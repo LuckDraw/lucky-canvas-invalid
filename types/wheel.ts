@@ -1,23 +1,25 @@
 import { FontType, ImgType } from './index'
 
-interface BlockType {
+export interface BlockType {
   background: string
   padding: string
 }
 
-interface PrizeType {
+export interface PrizeType {
   background?: string
   fonts?: Array<FontType>
   imgs?: Array<ImgType>
 }
 
-interface ButtonType {
+export interface ButtonType {
+  radius?: string
+  pointer?: boolean
   background?: string
   fonts?: Array<FontType>
   imgs?: Array<ImgType>
 }
 
-interface defaultConfigType {
+export interface DefaultConfigType {
   gutter?: string | number
   offsetDegree?: number
   speed?: number
@@ -25,7 +27,7 @@ interface defaultConfigType {
   decelerationTime?: number
 }
 
-interface defaultStyleType {
+export interface DefaultStyleType {
   background?: string
   fontColor?: FontType['fontColor']
   fontSize?: FontType['fontSize']
@@ -40,8 +42,8 @@ export default interface LuckyWheelConfig {
   blocks?: Array<BlockType>
   prizes?: Array<PrizeType>
   buttons?: Array<ButtonType>
-  defaultConfig?: defaultConfigType
-  defaultStyle?: defaultStyleType
-  play?: () => void
-  stop?: (index: number | string) => void
+  defaultConfig?: DefaultConfigType
+  defaultStyle?: DefaultStyleType
+  start?: (e: MouseEvent) => void
+  end?: (prize: object) => void
 }
