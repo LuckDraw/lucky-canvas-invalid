@@ -38,12 +38,15 @@ export interface DefaultStyleType {
   lengthLimit?: FontType['lengthLimit']
 }
 
+export type StartCallbackType = (e: MouseEvent) => void
+export type EndCallbackType = (prize: object) => void
+
 export default interface LuckyWheelConfig {
   blocks?: Array<BlockType>
   prizes?: Array<PrizeType>
   buttons?: Array<ButtonType>
   defaultConfig?: DefaultConfigType
   defaultStyle?: DefaultStyleType
-  start?: (e: MouseEvent) => void
-  end?: (prize: object) => void
+  start?: StartCallbackType
+  end?: EndCallbackType
 }

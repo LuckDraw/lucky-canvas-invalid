@@ -1,31 +1,51 @@
 
-// 转换角度
-export const getAngle = deg => {
+/**
+ * 转换为运算角度
+ * @param { number } deg 数学角度
+ * @return { number } 运算角度
+ */
+export const getAngle = (deg: number): number => {
   return Math.PI / 180 * deg
 }
 
-// 根据角度计算圆上的点
-export const getArcPointerByDeg = (deg, r) => {
+/**
+ * 根据角度计算圆上的点
+ * @param { number } deg 运算角度
+ * @param { number } r 半径
+ * @return { Array<number> } 坐标[x, y]
+ */
+export const getArcPointerByDeg = (deg: number, r: number): [number, number] => {
   return [+(Math.cos(deg) * r).toFixed(8), +(Math.sin(deg) * r).toFixed(8)]
 }
 
-// 根据点计算切线方程
-export const getTangentByPointer = (x, y) => {
+/**
+ * 根据点计算切线方程
+ * @param { number } x 横坐标
+ * @param { number } y 纵坐标
+ * @return { Array<number> } [斜率, 常数]
+ */
+export const getTangentByPointer = (x: number, y: number): Array<number> => {
   let k = - x / y
   let b = -k * x + y
   return [k, b]
 }
 
 // 根据三点画圆弧
-export const drawRadian = (ctx, r, start, end, direction = true) => {
+export const drawRadian = (
+  ctx: CanvasRenderingContext2D,
+  r: number,
+  start: number,
+  end: number,
+  direction: boolean = true
+) => {
   if (Math.abs(end - start).toFixed(8) >= getAngle(180).toFixed(8)) {
     let middle = (end + start) / 2
     if (direction) {
-      drawRadian(ctx, r, start, middle, direction, 1)
-      drawRadian(ctx, r, middle, end, direction, 1)
+      drawRadian(ctx, r, start, middle, direction)
+      drawRadian(ctx, r, middle, end, direction)
     } else {
-      drawRadian(ctx, r, middle, end, direction, 1)
-      drawRadian(ctx, r, start, middle, direction, 1)
+      drawRadian(ctx, r, middle, end, direction)
+      drawRadian(ctx, r, start, middle, direction)
     }
     return false
   }
@@ -37,8 +57,8 @@ export const drawRadian = (ctx, r, start, end, direction = true) => {
   let x0 = (b2 - b1) / (k1 - k2)
   let y0 = (k2 * b1 - k1 * b2) / (k2 - k1)
   if (isNaN(x0)) {
-    Math.abs(x1) == r.toFixed(8) && (x0 = x1)
-    Math.abs(x2) == r.toFixed(8) && (x0 = x2)
+    Math.abs(x1) === +r.toFixed(8) && (x0 = x1)
+    Math.abs(x2) === +r.toFixed(8) && (x0 = x2)
   }
   if (k1 === Infinity || k1 === -Infinity) {
     y0 = k2 * x0 + b2
@@ -51,7 +71,15 @@ export const drawRadian = (ctx, r, start, end, direction = true) => {
 }
 
 // 绘制扇形
-export const drawSector = (ctx, minRadius, maxRadius, start, end, gutter, background) => {
+export const drawSector = (
+  ctx: CanvasRenderingContext2D,
+  minRadius: number,
+  maxRadius: number,
+  start: number,
+  end: number,
+  gutter: number,
+  background: string
+) => {
   if (!minRadius) minRadius = gutter
   let maxGutter = getAngle(90 / Math.PI / maxRadius * gutter)
   let minGutter = getAngle(90 / Math.PI / minRadius * gutter)
@@ -77,7 +105,15 @@ export const drawSector = (ctx, minRadius, maxRadius, start, end, gutter, backgr
 }
 
 // 绘制圆角矩形
-export const drawRoundRect = (ctx, x, y, w, h, r, color) => {
+export const drawRoundRect = (
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  r: number,
+  color: string
+) => {
   let min = Math.min(w, h)
   if (r > min / 2) r = min / 2
   ctx.beginPath()
@@ -99,16 +135,33 @@ export const drawRoundRect = (ctx, x, y, w, h, r, color) => {
 /**
  * 创建线性渐变色
  */
-export const getLinearGradient = (ctx, x, y, w, h, background) => {
-  const context = /linear-gradient\((.+)\)/.exec(background)[1]
+export const getLinearGradient = (
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  background: string
+) => {
+  const context = (/linear-gradient\((.+)\)/.exec(background) as Array<any>)[1]
     .split(',') // 根据逗号分割
-    .map(text => text.trim()) // 去除两边空格
-  let deg = context.shift(), direction
+    .map((text: string) => text.trim()) // 去除两边空格
+
+  // interface TypeArr1<T> {
+  //   0: T
+  //   1: T
+  //   2: T
+  //   3: T
+  // }
+  // let arr1: TypeArr1<number> = [1, 2, 3, 4, 8, 5]
+  // type TypeArr2 = [number, number, number, number]
+  // let arr2: TypeArr2 = [1,2,2,3]
+  let deg = context.shift(), direction: [number, number, number, number] = [0, 0, 0, 0]
   // 通过起始点和角度计算渐变终点的坐标点, 这里感谢泽宇大神提醒我使用勾股定理....
   if (deg.includes('deg')) {
     deg = deg.slice(0, -3) % 360
     // 根据4个象限定义起点坐标, 根据45度划分8个区域计算终点坐标
-    const getLenOfTanDeg = deg => Math.tan(deg / 180 * Math.PI)
+    const getLenOfTanDeg = (deg: number) => Math.tan(deg / 180 * Math.PI)
     if (deg >= 0 && deg < 45) direction = [x, y + h, x + w, y + h - w * getLenOfTanDeg(deg - 0)]
     else if (deg >= 45 && deg < 90) direction = [x, y + h, (x + w) - h * getLenOfTanDeg(deg - 45), y]
     else if (deg >= 90 && deg < 135) direction = [x + w, y + h, (x + w) - h * getLenOfTanDeg(deg - 90), y]
@@ -124,11 +177,12 @@ export const getLinearGradient = (ctx, x, y, w, h, background) => {
   else if (deg.includes('left')) direction = [x + w, y, x, y]
   else if (deg.includes('right')) direction = [x, y, x + w, y]
   // 创建线性渐变必须使用整数坐标
-  const gradient = ctx.createLinearGradient(...direction.map(n => n >> 0))
-  return context.reduce((gradient, item, index) => {
-    const info = item.split(' ')
-    if (info.length === 1) gradient.addColorStop(index, info[0])
-    else if (info.length === 2) gradient.addColorStop(...info)
-    return gradient
-  }, gradient)
+  const gradient = ctx.createLinearGradient(...direction)
+  // return context.reduce((gradient, item, index) => {
+  //   const info = item.split(' ')
+  //   if (info.length === 1) gradient.addColorStop(index, info[0])
+  //   else if (info.length === 2) gradient.addColorStop(...info)
+  //   return gradient
+  // }, gradient)
 }
+
