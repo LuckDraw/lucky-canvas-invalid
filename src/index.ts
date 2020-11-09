@@ -6,14 +6,14 @@ export default class LuckDraw {
   /**
    * 设备像素比
    */
-  protected setDpr () {
+  protected setDpr (): void {
     (window as any).dpr = this.dpr = (window.devicePixelRatio || 2 ) * 1.3
   }
 
   /**
    * 根标签的字体大小
    */
-  protected setHTMLFontSize () {
+  protected setHTMLFontSize (): void {
     this.htmlFontSize = +getComputedStyle(document.documentElement).fontSize.slice(0, -2)
   }
 
@@ -23,7 +23,7 @@ export default class LuckDraw {
    * @param width 将要等比缩放的宽
    * @param height 将要等比缩放的高
    */
-  protected optimizeClarity (canvas: HTMLCanvasElement, width: number, height: number) {
+  protected optimizeClarity (canvas: HTMLCanvasElement, width: number, height: number): void {
     const { dpr } = this
     const compute = (len: number): number => {
       return (len * dpr - len) / (len * dpr) * (dpr / 2) * 100
