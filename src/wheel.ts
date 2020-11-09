@@ -7,14 +7,15 @@ import LuckyWheelConfig, {
   DefaultStyleType,
   StartCallbackType,
 } from '../types/wheel'
+import { FontType, ImgType } from '../types/index'
 import LuckDraw from './index'
 import {
   isExpectType,
-  // removeEnter,
+  removeEnter,
 } from '../utils/index'
 import {
   getAngle,
-  // drawSector,
+  drawSector,
 } from '../utils/math'
 
 export class LuckyWheel extends LuckDraw {
@@ -39,15 +40,18 @@ export class LuckyWheel extends LuckDraw {
     lengthLimit: '90%',
   }
   private readonly startCallback?: StartCallbackType
-  private readonly box: Element
+  private readonly box: HTMLDivElement
   private readonly canvas: HTMLCanvasElement
   private readonly ctx: CanvasRenderingContext2D
   private Radius: number = 0
   private prizeRadius: number = 0
-  private prizeDeg: number = 0
   private prizeRadian: number = 0
+  private prizeDeg: number = 0
+  private rotateDeg: number = 0
   private maxBtnRadius: number = 0
   private startTime: number = 0
+  private prizeImgs: Array<HTMLImageElement[]> = [[]]
+  private btnImgs: Array<HTMLImageElement[]> = [[]]
 
   /**
    * 构造器
@@ -56,32 +60,36 @@ export class LuckyWheel extends LuckDraw {
    */
   constructor (el: string, data: LuckyWheelConfig = {}) {
     super()
-    this.box = document.querySelector(el) as Element
+    this.box = document.querySelector(el) as HTMLDivElement
     this.canvas = document.createElement('canvas')
     this.box.appendChild(this.canvas)
-    this.ctx = this.canvas.getContext('2d') as CanvasRenderingContext2D
+    this.ctx = this.canvas.getContext('2d')!
     this.blocks = data?.blocks || []
     this.prizes = data?.prizes || []
     this.buttons = data?.buttons || []
-    for (let key in data?.defaultConfig) {
-      this.defaultConfig[key] = data?.defaultConfig[key]
+    for (let key in data.defaultConfig) {
+      this.defaultConfig[key] = data.defaultConfig[key]
     }
-    for (let key in data?.defaultStyle) {
-      this.defaultStyle[key] = data?.defaultStyle[key]
+    for (let key in data.defaultStyle) {
+      this.defaultStyle[key] = data.defaultStyle[key]
     }
-    this.init([])
+    // 收集首次渲染的图片
+    let willUpdate: Array<ImgType[] | undefined> = [[]]
+    this.prizes && ( willUpdate = this.prizes.map(prize => prize.imgs))
+    this.buttons && (willUpdate.push(...this.buttons.map(btn => btn.imgs)))
+    this.init(willUpdate)
   }
 
   /**
    * 初始化 canvas 抽奖
-   * @param { Array<Array<img>> } willUpdateImgs 需要更新的图片
+   * @param { Array<ImgType[]> } willUpdateImgs 需要更新的图片
    */
-  public init (willUpdateImgs: object[][]) {
+  public init (willUpdateImgs: Array<ImgType[] | undefined>) {
     this.setDpr()
     this.setHTMLFontSize()
     const { box, canvas, ctx, dpr } = this
     if (!box) return
-    canvas.width = canvas.height = (box as HTMLDivElement).offsetWidth * dpr
+    canvas.width = canvas.height = box.offsetWidth * dpr
     this.Radius = canvas.width / 2
     this.optimizeClarity(canvas, this.Radius * 2, this.Radius * 2)
     ctx.translate(this.Radius, this.Radius)
@@ -99,19 +107,19 @@ export class LuckyWheel extends LuckDraw {
     }
     // 同步加载图片
     let num = 0, sum = 0
-    // if (isExpectType(willUpdateImgs, 'array')) {
-    //   this.draw() // 先画一次防止闪烁, 因为加载图片是异步的
-    //   willUpdateImgs.forEach((imgs, cellIndex) => {
-    //     if (!imgs) return false
-    //     imgs.forEach((imgInfo, imgIndex) => {
-    //       sum++
-    //       this.loadAndCacheImg(cellIndex, imgIndex, () => {
-    //         num++
-    //         if (sum === num) endCallBack.call(this)
-    //       })
-    //     })
-    //   })
-    // }
+    if (isExpectType(willUpdateImgs, 'array')) {
+      this.draw() // 先画一次防止闪烁, 因为加载图片是异步的
+      willUpdateImgs.forEach((imgs, cellIndex) => {
+        if (!imgs) return false
+        imgs.forEach((imgInfo, imgIndex) => {
+          sum++
+          this.loadAndCacheImg(cellIndex, imgIndex, () => {
+            num++
+            if (sum === num) endCallBack.call(this)
+          })
+        })
+      })
+    }
     if (!sum) endCallBack.call(this)
   }
 
@@ -121,32 +129,61 @@ export class LuckyWheel extends LuckDraw {
    * @param { number } imgIndex 奖品图片索引
    * @param { Function } callBack 图片加载完毕回调
    */
-  // loadAndCacheImg (cellIndex: number, imgIndex: number, callBack: () => void) {
-  //   // 先判断index是奖品图片还是按钮图片, 并修正index的值
-  //   const isPrize = cellIndex < (this.config.prizes?.length as number)
-  //   const cellName = isPrize ? 'prizes' : 'buttons'
-  //   const imgName = isPrize ? 'prizeImgs' : 'btnImgs'
-  //   cellIndex = isPrize ? cellIndex : cellIndex - this.prizes.length
-  //   // 获取图片信息
-  //   const cell = this[cellName][cellIndex]
-  //   if (!cell) return false
-  //   const imgInfo = cell.imgs[imgIndex]
-  //   if (!imgInfo) return false
-  //   // 创建图片
-  //   let imgObj = new Image()
-  //   if (!this[imgName][cellIndex]) this[imgName][cellIndex] = []
-  //   // 创建缓存
-  //   this[imgName][cellIndex][imgIndex] = imgObj
-  //   imgObj.src = imgInfo.src
-  //   imgObj.onload = () => callBack.call(this)
-  // }
+  private loadAndCacheImg (cellIndex: number, imgIndex: number, callBack: () => void) {
+    // 先判断index是奖品图片还是按钮图片, 并修正index的值
+    const isPrize = cellIndex < this.prizes.length
+    const cellName = isPrize ? 'prizes' : 'buttons'
+    const imgName = isPrize ? 'prizeImgs' : 'btnImgs'
+    cellIndex = isPrize ? cellIndex : cellIndex - this.prizes.length
+    // 获取图片信息
+    const cell: PrizeType | ButtonType = this[cellName][cellIndex]
+    if (!cell || !cell.imgs) return false
+    const imgInfo = cell.imgs[imgIndex]
+    if (!imgInfo) return false
+    // 创建图片
+    let imgObj = new Image()
+    if (!this[imgName][cellIndex]) this[imgName][cellIndex] = []
+    // 创建缓存
+    this[imgName][cellIndex][imgIndex] = imgObj
+    imgObj.src = imgInfo.src
+    imgObj.onload = () => callBack.call(this)
+  }
+
+  /**
+   * 计算图片的渲染宽高
+   * @param imgObj 图片标签元素
+   * @param imgInfo 图片信息
+   * @param computedWidth 宽度百分比
+   * @param computedHeight 高度百分比
+   */
+  private computedWidthAndHeight (imgObj: HTMLImageElement, imgInfo: ImgType, computedWidth: number, computedHeight: number) {
+    // 根据配置的样式计算图片的真实宽高
+    if (!imgInfo.width && !imgInfo.height) {
+      // 如果没有配置宽高, 则使用图片本身的宽高
+      return [imgObj.width, imgObj.height]
+    } else if (imgInfo.width && !imgInfo.height) {
+      // 如果只填写了宽度, 没填写高度
+      let trueWidth = this.getWidth(imgInfo.width, computedWidth)
+      // 那高度就随着宽度进行等比缩放
+      return [trueWidth, imgObj.height * (trueWidth / imgObj.width)]
+    } else if (!imgInfo.width && imgInfo.height) {
+      // 如果只填写了宽度, 没填写高度
+      let trueHeight = this.getHeight(imgInfo.height, computedHeight)
+      // 那宽度就随着高度进行等比缩放
+      return [imgObj.width * (trueHeight / imgObj.height), trueHeight]
+    }
+    // 如果宽度和高度都填写了, 就如实计算
+    return [
+      this.getWidth(imgInfo.width, computedWidth),
+      this.getHeight(imgInfo.height, computedHeight)
+    ]
+  }
 
   /**
    * 开始绘制
    */
-  draw () {
-    const { ctx, dpr } = this
-    // const { _defaultStyle, _defaultConfig } = config
+  private draw () {
+    const { ctx, dpr, defaultConfig, defaultStyle } = this
     ctx.clearRect(-this.Radius, -this.Radius, this.Radius * 2, this.Radius * 2)
     // 绘制blocks边框
     this.prizeRadius = this.blocks.reduce((radius, block) => {
@@ -159,16 +196,126 @@ export class LuckyWheel extends LuckDraw {
     // 计算起始弧度
     this.prizeDeg = 360 / this.prizes.length
     this.prizeRadian = getAngle(this.prizeDeg)
+    let start = getAngle(-90 + this.rotateDeg + defaultConfig.offsetDegree!)
+    // 计算文字横坐标
+    const getFontX = (line: string) => {
+      return this.getOffsetX(ctx.measureText(line).width)
+    }
+    // 计算文字纵坐标
+    const getFontY = (font: FontType, height: number, lineIndex: number) => {
+      // 优先使用字体行高, 要么使用默认行高, 其次使用字体大小, 否则使用默认字体大小
+      const lineHeight = font.lineHeight || defaultStyle.lineHeight || font.fontSize || defaultStyle.fontSize
+      return this.getHeight(font.top, height) + (lineIndex + 1) * this.getLength(lineHeight) * dpr
+    }
+    ctx.save()
+    // 绘制prizes奖品区域
+    this.prizes.forEach((prize, prizeIndex) => {
+      // 计算当前奖品区域中间坐标点
+      let currMiddleDeg = start + prizeIndex * this.prizeRadian
+      // 奖品区域可见高度
+      let prizeHeight = this.prizeRadius - this.maxBtnRadius
+      // 绘制背景
+      drawSector(
+        ctx, this.maxBtnRadius, this.prizeRadius,
+        currMiddleDeg - this.prizeRadian / 2,
+        currMiddleDeg + this.prizeRadian / 2,
+        this.getLength(defaultConfig.gutter) * dpr,
+        prize.background || defaultStyle.background || 'rgba(0, 0, 0, 0)'
+      )
+      // 计算临时坐标并旋转文字
+      let x = Math.cos(currMiddleDeg) * this.prizeRadius
+      let y = Math.sin(currMiddleDeg) * this.prizeRadius
+      ctx.translate(x, y)
+      ctx.rotate(currMiddleDeg + getAngle(90))
+      // 绘制图片
+      prize.imgs && prize.imgs.forEach((imgInfo, imgIndex) => {
+        if (!this.prizeImgs[prizeIndex]) return
+        const prizeImg = this.prizeImgs[prizeIndex][imgIndex]
+        if (!prizeImg) return
+        const [trueWidth, trueHeight] = this.computedWidthAndHeight(
+          prizeImg, imgInfo, this.prizeRadian * this.prizeRadius, prizeHeight
+        )
+        ctx.drawImage(
+          prizeImg,
+          this.getOffsetX(trueWidth),
+          this.getHeight(imgInfo.top, prizeHeight),
+          trueWidth,
+          trueHeight
+        )
+      })
+      // 逐行绘制文字
+      prize.fonts && prize.fonts.forEach(font => {
+        let fontColor = font.fontColor || defaultStyle.fontColor
+        let fontWeight = font.fontWeight || defaultStyle.fontWeight
+        let fontSize = this.getLength(font.fontSize || defaultStyle.fontSize)
+        let fontStyle = font.fontStyle || defaultStyle.fontStyle
+        ctx.fillStyle = fontColor!
+        ctx.font = `${fontWeight} ${fontSize * dpr}px ${fontStyle}`
+        let lines = [], text = String(font.text)
+        if (font.hasOwnProperty('wordWrap') ? font.wordWrap : defaultStyle.wordWrap) {
+          text = removeEnter(text)
+          let str = ''
+          for (let i = 0; i < text.length; i++) {
+            str += text[i]
+            let currWidth = ctx.measureText(str).width
+            let maxWidth = Math.tan(this.prizeRadian / 2) * 2 - this.getLength(defaultConfig.gutter) * (
+              this.prizeRadius - getFontY(font, prizeHeight, lines.length)
+            ) * dpr
+            if (currWidth > this.getWidth(font.lengthLimit || defaultStyle.lengthLimit, maxWidth)) {
+              lines.push(str.slice(0, -1))
+              str = text[i]
+            }
+          }
+          if (str) lines.push(str)
+          if (!lines.length) lines.push(text)
+        } else {
+          lines = text.split('\n')
+        }
+        lines.filter(line => !!line).forEach((line, lineIndex) => {
+          ctx.fillText(line, getFontX(line), getFontY(font, prizeHeight, lineIndex))
+        })
+      })
+      // 修正旋转角度和原点坐标
+      ctx.rotate(getAngle(360) - currMiddleDeg - getAngle(90))
+      ctx.translate(-x, -y)
+    })
+    ctx.restore()
   }
 
   /**
    * 获取长度
    */
-  getLength (length: string | number): number {
+  private getLength (length: string | number | undefined): number {
     if (isExpectType(length, 'number')) return length as number
     if (isExpectType(length, 'string')) return this.changeUnits(
-      length as string, { clean: true }
+      length as string,
+      { clean: true }
     )
     return 0
+  }
+  // 获取相对宽度
+  private getWidth (length: string | number | undefined, width = this.prizeRadian * this.prizeRadius) {
+    if (isExpectType(length, 'number')) return (length as number) * this.dpr
+    if (isExpectType(length, 'string')) return this.changeUnits(
+      length as string,
+      { denominator: width }
+    )
+    return 0
+  }
+  // 获取相对高度
+  private getHeight (length: string | number | undefined, height = this.prizeRadius) {
+    if (isExpectType(length, 'number')) return (length as number) * this.dpr
+    if (isExpectType(length, 'string')) return this.changeUnits(
+      length as string,
+      { denominator: height }
+    )
+    return 0
+  }
+  /**
+   * 获取相对(居中)X坐标
+   * @param width
+   */
+  private getOffsetX (width: number) {
+    return -width / 2
   }
 }

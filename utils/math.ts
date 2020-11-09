@@ -178,11 +178,12 @@ export const getLinearGradient = (
   else if (deg.includes('right')) direction = [x, y, x + w, y]
   // 创建线性渐变必须使用整数坐标
   const gradient = ctx.createLinearGradient(...direction)
-  // return context.reduce((gradient, item, index) => {
-  //   const info = item.split(' ')
-  //   if (info.length === 1) gradient.addColorStop(index, info[0])
-  //   else if (info.length === 2) gradient.addColorStop(...info)
-  //   return gradient
-  // }, gradient)
+  // 这里后期重构, 先用any代替
+  return context.reduce((gradient: any, item: any, index: any) => {
+    const info = item.split(' ')
+    if (info.length === 1) gradient.addColorStop(index, info[0])
+    else if (info.length === 2) gradient.addColorStop(...info)
+    return gradient
+  }, gradient)
 }
 
