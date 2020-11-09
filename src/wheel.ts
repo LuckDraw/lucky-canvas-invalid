@@ -88,7 +88,7 @@ export class LuckyWheel extends LuckDraw {
    * 初始化 canvas 抽奖
    * @param { Array<ImgType[]> } willUpdateImgs 需要更新的图片
    */
-  public init (willUpdateImgs: Array<ImgType[] | undefined>) {
+  public init (willUpdateImgs: Array<ImgType[] | undefined>): void {
     this.setDpr()
     this.setHTMLFontSize()
     const { box, canvas, ctx, dpr } = this
@@ -420,7 +420,10 @@ export class LuckyWheel extends LuckDraw {
    * @param width 宽度计算百分比
    * @return 返回相对宽度
    */
-  private getWidth (length: string | number | undefined, width = this.prizeRadian * this.prizeRadius): number {
+  private getWidth (
+    length: string | number | undefined,
+    width = this.prizeRadian * this.prizeRadius
+  ): number {
     if (isExpectType(length, 'number')) return (length as number) * this.dpr
     if (isExpectType(length, 'string')) return this.changeUnits(
       length as string,
@@ -435,7 +438,10 @@ export class LuckyWheel extends LuckDraw {
    * @param height 高度计算百分比
    * @return 返回相对高度
    */
-  private getHeight (length: string | number | undefined, height = this.prizeRadius): number {
+  private getHeight (
+    length: string | number | undefined,
+    height = this.prizeRadius
+  ): number {
     if (isExpectType(length, 'number')) return (length as number) * this.dpr
     if (isExpectType(length, 'string')) return this.changeUnits(
       length as string,
