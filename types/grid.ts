@@ -54,7 +54,10 @@ export interface ActiveStyleType {
   fontWeight?: FontType['fontWeight']
 }
 
-export default interface LuckyWheelConfig {
+export type StartCallbackType = (e: MouseEvent) => void
+export type EndCallbackType = (prize: object) => void
+
+export default interface LuckyGridConfig {
   rows?: string | number
   cols?: string | number
   blocks?: Array<BlockType>
@@ -63,6 +66,6 @@ export default interface LuckyWheelConfig {
   defaultConfig?: DefaultConfigType
   defaultStyle?: DefaultStyleType
   activeStyle?: ActiveStyleType
-  start?: (e: MouseEvent) => void
-  end?: (prize: object) => void
+  start?: StartCallbackType
+  end?: EndCallbackType
 }
