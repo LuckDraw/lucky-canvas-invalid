@@ -56,7 +56,7 @@ export class LuckyWheel extends LuckDraw {
   private btnImgs: Array<HTMLImageElement[]> = [[]]
 
   /**
-   * 构造器
+   * 大转盘构造器
    * @param el 元素标识
    * @param data 抽奖配置项
    */
@@ -133,7 +133,7 @@ export class LuckyWheel extends LuckDraw {
    * @param { number } imgIndex 奖品图片索引
    * @param { Function } callBack 图片加载完毕回调
    */
-  private loadAndCacheImg (cellIndex: number, imgIndex: number, callBack: () => void) {
+  private loadAndCacheImg (cellIndex: number, imgIndex: number, callBack: () => void): void {
     // 先判断index是奖品图片还是按钮图片, 并修正index的值
     const isPrize = cellIndex < this.prizes.length
     const cellName = isPrize ? 'prizes' : 'buttons'
@@ -141,9 +141,9 @@ export class LuckyWheel extends LuckDraw {
     cellIndex = isPrize ? cellIndex : cellIndex - this.prizes.length
     // 获取图片信息
     const cell: PrizeType | ButtonType = this[cellName][cellIndex]
-    if (!cell || !cell.imgs) return false
+    if (!cell || !cell.imgs) return
     const imgInfo = cell.imgs[imgIndex]
-    if (!imgInfo) return false
+    if (!imgInfo) return
     // 创建图片
     let imgObj = new Image()
     if (!this[imgName][cellIndex]) this[imgName][cellIndex] = []
@@ -159,8 +159,14 @@ export class LuckyWheel extends LuckDraw {
    * @param imgInfo 图片信息
    * @param computedWidth 宽度百分比
    * @param computedHeight 高度百分比
+   * @return [渲染宽度, 渲染高度]
    */
-  private computedWidthAndHeight (imgObj: HTMLImageElement, imgInfo: ImgType, computedWidth: number, computedHeight: number) {
+  private computedWidthAndHeight (
+    imgObj: HTMLImageElement,
+    imgInfo: ImgType,
+    computedWidth: number,
+    computedHeight: number
+  ): [number, number] {
     // 根据配置的样式计算图片的真实宽高
     if (!imgInfo.width && !imgInfo.height) {
       // 如果没有配置宽高, 则使用图片本身的宽高
@@ -186,7 +192,7 @@ export class LuckyWheel extends LuckDraw {
   /**
    * 开始绘制
    */
-  private draw () {
+  private draw (): void {
     const { ctx, dpr, defaultConfig, defaultStyle } = this
     ctx.clearRect(-this.Radius, -this.Radius, this.Radius * 2, this.Radius * 2)
     // 绘制blocks边框
@@ -339,9 +345,9 @@ export class LuckyWheel extends LuckDraw {
   /**
    * 对外暴露: 开始抽奖方法
    */
-  public play () {
+  public play (): void {
     // 再次拦截, 因为play是可以异步调用的
-    if (this.startTime) return false
+    if (this.startTime) return
     cancelAnimationFrame(this.animationId)
     this.startTime = Date.now()
     this.prizeFlag = undefined
@@ -350,15 +356,16 @@ export class LuckyWheel extends LuckDraw {
 
   /**
    * 对外暴露: 缓慢停止方法
+   * @param index 中奖索引
    */
-  public stop (index: string | number) {
+  public stop (index: string | number): void {
     this.prizeFlag = Number(index) % this.prizes.length
   }
 
   /**
    * 实际开始执行方法
    */
-  private run () {
+  private run (): void {
     const { prizeFlag, prizeDeg, rotateDeg, defaultConfig } = this
     let interval = Date.now() - this.startTime
     // 先完全旋转, 再停止
@@ -380,7 +387,7 @@ export class LuckyWheel extends LuckDraw {
   /**
    * 缓慢停止的方法
    */
-  private slowDown () {
+  private slowDown (): void {
     const { prizes, prizeFlag, stopDeg, endDeg, defaultConfig } = this
     let interval = Date.now() - this.endTime
     if (interval >= defaultConfig.decelerationTime!) {
@@ -395,6 +402,8 @@ export class LuckyWheel extends LuckDraw {
 
   /**
    * 获取长度
+   * @param length 将要转换的长度
+   * @return 返回长度
    */
   private getLength (length: string | number | undefined): number {
     if (isExpectType(length, 'number')) return length as number
@@ -404,8 +413,14 @@ export class LuckyWheel extends LuckDraw {
     )
     return 0
   }
-  // 获取相对宽度
-  private getWidth (length: string | number | undefined, width = this.prizeRadian * this.prizeRadius) {
+
+  /**
+   * 获取相对宽度
+   * @param length 将要转换的宽度
+   * @param width 宽度计算百分比
+   * @return 返回相对宽度
+   */
+  private getWidth (length: string | number | undefined, width = this.prizeRadian * this.prizeRadius): number {
     if (isExpectType(length, 'number')) return (length as number) * this.dpr
     if (isExpectType(length, 'string')) return this.changeUnits(
       length as string,
@@ -413,8 +428,14 @@ export class LuckyWheel extends LuckDraw {
     )
     return 0
   }
-  // 获取相对高度
-  private getHeight (length: string | number | undefined, height = this.prizeRadius) {
+
+  /**
+   * 获取相对高度
+   * @param length 将要转换的高度
+   * @param height 高度计算百分比
+   * @return 返回相对高度
+   */
+  private getHeight (length: string | number | undefined, height = this.prizeRadius): number {
     if (isExpectType(length, 'number')) return (length as number) * this.dpr
     if (isExpectType(length, 'string')) return this.changeUnits(
       length as string,
@@ -422,11 +443,13 @@ export class LuckyWheel extends LuckDraw {
     )
     return 0
   }
+
   /**
    * 获取相对(居中)X坐标
    * @param width
+   * @return 返回x坐标
    */
-  private getOffsetX (width: number) {
+  private getOffsetX (width: number): number {
     return -width / 2
   }
 }
