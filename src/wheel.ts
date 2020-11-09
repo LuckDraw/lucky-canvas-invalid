@@ -1,4 +1,5 @@
 
+import LuckDraw from './index'
 import LuckyWheelConfig, {
   BlockType,
   PrizeType,
@@ -6,17 +7,12 @@ import LuckyWheelConfig, {
   DefaultConfigType,
   DefaultStyleType,
   StartCallbackType,
+  EndCallbackType
 } from '../types/wheel'
 import { FontType, ImgType } from '../types/index'
-import LuckDraw from './index'
-import {
-  isExpectType,
-  removeEnter,
-} from '../utils/index'
-import {
-  getAngle,
-  drawSector,
-} from '../utils/math'
+import { isExpectType, removeEnter } from '../utils/index'
+import { getAngle, drawSector } from '../utils/math'
+import { quad } from '../utils/tween'
 
 export class LuckyWheel extends LuckDraw {
 
@@ -40,16 +36,22 @@ export class LuckyWheel extends LuckDraw {
     lengthLimit: '90%',
   }
   private readonly startCallback?: StartCallbackType
+  private readonly endCallback?: EndCallbackType
   private readonly box: HTMLDivElement
   private readonly canvas: HTMLCanvasElement
   private readonly ctx: CanvasRenderingContext2D
-  private Radius: number = 0
-  private prizeRadius: number = 0
-  private prizeRadian: number = 0
-  private prizeDeg: number = 0
-  private rotateDeg: number = 0
-  private maxBtnRadius: number = 0
-  private startTime: number = 0
+  private Radius = 0                    // 大转盘半径
+  private prizeRadius = 0               // 奖品区域半径
+  private prizeDeg = 0                  // 奖品数学角度
+  private prizeRadian = 0               // 奖品运算角度
+  private rotateDeg = 0                 // 转盘旋转角度
+  private maxBtnRadius = 0              // 最大按钮半径
+  private startTime = 0                 // 开始时间戳
+  private endTime = 0                   // 停止时间戳
+  private stopDeg = 0                   // 刻舟求剑
+  private endDeg = 0                    // 停止角度
+  private prizeFlag: number | undefined // 中奖索引
+  private animationId = 0               // 帧动画id
   private prizeImgs: Array<HTMLImageElement[]> = [[]]
   private btnImgs: Array<HTMLImageElement[]> = [[]]
 
@@ -64,9 +66,11 @@ export class LuckyWheel extends LuckDraw {
     this.canvas = document.createElement('canvas')
     this.box.appendChild(this.canvas)
     this.ctx = this.canvas.getContext('2d')!
-    this.blocks = data?.blocks || []
-    this.prizes = data?.prizes || []
-    this.buttons = data?.buttons || []
+    this.blocks = data.blocks || []
+    this.prizes = data.prizes || []
+    this.buttons = data.buttons || []
+    this.startCallback = data.start
+    this.endCallback = data.end
     for (let key in data.defaultConfig) {
       this.defaultConfig[key] = data.defaultConfig[key]
     }
@@ -280,6 +284,113 @@ export class LuckyWheel extends LuckDraw {
       ctx.translate(-x, -y)
     })
     ctx.restore()
+    // 绘制按钮
+    this.buttons.forEach((btn, btnIndex) => {
+      let radius = this.getHeight(btn.radius)
+      // 绘制背景颜色
+      this.maxBtnRadius = Math.max(this.maxBtnRadius, radius)
+      ctx.beginPath()
+      ctx.fillStyle = btn.background || 'rgba(0, 0, 0, 0)'
+      ctx.arc(0, 0, radius, 0, Math.PI * 2, false)
+      ctx.fill()
+      // 绘制指针
+      if (btn.pointer) {
+        ctx.beginPath()
+        ctx.fillStyle = btn.background || 'rgba(0, 0, 0, 0)'
+        ctx.moveTo(-radius, 0)
+        ctx.lineTo(radius, 0)
+        ctx.lineTo(0, -radius * 2)
+        ctx.closePath()
+        ctx.fill()
+      }
+      // 绘制按钮图片
+      btn.imgs && btn.imgs.forEach((imgInfo, imgIndex) => {
+        if (!this.btnImgs[btnIndex]) return
+        const btnImg = this.btnImgs[btnIndex][imgIndex]
+        if (!btnImg) return
+        // 计算图片真实宽高
+        const [trueWidth, trueHeight] = this.computedWidthAndHeight(
+          btnImg, imgInfo, this.getHeight(btn.radius) * 2, this.getHeight(btn.radius) * 2
+        )
+        // 绘制图片
+        ctx.drawImage(
+          btnImg,
+          this.getOffsetX(trueWidth),
+          this.getHeight(imgInfo.top, radius),
+          trueWidth,
+          trueHeight
+        )
+      })
+      // 绘制按钮文字
+      btn.fonts && btn.fonts.forEach(font => {
+        let fontColor = font.fontColor || defaultStyle.fontColor
+        let fontWeight = font.fontWeight || defaultStyle.fontWeight
+        let fontSize = this.getLength(font.fontSize || defaultStyle.fontSize)
+        let fontStyle = font.fontStyle || defaultStyle.fontStyle
+        ctx.fillStyle = fontColor!
+        ctx.font = `${fontWeight} ${fontSize * dpr}px ${fontStyle}`
+        String(font.text).split('\n').forEach((line, lineIndex) => {
+          ctx.fillText(line, getFontX(line), getFontY(font, radius, lineIndex))
+        })
+      })
+    })
+  }
+
+  /**
+   * 对外暴露: 开始抽奖方法
+   */
+  public play () {
+    // 再次拦截, 因为play是可以异步调用的
+    if (this.startTime) return false
+    cancelAnimationFrame(this.animationId)
+    this.startTime = Date.now()
+    this.prizeFlag = undefined
+    this.run()
+  }
+
+  /**
+   * 对外暴露: 缓慢停止方法
+   */
+  public stop (index: string | number) {
+    this.prizeFlag = Number(index) % this.prizes.length
+  }
+
+  /**
+   * 实际开始执行方法
+   */
+  private run () {
+    const { prizeFlag, prizeDeg, rotateDeg, defaultConfig } = this
+    let interval = Date.now() - this.startTime
+    // 先完全旋转, 再停止
+    if (interval >= defaultConfig.accelerationTime! && prizeFlag !== undefined) {
+      // 记录开始停止的时间戳
+      this.endTime = Date.now()
+      // 记录开始停止的位置
+      this.stopDeg = rotateDeg
+      // 最终停止的角度
+      this.endDeg = 360 * 5 - (prizeFlag as number) * prizeDeg - rotateDeg - defaultConfig.offsetDegree!
+      cancelAnimationFrame(this.animationId)
+      return this.slowDown()
+    }
+    this.rotateDeg = (rotateDeg + quad.easeIn(interval, 0, defaultConfig.speed!, defaultConfig.accelerationTime!)) % 360
+    this.draw()
+    this.animationId = window.requestAnimationFrame(this.run.bind(this))
+  }
+
+  /**
+   * 缓慢停止的方法
+   */
+  private slowDown () {
+    const { prizes, prizeFlag, stopDeg, endDeg, defaultConfig } = this
+    let interval = Date.now() - this.endTime
+    if (interval >= defaultConfig.decelerationTime!) {
+      this.startTime = 0
+      this.endCallback?.({...prizes.find((prize, index) => index === prizeFlag)})
+      return cancelAnimationFrame(this.animationId)
+    }
+    this.rotateDeg = quad.easeOut(interval, stopDeg, endDeg, defaultConfig.decelerationTime!) % 360
+    this.draw()
+    this.animationId = window.requestAnimationFrame(this.slowDown.bind(this))
   }
 
   /**
