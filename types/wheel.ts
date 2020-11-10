@@ -20,22 +20,22 @@ export interface ButtonType {
 }
 
 export interface DefaultConfigType {
-  gutter?: string | number
-  offsetDegree?: number
-  speed?: number
-  accelerationTime?: number
-  decelerationTime?: number
+  gutter: string | number
+  offsetDegree: number
+  speed: number
+  accelerationTime: number
+  decelerationTime: number
 }
 
 export interface DefaultStyleType {
-  background?: string
-  fontColor?: FontType['fontColor']
-  fontSize?: FontType['fontSize']
-  fontStyle?: FontType['fontStyle']
-  fontWeight?: FontType['fontWeight']
+  background: string
+  fontColor: FontType['fontColor']
+  fontSize: FontType['fontSize']
+  fontStyle: FontType['fontStyle']
+  fontWeight: FontType['fontWeight']
   lineHeight?: FontType['lineHeight']
-  wordWrap?: FontType['wordWrap']
-  lengthLimit?: FontType['lengthLimit']
+  wordWrap: FontType['wordWrap']
+  lengthLimit: FontType['lengthLimit']
 }
 
 export type StartCallbackType = (e: MouseEvent) => void

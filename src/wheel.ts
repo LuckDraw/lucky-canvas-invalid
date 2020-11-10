@@ -98,7 +98,7 @@ export class LuckyWheel extends LuckDraw {
     this.Radius = canvas.width / 2
     this.optimizeClarity(canvas, this.Radius * 2, this.Radius * 2)
     ctx.translate(this.Radius, this.Radius)
-    const endCallBack = () => {
+    const endCallBack = (): void => {
       // 开始绘制
       this.draw()
       // 防止多次绑定点击事件
@@ -207,7 +207,7 @@ export class LuckyWheel extends LuckDraw {
     // 计算起始弧度
     this.prizeDeg = 360 / this.prizes.length
     this.prizeRadian = getAngle(this.prizeDeg)
-    let start = getAngle(-90 + this.rotateDeg + defaultConfig.offsetDegree!)
+    let start = getAngle(-90 + this.rotateDeg + defaultConfig.offsetDegree)
     // 计算文字横坐标
     const getFontX = (line: string) => {
       return this.getOffsetX(ctx.measureText(line).width)
@@ -371,7 +371,7 @@ export class LuckyWheel extends LuckDraw {
     const { prizeFlag, prizeDeg, rotateDeg, defaultConfig } = this
     let interval = Date.now() - this.startTime
     // 先完全旋转, 再停止
-    if (interval >= defaultConfig.accelerationTime! && prizeFlag !== undefined) {
+    if (interval >= defaultConfig.accelerationTime && prizeFlag !== undefined) {
       // 记录帧率
       this.FPS = interval / num
       // 记录开始停止的时间戳
@@ -379,11 +379,11 @@ export class LuckyWheel extends LuckDraw {
       // 记录开始停止的位置
       this.stopDeg = rotateDeg
       // 最终停止的角度
-      this.endDeg = 360 * 5 - (prizeFlag as number) * prizeDeg - rotateDeg - defaultConfig.offsetDegree!
+      this.endDeg = 360 * 5 - (prizeFlag as number) * prizeDeg - rotateDeg - defaultConfig.offsetDegree
       cancelAnimationFrame(this.animationId)
       return this.slowDown()
     }
-    this.rotateDeg = (rotateDeg + quad.easeIn(interval, 0, defaultConfig.speed!, defaultConfig.accelerationTime!)) % 360
+    this.rotateDeg = (rotateDeg + quad.easeIn(interval, 0, defaultConfig.speed, defaultConfig.accelerationTime)) % 360
     this.draw()
     this.animationId = window.requestAnimationFrame(this.run.bind(this, num + 1))
   }
@@ -394,12 +394,12 @@ export class LuckyWheel extends LuckDraw {
   private slowDown (): void {
     const { prizes, prizeFlag, stopDeg, endDeg, defaultConfig } = this
     let interval = Date.now() - this.endTime
-    if (interval >= defaultConfig.decelerationTime!) {
+    if (interval >= defaultConfig.decelerationTime) {
       this.startTime = 0
       this.endCallback?.({...prizes.find((prize, index) => index === prizeFlag)})
       return cancelAnimationFrame(this.animationId)
     }
-    this.rotateDeg = quad.easeOut(interval, stopDeg, endDeg, defaultConfig.decelerationTime!) % 360
+    this.rotateDeg = quad.easeOut(interval, stopDeg, endDeg, defaultConfig.decelerationTime) % 360
     this.draw()
     this.animationId = window.requestAnimationFrame(this.slowDown.bind(this))
   }

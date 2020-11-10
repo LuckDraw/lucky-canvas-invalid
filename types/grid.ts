@@ -27,39 +27,41 @@ export interface CellType {
 }
 
 export interface DefaultConfigType {
-  gutter?: number
-  speed?: number
-  accelerationTime?: number
-  decelerationTime?: number
+  gutter: number
+  speed: number
+  accelerationTime: number
+  decelerationTime: number
 }
 
 export interface DefaultStyleType {
-  borderRadius?: borderRadiusType
-  background?: backgroundType
-  shadow?: shadowType
-  fontColor?: FontType['fontColor']
-  fontSize?: FontType['fontSize']
-  fontStyle?: FontType['fontStyle']
-  fontWeight?: FontType['fontWeight']
-  wordWrap?: FontType['wordWrap']
-  lengthLimit?: FontType['lengthLimit']
+  borderRadius: borderRadiusType
+  background: backgroundType
+  shadow: shadowType
+  fontColor: FontType['fontColor']
+  fontSize: FontType['fontSize']
+  fontStyle: FontType['fontStyle']
+  fontWeight: FontType['fontWeight']
+  wordWrap: FontType['wordWrap']
+  lengthLimit: FontType['lengthLimit']
 }
 
 export interface ActiveStyleType {
-  background?: backgroundType
-  shadow?: shadowType
+  background: backgroundType
+  shadow: shadowType
   fontColor?: FontType['fontColor']
   fontSize?: FontType['fontSize']
   fontStyle?: FontType['fontStyle']
   fontWeight?: FontType['fontWeight']
 }
 
+export type RowsType = number
+export type ColsType = number
 export type StartCallbackType = (e: MouseEvent) => void
 export type EndCallbackType = (prize: object) => void
 
 export default interface LuckyGridConfig {
-  rows?: string | number
-  cols?: string | number
+  rows?: RowsType
+  cols?: ColsType
   blocks?: Array<BlockType>
   prizes?: Array<CellType>
   button?: CellType

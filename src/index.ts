@@ -1,7 +1,11 @@
 export default class LuckDraw {
   protected htmlFontSize: number = 16
   protected dpr: number = 1
-  constructor () {}
+  constructor () {
+    // 初始化一些公共设置
+    this.setDpr()
+    this.setHTMLFontSize()
+  }
 
   /**
    * 设备像素比

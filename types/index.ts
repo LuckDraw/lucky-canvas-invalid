@@ -1,4 +1,4 @@
-
+// 字体类型
 export interface FontType {
   text: string
   top?: string | number
@@ -11,6 +11,7 @@ export interface FontType {
   lengthLimit?: string | number
 }
 
+// 图片类型
 export interface ImgType {
   src: string
   top?: string | number
