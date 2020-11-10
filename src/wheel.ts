@@ -52,6 +52,7 @@ export class LuckyWheel extends LuckDraw {
   private endDeg = 0                    // 停止角度
   private prizeFlag: number | undefined // 中奖索引
   private animationId = 0               // 帧动画id
+  private FPS = 16.6                    // 屏幕刷新率
   private prizeImgs: Array<HTMLImageElement[]> = [[]]
   private btnImgs: Array<HTMLImageElement[]> = [[]]
 
@@ -364,12 +365,15 @@ export class LuckyWheel extends LuckDraw {
 
   /**
    * 实际开始执行方法
+   * @param num 记录帧动画执行多少次
    */
-  private run (): void {
+  private run (num: number = 0): void {
     const { prizeFlag, prizeDeg, rotateDeg, defaultConfig } = this
     let interval = Date.now() - this.startTime
     // 先完全旋转, 再停止
     if (interval >= defaultConfig.accelerationTime! && prizeFlag !== undefined) {
+      // 记录帧率
+      this.FPS = interval / num
       // 记录开始停止的时间戳
       this.endTime = Date.now()
       // 记录开始停止的位置
@@ -381,7 +385,7 @@ export class LuckyWheel extends LuckDraw {
     }
     this.rotateDeg = (rotateDeg + quad.easeIn(interval, 0, defaultConfig.speed!, defaultConfig.accelerationTime!)) % 360
     this.draw()
-    this.animationId = window.requestAnimationFrame(this.run.bind(this))
+    this.animationId = window.requestAnimationFrame(this.run.bind(this, num + 1))
   }
 
   /**

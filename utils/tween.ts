@@ -29,11 +29,11 @@ export const quad: SpeedType = {
 export const cubic: SpeedType = {
   easeIn: function (t, b, c, d) {
     if (t >= d) t = d
-    return c * (t /= d) * t ** 2 + b
+    return c * (t /= d) * t * t + b
   },
   easeOut: function (t, b, c, d) {
     if (t >= d) t = d
-    return c * ((t = t / d - 1) * t ** 2 + 1) + b
+    return c * ((t = t / d - 1) * t * t + 1) + b
   }
 }
 
@@ -41,11 +41,11 @@ export const cubic: SpeedType = {
 export const quart: SpeedType = {
   easeIn: function (t, b, c, d) {
     if (t >= d) t = d
-    return c * (t /= d) * t ** 3 + b
+    return c * (t /= d) * t * t * t + b
   },
   easeOut: function (t, b, c, d) {
     if (t >= d) t = d
-    return -c * ((t = t / d - 1) * t ** 3 - 1) + b
+    return -c * ((t = t / d - 1) * t * t * t - 1) + b
   }
 }
 
@@ -53,11 +53,11 @@ export const quart: SpeedType = {
 export const quint: SpeedType = {
   easeIn: function (t, b, c, d) {
     if (t >= d) t = d
-    return c * (t /= d) * t ** 4 + b
+    return c * (t /= d) * t * t * t * t + b
   },
   easeOut: function (t, b, c, d) {
     if (t >= d) t = d
-    return c * ((t = t / d - 1) * t ** 4 + 1) + b
+    return c * ((t = t / d - 1) * t * t * t * t + 1) + b
   }
 }
 
