@@ -19,6 +19,9 @@ import { isExpectType, removeEnter, computePadding } from '../utils/index'
 import { drawRoundRect, getLinearGradient, } from '../utils/math'
 import { quad } from '../utils/tween'
 
+type CellFontType = PrizeFontType | ButtonFontType
+type CellImgType = PrizeImgType | ButtonImgType
+
 export class LuckyGrid extends LuckDraw {
 
   private readonly rows: RowsType
@@ -67,7 +70,7 @@ export class LuckyGrid extends LuckDraw {
   private FPS = 16.6                    // 屏幕刷新率
   private prizeFlag: number | undefined // 中奖索引
   // 所有格子
-  private cells: CellType<ButtonFontType | PrizeFontType, ButtonImgType | PrizeImgType>[] = []
+  private cells: CellType<CellFontType, CellImgType>[] = []
   // 图片缓存
   private cellImgs: Array<{ defaultImg: HTMLImageElement, activeImg?: HTMLImageElement }[]> = []
   // 奖品区域几何信息
@@ -109,7 +112,7 @@ export class LuckyGrid extends LuckDraw {
       active[key] = data.activeStyle[key]
     }
     // 收集首次渲染的图片
-    let willUpdate: Array<(PrizeImgType | ButtonImgType)[] | undefined> = [[]]
+    let willUpdate: Array<CellImgType[] | undefined> = [[]]
     this.prizes && (willUpdate = this.prizes.map(prize => prize.imgs))
     this.button && (willUpdate[this.cols * this.rows - 1] = this.button.imgs)
     this.init(willUpdate)
@@ -119,7 +122,7 @@ export class LuckyGrid extends LuckDraw {
    * 初始化 canvas 抽奖
    * @param willUpdateImgs 需要更新的图片
    */
-  public init (willUpdateImgs: Array<(PrizeImgType | ButtonImgType)[] | undefined>): void {
+  public init (willUpdateImgs: Array<CellImgType[] | undefined>): void {
     this.setDpr()
     this.setHTMLFontSize()
     const { box, canvas, dpr, defaultStyle, defaultConfig } = this
@@ -230,8 +233,8 @@ export class LuckyGrid extends LuckDraw {
    */
   private computedWidthAndHeight (
     imgObj: HTMLImageElement,
-    imgInfo: PrizeImgType | ButtonImgType,
-    cell: CellType<PrizeFontType | ButtonFontType, PrizeImgType | ButtonImgType>
+    imgInfo: CellImgType,
+    cell: CellType<CellFontType, CellImgType>
   ): [number, number] {
     // 根据配置的样式计算图片的真实宽高
     if (!imgInfo.width && !imgInfo.height) {
