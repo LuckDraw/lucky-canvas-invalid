@@ -10,11 +10,15 @@ export interface ButtonFontType extends FontType {
   lengthLimit?: string | number
 }
 
+export type CellFontType = PrizeFontType | ButtonFontType
+
 export interface PrizeImgType extends ImgType {
   activeSrc?: string
 }
 
 export interface ButtonImgType extends ImgType {}
+
+export type CellImgType = PrizeImgType | ButtonImgType
 
 type borderRadiusType =  string | number
 type backgroundType = string

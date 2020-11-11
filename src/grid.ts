@@ -1,12 +1,10 @@
 
 import LuckDraw from './index'
 import LuckyGridConfig, {
-  PrizeFontType,
-  PrizeImgType,
-  ButtonFontType,
-  ButtonImgType,
-  RowsType,
-  ColsType,
+  PrizeFontType, PrizeImgType,
+  ButtonFontType, ButtonImgType,
+  CellFontType, CellImgType,
+  RowsType, ColsType,
   BlockType,
   CellType,
   DefaultConfigType,
@@ -18,9 +16,6 @@ import LuckyGridConfig, {
 import { isExpectType, removeEnter, computePadding } from '../utils/index'
 import { drawRoundRect, getLinearGradient, } from '../utils/math'
 import { quad } from '../utils/tween'
-
-type CellFontType = PrizeFontType | ButtonFontType
-type CellImgType = PrizeImgType | ButtonImgType
 
 export class LuckyGrid extends LuckDraw {
 
