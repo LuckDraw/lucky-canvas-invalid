@@ -7,8 +7,6 @@ export interface FontType {
   fontStyle?: string
   fontWeight?: string
   lineHeight?: string
-  wordWrap?: boolean
-  lengthLimit?: string | number
 }
 
 // 图片类型

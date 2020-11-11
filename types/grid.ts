@@ -1,5 +1,21 @@
 import { FontType, ImgType } from './index'
 
+export interface PrizeFontType extends FontType {
+  wordWrap?: boolean
+  lengthLimit?: string | number
+}
+
+export interface ButtonFontType extends FontType {
+  wordWrap?: boolean
+  lengthLimit?: string | number
+}
+
+export interface PrizeImgType extends ImgType {
+  activeSrc?: string
+}
+
+export interface ButtonImgType extends ImgType {}
+
 type borderRadiusType =  string | number
 type backgroundType = string
 type shadowType = string
@@ -14,7 +30,7 @@ export interface BlockType {
   paddingLeft?: string | number
 }
 
-export interface CellType {
+export interface CellType<T, U> {
   x: number
   y: number
   col: number
@@ -22,8 +38,8 @@ export interface CellType {
   borderRadius?: borderRadiusType
   background: backgroundType
   shadow?: shadowType
-  fonts?: Array<FontType>
-  imgs?: Array<ImgType>
+  fonts?: Array<T>
+  imgs?: Array<U>
 }
 
 export interface DefaultConfigType {
@@ -37,21 +53,23 @@ export interface DefaultStyleType {
   borderRadius: borderRadiusType
   background: backgroundType
   shadow: shadowType
-  fontColor: FontType['fontColor']
-  fontSize: FontType['fontSize']
-  fontStyle: FontType['fontStyle']
-  fontWeight: FontType['fontWeight']
-  wordWrap: FontType['wordWrap']
-  lengthLimit: FontType['lengthLimit']
+  fontColor: PrizeFontType['fontColor']
+  fontSize: PrizeFontType['fontSize']
+  fontStyle: PrizeFontType['fontStyle']
+  fontWeight: PrizeFontType['fontWeight']
+  lineHeight?: PrizeFontType['lineHeight']
+  wordWrap: PrizeFontType['wordWrap']
+  lengthLimit: PrizeFontType['lengthLimit']
 }
 
 export interface ActiveStyleType {
   background: backgroundType
   shadow: shadowType
-  fontColor?: FontType['fontColor']
-  fontSize?: FontType['fontSize']
-  fontStyle?: FontType['fontStyle']
-  fontWeight?: FontType['fontWeight']
+  fontColor?: PrizeFontType['fontColor']
+  fontSize?: PrizeFontType['fontSize']
+  fontStyle?: PrizeFontType['fontStyle']
+  fontWeight?: PrizeFontType['fontWeight']
+  lineHeight?: PrizeFontType['lineHeight']
 }
 
 export type RowsType = number
@@ -63,8 +81,8 @@ export default interface LuckyGridConfig {
   rows?: RowsType
   cols?: ColsType
   blocks?: Array<BlockType>
-  prizes?: Array<CellType>
-  button?: CellType
+  prizes?: CellType<PrizeFontType, PrizeImgType>[]
+  button?: CellType<ButtonFontType, ButtonImgType>
   defaultConfig?: DefaultConfigType
   defaultStyle?: DefaultStyleType
   activeStyle?: ActiveStyleType

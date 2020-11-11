@@ -146,16 +146,6 @@ export const getLinearGradient = (
   const context = (/linear-gradient\((.+)\)/.exec(background) as Array<any>)[1]
     .split(',') // 根据逗号分割
     .map((text: string) => text.trim()) // 去除两边空格
-
-  // interface TypeArr1<T> {
-  //   0: T
-  //   1: T
-  //   2: T
-  //   3: T
-  // }
-  // let arr1: TypeArr1<number> = [1, 2, 3, 4, 8, 5]
-  // type TypeArr2 = [number, number, number, number]
-  // let arr2: TypeArr2 = [1,2,2,3]
   let deg = context.shift(), direction: [number, number, number, number] = [0, 0, 0, 0]
   // 通过起始点和角度计算渐变终点的坐标点, 这里感谢泽宇大神提醒我使用勾股定理....
   if (deg.includes('deg')) {
@@ -177,7 +167,7 @@ export const getLinearGradient = (
   else if (deg.includes('left')) direction = [x + w, y, x, y]
   else if (deg.includes('right')) direction = [x, y, x + w, y]
   // 创建线性渐变必须使用整数坐标
-  const gradient = ctx.createLinearGradient(...direction)
+  const gradient = ctx.createLinearGradient(...(direction.map(n => n >> 0) as [number, number, number, number]))
   // 这里后期重构, 先用any代替
   return context.reduce((gradient: any, item: any, index: any) => {
     const info = item.split(' ')

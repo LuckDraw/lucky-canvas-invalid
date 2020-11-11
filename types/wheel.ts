@@ -1,5 +1,16 @@
 import { FontType, ImgType } from './index'
 
+export interface PrizeFontType extends FontType {
+  wordWrap?: boolean
+  lengthLimit?: string | number
+}
+
+export interface ButtonFontType extends FontType {}
+
+export interface PrizeImgType extends ImgType {}
+
+export interface ButtonImgType extends ImgType {}
+
 export interface BlockType {
   background: string
   padding: string
@@ -7,16 +18,16 @@ export interface BlockType {
 
 export interface PrizeType {
   background?: string
-  fonts?: Array<FontType>
-  imgs?: Array<ImgType>
+  fonts?: Array<PrizeFontType>
+  imgs?: Array<PrizeImgType>
 }
 
 export interface ButtonType {
   radius?: string
   pointer?: boolean
   background?: string
-  fonts?: Array<FontType>
-  imgs?: Array<ImgType>
+  fonts?: Array<ButtonFontType>
+  imgs?: Array<ButtonImgType>
 }
 
 export interface DefaultConfigType {
@@ -29,13 +40,13 @@ export interface DefaultConfigType {
 
 export interface DefaultStyleType {
   background: string
-  fontColor: FontType['fontColor']
-  fontSize: FontType['fontSize']
-  fontStyle: FontType['fontStyle']
-  fontWeight: FontType['fontWeight']
-  lineHeight?: FontType['lineHeight']
-  wordWrap: FontType['wordWrap']
-  lengthLimit: FontType['lengthLimit']
+  fontColor: PrizeFontType['fontColor']
+  fontSize: PrizeFontType['fontSize']
+  fontStyle: PrizeFontType['fontStyle']
+  fontWeight: PrizeFontType['fontWeight']
+  lineHeight?: PrizeFontType['lineHeight']
+  wordWrap: PrizeFontType['wordWrap']
+  lengthLimit: PrizeFontType['lengthLimit']
 }
 
 export type StartCallbackType = (e: MouseEvent) => void

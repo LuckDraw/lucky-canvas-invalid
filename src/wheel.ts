@@ -134,7 +134,11 @@ export class LuckyWheel extends LuckDraw {
    * @param { number } imgIndex 奖品图片索引
    * @param { Function } callBack 图片加载完毕回调
    */
-  private loadAndCacheImg (cellIndex: number, imgIndex: number, callBack: () => void): void {
+  private loadAndCacheImg (
+    cellIndex: number,
+    imgIndex: number,
+    callBack: () => void
+  ): void {
     // 先判断index是奖品图片还是按钮图片, 并修正index的值
     const isPrize = cellIndex < this.prizes.length
     const cellName = isPrize ? 'prizes' : 'buttons'
