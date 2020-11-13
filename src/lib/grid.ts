@@ -1,5 +1,4 @@
-
-import LuckDraw from './index'
+import Lucky from './lucky'
 import LuckyGridConfig, {
   PrizeFontType, PrizeImgType,
   ButtonFontType, ButtonImgType,
@@ -17,7 +16,7 @@ import { isExpectType, removeEnter, computePadding } from '../utils/index'
 import { drawRoundRect, getLinearGradient, } from '../utils/math'
 import { quad } from '../utils/tween'
 
-export class LuckyGrid extends LuckDraw {
+export default class LuckyGrid extends Lucky {
 
   private readonly rows: RowsType
   private readonly cols: ColsType
@@ -60,7 +59,7 @@ export class LuckyGrid extends LuckDraw {
   private stopIndex = 0                 // 刻舟求剑
   private endIndex = 0                  // 停止索引
   private demo = false                  // 是否自动游走
-  private timer = 0                     // 游走定时器
+  private timer = null                  // 游走定时器
   private animationId = 0               // 帧动画id
   private FPS = 16.6                    // 屏幕刷新率
   private prizeFlag: number | undefined // 中奖索引

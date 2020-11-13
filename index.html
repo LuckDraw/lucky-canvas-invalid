@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<body>
+  <div id="my-lucky" style="width: 300px; height: 300px;"></div>
+  <script src="./dist/web-luck-draw.umd.js"></script>
+  <script>
+    let luckyWheel = new LuckDraw.LuckyWheel('#my-lucky', {
+      blocks: [{ padding: '10px', background: '#d64737' }],
+      prizes: [
+        { background: '#f8d384', fonts: [{ text: '0', top: 5 }] },
+        { background: '#f9e3bb', fonts: [{ text: '1', top: 5 }] },
+        { background: '#f8d384', fonts: [{ text: '2', top: 5 }] },
+        { background: '#f9e3bb', fonts: [{ text: '3', top: 5 }] },
+        { background: '#f8d384', fonts: [{ text: '4', top: 5 }] },
+        { background: '#f9e3bb', fonts: [{ text: '5', top: 5 }] },
+      ],
+      buttons: [
+        { radius: '35px', background: '#d64737' },
+        { radius: '30px', background: '#f6c66f', pointer: true },
+        { radius: '25px', background: '#ffdea0' }
+      ],
+      defaultConfig: {
+        gutter: '5px',
+        offsetDegree: 30
+      },
+      start: function () {
+        luckyWheel.play()
+        setTimeout(_ => {
+          luckyWheel.stop(1)
+        }, 3000)
+      },
+      end: function (res) {
+        console.log(res)
+      }
+    })
+    // let i = 0
+    // setInterval(_ => {
+    //   i++
+    //   luckyWheel.blocks = [{ padding: i % 2 === 0 ? '20px' : '10px', background: '#d64737' }]
+    //   luckyWheel.draw()
+    // }, 1000)
+  </script>
+</body>
+</html>

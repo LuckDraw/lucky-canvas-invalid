@@ -1,5 +1,4 @@
-
-import LuckDraw from './index'
+import Lucky from './lucky'
 import LuckyWheelConfig, {
   BlockType,
   PrizeType,
@@ -14,7 +13,7 @@ import { isExpectType, removeEnter } from '../utils/index'
 import { getAngle, drawSector } from '../utils/math'
 import { quad } from '../utils/tween'
 
-export class LuckyWheel extends LuckDraw {
+export default class LuckyWheel extends Lucky {
 
   private readonly blocks: Array<BlockType>
   private readonly prizes: Array<PrizeType>
