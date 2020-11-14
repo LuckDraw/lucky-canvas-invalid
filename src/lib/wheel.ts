@@ -272,9 +272,8 @@ export default class LuckyWheel extends Lucky {
           for (let i = 0; i < text.length; i++) {
             str += text[i]
             let currWidth = ctx.measureText(str).width
-            let maxWidth = Math.tan(this.prizeRadian / 2) * 2 - this.getLength(defaultConfig.gutter) * (
-              this.prizeRadius - getFontY(font, prizeHeight, lines.length)
-            ) * dpr
+            let maxWidth = (this.prizeRadius - getFontY(font, prizeHeight, lines.length))
+              * Math.tan(this.prizeRadian / 2) * 2 - this.getLength(defaultConfig.gutter) * dpr
             if (currWidth > this.getWidth(font.lengthLimit || defaultStyle.lengthLimit, maxWidth)) {
               lines.push(str.slice(0, -1))
               str = text[i]
