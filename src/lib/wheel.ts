@@ -15,17 +15,17 @@ import { quad } from '../utils/tween'
 
 export default class LuckyWheel extends Lucky {
 
-  private readonly blocks: Array<BlockType>
-  private readonly prizes: Array<PrizeType>
-  private readonly buttons: Array<ButtonType>
-  private readonly defaultConfig: DefaultConfigType = {
+  private blocks: Array<BlockType>
+  private prizes: Array<PrizeType>
+  private buttons: Array<ButtonType>
+  private defaultConfig: DefaultConfigType = {
     gutter: '0px',
     offsetDegree: 0,
     speed: 20,
     accelerationTime: 2500,
     decelerationTime: 2500,
   }
-  private readonly defaultStyle: DefaultStyleType = {
+  private defaultStyle: DefaultStyleType = {
     fontSize: '18px',
     fontColor: '#000',
     fontStyle: 'microsoft yahei ui,microsoft yahei,simsun,sans-serif',
@@ -34,8 +34,8 @@ export default class LuckyWheel extends Lucky {
     wordWrap: true,
     lengthLimit: '90%',
   }
-  private readonly startCallback?: StartCallbackType
-  private readonly endCallback?: EndCallbackType
+  private startCallback?: StartCallbackType
+  private endCallback?: EndCallbackType
   private readonly box: HTMLDivElement
   private readonly canvas: HTMLCanvasElement
   private readonly ctx: CanvasRenderingContext2D
@@ -66,6 +66,20 @@ export default class LuckyWheel extends Lucky {
     this.canvas = document.createElement('canvas')
     this.box.appendChild(this.canvas)
     this.ctx = this.canvas.getContext('2d')!
+    this.setData(data)
+    // 收集首次渲染的图片
+    let willUpdate: Array<ImgType[] | undefined> = [[]]
+    this.prizes && ( willUpdate = this.prizes.map(prize => prize.imgs))
+    this.buttons && (willUpdate.push(...this.buttons.map(btn => btn.imgs)))
+    this.init(willUpdate)
+  }
+
+  
+  /**
+   * 初始化数据
+   * @param data 
+   */
+  private setData (data: LuckyWheelConfig): void {
     this.blocks = data.blocks || []
     this.prizes = data.prizes || []
     this.buttons = data.buttons || []
@@ -77,11 +91,6 @@ export default class LuckyWheel extends Lucky {
     for (let key in data.defaultStyle) {
       this.defaultStyle[key] = data.defaultStyle[key]
     }
-    // 收集首次渲染的图片
-    let willUpdate: Array<ImgType[] | undefined> = [[]]
-    this.prizes && ( willUpdate = this.prizes.map(prize => prize.imgs))
-    this.buttons && (willUpdate.push(...this.buttons.map(btn => btn.imgs)))
-    this.init(willUpdate)
   }
 
   /**
