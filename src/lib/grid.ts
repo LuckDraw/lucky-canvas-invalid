@@ -18,18 +18,18 @@ import { quad } from '../utils/tween'
 
 export default class LuckyGrid extends Lucky {
 
-  private readonly rows: RowsType
-  private readonly cols: ColsType
-  private readonly blocks: Array<BlockType>
-  private readonly prizes: CellType<PrizeFontType, PrizeImgType>[]
-  private readonly button?: CellType<ButtonFontType, ButtonImgType>
-  private readonly defaultConfig: DefaultConfigType = {
+  private rows: RowsType
+  private cols: ColsType
+  private blocks: Array<BlockType>
+  private prizes: CellType<PrizeFontType, PrizeImgType>[]
+  private button?: CellType<ButtonFontType, ButtonImgType>
+  private defaultConfig: DefaultConfigType = {
     gutter: 5,
     speed: 20,
     accelerationTime: 2500,
     decelerationTime: 2500,
   }
-  private readonly defaultStyle: DefaultStyleType = {
+  private defaultStyle: DefaultStyleType = {
     borderRadius: 20,
     fontColor: '#000',
     fontSize: '18px',
@@ -40,12 +40,12 @@ export default class LuckyGrid extends Lucky {
     wordWrap: true,
     lengthLimit: '90%',
   }
-  private readonly activeStyle: ActiveStyleType = {
+  private activeStyle: ActiveStyleType = {
     background: '#ffce98',
     shadow: '',
   }
-  private readonly startCallback?: StartCallbackType
-  private readonly endCallback?: EndCallbackType
+  private startCallback?: StartCallbackType
+  private endCallback?: EndCallbackType
   private readonly box: HTMLDivElement
   private readonly canvas: HTMLCanvasElement
   private readonly ctx: CanvasRenderingContext2D
@@ -83,6 +83,19 @@ export default class LuckyGrid extends Lucky {
     this.canvas = document.createElement('canvas')
     this.box.appendChild(this.canvas)
     this.ctx = this.canvas.getContext('2d')!
+    this.setData(data)
+    // 收集首次渲染的图片
+    let willUpdate: Array<CellImgType[] | undefined> = [[]]
+    this.prizes && (willUpdate = this.prizes.map(prize => prize.imgs))
+    this.button && (willUpdate[this.cols * this.rows - 1] = this.button.imgs)
+    this.init(willUpdate)
+  }
+
+  /**
+   * 初始化数据
+   * @param data 
+   */
+  private setData (data: LuckyGridConfig): void {
     this.rows = Number(data.rows) || 3
     this.cols = Number(data.cols) || 3
     this.blocks = data.blocks || []
@@ -105,11 +118,6 @@ export default class LuckyGrid extends Lucky {
     for (let key in data.activeStyle) {
       active[key] = data.activeStyle[key]
     }
-    // 收集首次渲染的图片
-    let willUpdate: Array<CellImgType[] | undefined> = [[]]
-    this.prizes && (willUpdate = this.prizes.map(prize => prize.imgs))
-    this.button && (willUpdate[this.cols * this.rows - 1] = this.button.imgs)
-    this.init(willUpdate)
   }
 
   /**
