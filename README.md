@@ -47,7 +47,7 @@
 
 ## 在 JavaScript 中使用
 
-## 方式 1：通过 script 标签引入
+### 方式 1：通过 script 标签引入
 
 从下面的链接里下载一个叫`web-luck-draw.umd.min.js`的 js 文件, 然后使用 script 标签引入
 

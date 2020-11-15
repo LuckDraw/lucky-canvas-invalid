@@ -9,7 +9,7 @@ export default {
   input: 'src/index.ts',
   output: [
     {
-      file: 'examples/web-luck-draw.umd.js',
+      file: 'examples/web-luck-draw.umd.min.js',
       format: 'umd',
       name: 'LuckDraw',
     },
