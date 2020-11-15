@@ -15,9 +15,9 @@ import { quad } from '../utils/tween'
 
 export default class LuckyWheel extends Lucky {
 
-  private blocks: Array<BlockType>
-  private prizes: Array<PrizeType>
-  private buttons: Array<ButtonType>
+  private blocks: Array<BlockType> = []
+  private prizes: Array<PrizeType> = []
+  private buttons: Array<ButtonType> = []
   private defaultConfig: DefaultConfigType = {
     gutter: '0px',
     offsetDegree: 0,

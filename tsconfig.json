@@ -1,7 +1,16 @@
 {
   "compilerOptions": {
+    "target": "esnext",
     "module": "esnext",
     "allowJs": true,
+    "strict": true,
+    "importHelpers": true,
+    "moduleResolution": "node",
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "suppressImplicitAnyIndexErrors": true,
+    "sourceMap": true,
     "lib": [
       "es6",
       "esnext",

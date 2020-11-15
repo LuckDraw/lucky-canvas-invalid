@@ -27,7 +27,7 @@ function defineReactive (obj, key, val) {
 }
 
 export default function observe (value) {
-  if (typeof value === 'object') {
+  if (typeof value === 'object' && value !== null) {
     value = new Observer(value)
   }
 }

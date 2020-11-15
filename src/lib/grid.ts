@@ -18,10 +18,10 @@ import { quad } from '../utils/tween'
 
 export default class LuckyGrid extends Lucky {
 
-  private rows: RowsType
-  private cols: ColsType
-  private blocks: Array<BlockType>
-  private prizes: CellType<PrizeFontType, PrizeImgType>[]
+  private rows: RowsType = 3
+  private cols: ColsType = 3
+  private blocks: Array<BlockType> = []
+  private prizes: CellType<PrizeFontType, PrizeImgType>[] = []
   private button?: CellType<ButtonFontType, ButtonImgType>
   private defaultConfig: DefaultConfigType = {
     gutter: 5,
@@ -59,7 +59,7 @@ export default class LuckyGrid extends Lucky {
   private stopIndex = 0                 // 刻舟求剑
   private endIndex = 0                  // 停止索引
   private demo = false                  // 是否自动游走
-  private timer = null                  // 游走定时器
+  private timer = 0                     // 游走定时器
   private animationId = 0               // 帧动画id
   private FPS = 16.6                    // 屏幕刷新率
   private prizeFlag: number | undefined // 中奖索引
@@ -93,7 +93,7 @@ export default class LuckyGrid extends Lucky {
 
   /**
    * 初始化数据
-   * @param data 
+   * @param data
    */
   private setData (data: LuckyGridConfig): void {
     this.rows = Number(data.rows) || 3
@@ -459,7 +459,7 @@ export default class LuckyGrid extends Lucky {
    */
   public walk (): void {
     clearInterval(this.timer)
-    this.timer = setInterval(() => {
+    this.timer = window.setInterval(() => {
       this.currIndex += 1
       this.draw()
     }, 1300)
