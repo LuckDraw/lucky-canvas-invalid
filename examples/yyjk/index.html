@@ -1,6 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
-<head></head>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
 <body>
   <div id="my-lucky" style="width: 310px; height: 310px"></div>
   <script src="../web-luck-draw.umd.min.js"></script>
@@ -71,7 +75,7 @@
         }, 2000)
       },
       end (prize) {
-        console.log(`恭喜你获得大奖: ${prize.name}`)
+        alert(`恭喜你获得大奖: ${prize.name}`)
         luckyNum--
         luckyGrid.button.fonts[0].text = `${luckyNum} 次`
         // 重新绘制
