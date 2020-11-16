@@ -1,7 +1,7 @@
 
 <div align="center">
-  <img src="./logo.png" width="200" alt="logo" />
-  <h1>web-luck-draw 抽奖插件</h1>
+  <img src="./web.svg" width="200" alt="logo" />
+  <h1>lucky-canvas 抽奖插件</h1>
   <p>一个基于 JavaScript 的 ( 大转盘 / 九宫格 ) 抽奖插件</p>
   <p class="hidden">
     <a href="https://github.com/luckdraw/web-luck-draw#readme">简体中文</a>
