@@ -1,1 +1,1 @@
-module.exports = require('./dist/web-luck-draw.cjs.min.js')
+module.exports = require('./dist/lucky-canvas.cjs.min.js')

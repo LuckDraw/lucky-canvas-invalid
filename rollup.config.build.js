@@ -1,3 +1,4 @@
+import { name } from './package.json'
 import ts from '@rollup/plugin-typescript'
 import resolve from '@rollup/plugin-node-resolve'
 import commonjs from '@rollup/plugin-commonjs'
@@ -8,21 +9,21 @@ export default {
   input: 'src/index.ts',
   output: [
     {
-      file: 'dist/web-luck-draw.cjs.js',
+      file: `dist/${name}.cjs.js`,
       format: 'cjs',
     },
     {
-      file: 'dist/web-luck-draw.cjs.min.js',
+      file: `dist/${name}.cjs.min.js`,
       format: 'cjs',
       plugins: [terser()]
     },
     {
-      file: 'dist/web-luck-draw.umd.js',
+      file: `dist/${name}.umd.js`,
       format: 'umd',
       name: 'LuckDraw',
     },
     {
-      file: 'dist/web-luck-draw.umd.min.js',
+      file: `dist/${name}.umd.min.js`,
       format: 'umd',
       name: 'LuckDraw',
       plugins: [terser()]

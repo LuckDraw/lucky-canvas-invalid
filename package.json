@@ -1,5 +1,5 @@
 {
-  "name": "web-luck-draw",
+  "name": "lucky-canvas",
   "version": "1.0.1",
   "description": "一个基于原生 js 的（大转盘抽奖 / 九宫格抽奖）插件",
   "main": "index.js",

@@ -62,6 +62,39 @@ class Lucky {
             return clean || unit === '%' ? num : num * this.dpr;
         }));
     }
+    /**
+     * vue2.x 响应式 - 数据劫持
+     * @param obj 将要处理的数据
+     */
+    observer(obj) {
+        if (typeof obj !== 'object' || obj === null)
+            return obj;
+        Object.keys(obj).forEach(key => {
+            this.defineReactive(obj, key, obj[key]);
+        });
+    }
+    /**
+     * vue2.x 响应式 - 重写setter和getter
+     * @param obj 数据
+     * @param key 属性
+     * @param val 值
+     */
+    defineReactive(obj, key, val) {
+        this.observer(val);
+        Object.defineProperty(obj, key, {
+            get() {
+                console.log('get', key);
+                return val;
+            },
+            set(newVal) {
+                console.log('set', key, val);
+                if (newVal !== val) {
+                    val = newVal;
+                    this.observer(val);
+                }
+            }
+        });
+    }
 }
 
 /**
