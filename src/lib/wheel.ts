@@ -205,7 +205,7 @@ export default class LuckyWheel extends Lucky {
   /**
    * 开始绘制
    */
-  private draw (): void {
+  protected draw (): void {
     const { ctx, dpr, defaultConfig, defaultStyle } = this
     ctx.clearRect(-this.Radius, -this.Radius, this.Radius * 2, this.Radius * 2)
     // 绘制blocks边框

@@ -118,6 +118,7 @@ export default class LuckyGrid extends Lucky {
     for (let key in data.activeStyle) {
       active[key] = data.activeStyle[key]
     }
+    this.observer(this, ['rows', 'cols', 'blocks', 'prizes', 'button', 'defaultConfig', 'defaultStyle', 'startCallback', 'endCallback'])
   }
 
   /**
@@ -263,7 +264,7 @@ export default class LuckyGrid extends Lucky {
   /**
    * 绘制九宫格抽奖
    */
-  private draw (): void {
+  protected draw (): void {
     const { ctx, dpr, defaultStyle, activeStyle } = this
     // 清空画布
     ctx.clearRect(0, 0, this.boxWidth, this.boxWidth)

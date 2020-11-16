@@ -4,9 +4,10 @@ export default class Lucky {
   protected dpr: number = 1
 
   constructor () {
-    // 初始化一些公共设置
+    // 初始化
     this.setDpr()
     this.setHTMLFontSize()
+    this.resetArrayPropo()
   }
 
   /**
@@ -45,7 +46,7 @@ export default class Lucky {
    * @param config 
    * @return { number } 返回新的字符串
    */
-  changeUnits (value: string, { denominator = 1, clean = false }): number {
+  protected changeUnits (value: string, { denominator = 1, clean = false }): number {
     return Number(value.replace(/^(\-*[0-9.]*)([a-z%]*)$/, (value, num, unit) => {
       switch (unit) {
         case '%':
@@ -66,12 +67,36 @@ export default class Lucky {
   }
 
   /**
+   * 更新并绘制 canvas
+   */
+  protected update () {
+
+  }
+
+  /**
+   * 重写数组的原型方法
+   */
+  private resetArrayPropo () {
+    const _this = this
+    const oldArrayProto = Array.prototype
+    const newArrayProto = Object.create(oldArrayProto)
+    const methods = ['push', 'pop', 'shift', 'unshift', 'sort', 'splice', 'reverse']
+    methods.forEach(name => {
+      newArrayProto[name] = function () {
+        _this.update()
+        console.log(name, '触发了 set')
+        oldArrayProto[name].call(this, ...arguments)
+      }
+    })
+  }
+
+  /**
    * vue2.x 响应式 - 数据劫持
    * @param obj 将要处理的数据
    */
-  observer (obj: any): void {
-    if (typeof obj !== 'object' || obj === null) return obj
-    Object.keys(obj).forEach(key => {
+  protected observer (obj: any, params: string[] = []): void {
+    if (typeof obj !== 'object' || obj === null) return
+    (params.length ? params : Object.keys(obj)).forEach(key => {
       this.defineReactive(obj, key, obj[key])
     })
   }
@@ -82,18 +107,19 @@ export default class Lucky {
    * @param key 属性
    * @param val 值
    */
-  defineReactive (obj: object, key: string | number, val: any): void {
-    this.observer(val)
+  private defineReactive (obj: object, key: string | number, val: any): void {
+    const _this = this
+    _this.observer(val)
     Object.defineProperty(obj, key, {
       get () {
-        console.log('get', key)
         return val
       },
       set (newVal) {
-        console.log('set', key, val)
         if (newVal !== val) {
           val = newVal
-          this.observer(val)
+          _this.observer(val)
+          console.log(key, '触发了 set')
+          _this.update()
         }
       }
     })
