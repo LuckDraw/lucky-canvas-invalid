@@ -19,7 +19,7 @@
       <img src="https://img.shields.io/github/package-json/v/luckdraw/web-luck-draw?&logo=npm" alt="version" />
     </a>
     <a href="https://www.npmjs.com/package/web-luck-draw" target="_black">
-      <img src="https://img.shields.io/npm/dt/web-luck-draw?&logo=npm" alt="downloads" />
+      <img src="https://img.shields.io/npm/dm/web-luck-draw?&logo=npm" alt="downloads" />
     </a>
     <a href="https://github.com/luckdraw/web-luck-draw/tree/master/dist" target="_black">
       <img src="https://img.shields.io/github/size/luckdraw/web-luck-draw/dist/web-luck-draw.umd.min.js?&logo=npm" alt="size" />
