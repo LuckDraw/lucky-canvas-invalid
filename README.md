@@ -1,6 +1,6 @@
 
 <div align="center">
-  <img src="./logo.png" width="200" alt="logo" />
+  <img src="./web.svg" width="200" alt="logo" />
   <h1>lucky-canvas 抽奖插件</h1>
   <p>一个基于 JavaScript 的 ( 大转盘 / 九宫格 ) 抽奖插件</p>
   <p class="hidden">
@@ -19,7 +19,7 @@
       <img src="https://img.shields.io/github/package-json/v/luckdraw/lucky-canvas?&logo=npm" alt="version" />
     </a>
     <a href="https://www.npmjs.com/package/lucky-canvas" target="_black">
-      <img src="https://img.shields.io/npm/dt/lucky-canvas?&logo=npm" alt="downloads" />
+      <img src="https://img.shields.io/npm/dm/lucky-canvas?&logo=npm" alt="downloads" />
     </a>
     <a href="https://github.com/luckdraw/lucky-canvas/tree/master/dist" target="_black">
       <img src="https://img.shields.io/github/size/luckdraw/lucky-canvas/dist/lucky-canvas.umd.min.js?&logo=npm" alt="size" />
