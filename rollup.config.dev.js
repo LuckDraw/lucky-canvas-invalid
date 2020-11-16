@@ -1,3 +1,4 @@
+import { name } from './package.json'
 import ts from '@rollup/plugin-typescript'
 import resolve from '@rollup/plugin-node-resolve'
 import commonjs from '@rollup/plugin-commonjs'
@@ -9,9 +10,9 @@ export default {
   input: 'src/index.ts',
   output: [
     {
-      file: 'examples/lucky-canvas.umd.min.js',
+      file: `examples/${name}.umd.min.js`,
       format: 'umd',
-      name: 'LuckDraw',
+      name: 'LuckyCanvas',
     },
   ],
   plugins: [

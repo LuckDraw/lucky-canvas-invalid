@@ -59,12 +59,12 @@
 <script>
 
   // 大转盘抽奖
-  let luckyWheel = new LuckDraw.LuckyWheel('#my-lucky', {
+  let luckyWheel = new LuckyCanvas.LuckyWheel('#my-lucky', {
     // ...你的配置
   })
   
   // 九宫格抽奖
-  let luckyGrid = new LuckDraw.LuckyGrid('#my-lucky', {
+  let luckyGrid = new LuckyCanvas.LuckyGrid('#my-lucky', {
     // ...你的配置
   })
 

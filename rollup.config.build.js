@@ -20,12 +20,12 @@ export default {
     {
       file: `dist/${name}.umd.js`,
       format: 'umd',
-      name: 'LuckDraw',
+      name: 'LuckyCanvas',
     },
     {
       file: `dist/${name}.umd.min.js`,
       format: 'umd',
-      name: 'LuckDraw',
+      name: 'LuckyCanvas',
       plugins: [terser()]
     },
   ],
