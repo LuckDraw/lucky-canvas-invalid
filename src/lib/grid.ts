@@ -69,8 +69,6 @@ export default class LuckyGrid extends Lucky {
   private cellImgs: Array<{ defaultImg: HTMLImageElement, activeImg?: HTMLImageElement }[]> = []
   // 奖品区域几何信息
   private prizeArea: { x: number, y: number, w: number, h: number } | undefined
-  // 边框绘制信息
-  private blockData: Array<[number, number, number, number, number, string]> = []
 
   /**
    * 九宫格构造器
@@ -91,34 +89,34 @@ export default class LuckyGrid extends Lucky {
     this.init(willUpdate)
   }
 
+  public $forceUpdate () {
+    this.draw()
+  }
+
   /**
    * 初始化数据
    * @param data
    */
   private setData (data: LuckyGridConfig): void {
-    this.rows = Number(data.rows) || 3
-    this.cols = Number(data.cols) || 3
-    this.blocks = data.blocks || []
-    this.prizes = data.prizes || []
-    this.button = data.button
-    this.startCallback = data.start
-    this.endCallback = data.end
-    const config = this.defaultConfig
-    const style = this.defaultStyle
-    const active = this.activeStyle
-    for (let key in data.defaultConfig) {
-      config[key] = data.defaultConfig[key]
-    }
-    config.gutter = this.getLength(config.gutter) * this.dpr
-    config.speed /= 40
-    for (let key in data.defaultStyle) {
-      style[key] = data.defaultStyle[key]
-    }
-    style.borderRadius = this.getLength(style.borderRadius) * this.dpr
-    for (let key in data.activeStyle) {
-      active[key] = data.activeStyle[key]
-    }
-    this.observer(this, ['rows', 'cols', 'blocks', 'prizes', 'button', 'defaultConfig', 'defaultStyle', 'startCallback', 'endCallback'])
+    this.$set(this, 'rows', Number(data.rows) || 3)
+    this.$set(this, 'cols', Number(data.cols) || 3)
+    this.$set(this, 'blocks', data.blocks || [])
+    this.$set(this, 'prizes', data.prizes || [])
+    this.$set(this, 'button', data.button)
+    this.$set(this, 'startCallback', data.start)
+    this.$set(this, 'endCallback', data.end)
+    this.$set(this, 'defaultConfig', {
+      ...this.defaultConfig,
+      ...data.defaultConfig
+    })
+    this.$set(this, 'defaultStyle', {
+      ...this.defaultStyle,
+      ...data.defaultStyle
+    })
+    this.$set(this, 'activeStyle', {
+      ...this.activeStyle,
+      ...data.activeStyle
+    })
   }
 
   /**
@@ -128,33 +126,11 @@ export default class LuckyGrid extends Lucky {
   public init (willUpdateImgs: Array<CellImgType[] | undefined>): void {
     this.setDpr()
     this.setHTMLFontSize()
-    const { box, canvas, dpr, defaultStyle, defaultConfig } = this
+    const { box, canvas, dpr } = this
     if (!box) return
     this.boxWidth = canvas.width = box.offsetWidth * dpr
     this.boxHeight = canvas.height = box.offsetHeight * dpr
     this.optimizeClarity(canvas, this.boxWidth, this.boxHeight)
-    // 合并奖品和按钮一起渲染
-    this.cells = [...this.prizes]
-    if (this.button) this.cells[this.cols * this.rows - 1] = { ...this.button }
-    this.cells.forEach(cell => {
-      cell.col = cell.col || 1
-      cell.row = cell.row || 1
-    })
-    // 计算所有边框信息, 并获取奖品区域
-    this.blockData = []
-    this.prizeArea = this.blocks.reduce(({x, y, w, h}, block) => {
-      const [paddingTop, paddingBottom, paddingLeft, paddingRight] = computePadding(block).map(n => n * dpr)
-      this.blockData.push([x, y, w, h, block.borderRadius ? this.getLength(block.borderRadius) * dpr : 0, block.background])
-      return {
-        x: x + paddingLeft,
-        y: y + paddingTop,
-        w: w - paddingLeft - paddingRight,
-        h: h - paddingTop - paddingBottom
-      }
-    }, { x: 0, y: 0, w: this.boxWidth, h: this.boxHeight })
-    // 计算单一奖品格子的宽度和高度
-    this.cellWidth = (this.prizeArea.w - defaultConfig.gutter * (this.cols - 1)) / this.cols
-    this.cellHeight = (this.prizeArea.h - defaultConfig.gutter * (this.rows - 1)) / this.rows
     const endCallBack = (): void => {
       // 开始首次渲染
       this.draw()
@@ -170,6 +146,7 @@ export default class LuckyGrid extends Lucky {
         ])
         if (e.offsetX < x || e.offsetY < y || e.offsetX > x + width || e.offsetY > y + height) return false
         if (this.startTime) return
+        console.log('点击了')
         this.startCallback?.(e)
       }
     }
@@ -268,10 +245,29 @@ export default class LuckyGrid extends Lucky {
     const { ctx, dpr, defaultStyle, activeStyle } = this
     // 清空画布
     ctx.clearRect(0, 0, this.boxWidth, this.boxWidth)
-    // 绘制所有边框
-    this.blockData.forEach(([x, y, w, h, r, background]) => {
-      drawRoundRect(ctx, x, y, w, h, r, this.handleBackground(x, y, w, h, background))
+    // 合并奖品和按钮
+    this.cells = [...this.prizes]
+    if (this.button) this.cells[this.cols * this.rows - 1] = this.button
+    this.cells.forEach(cell => {
+      cell.col = cell.col || 1
+      cell.row = cell.row || 1
     })
+    // 计算获取奖品区域的几何信息
+    this.prizeArea = this.blocks.reduce(({x, y, w, h}, block) => {
+      const [paddingTop, paddingBottom, paddingLeft, paddingRight] = computePadding(block).map(n => n * dpr)
+      const r = block.borderRadius ? this.getLength(block.borderRadius) * dpr : 0
+      // 绘制边框
+      drawRoundRect(ctx, x, y, w, h, r, this.handleBackground(x, y, w, h, block.background))
+      return {
+        x: x + paddingLeft,
+        y: y + paddingTop,
+        w: w - paddingLeft - paddingRight,
+        h: h - paddingTop - paddingBottom
+      }
+    }, { x: 0, y: 0, w: this.boxWidth, h: this.boxHeight })
+    // 计算单一奖品格子的宽度和高度
+    this.cellWidth = (this.prizeArea.w - this.getGutter() * (this.cols - 1)) / this.cols
+    this.cellHeight = (this.prizeArea.h - this.getGutter() * (this.rows - 1)) / this.rows
     // 绘制所有格子
     this.cells.forEach((prize, cellIndex) => {
       let [x, y, width, height] = this.getGeometricProperty([prize.x, prize.y, prize.col, prize.row])
@@ -295,7 +291,7 @@ export default class LuckyGrid extends Lucky {
       }
       drawRoundRect(
         ctx, x, y, width, height,
-        prize.borderRadius ? this.getLength(prize.borderRadius) * dpr : this.getLength(defaultStyle.borderRadius),
+        this.getLength(prize.borderRadius ? prize.borderRadius : defaultStyle.borderRadius) * dpr,
         this.handleBackground(x, y, width, height, prize.background, isActive)
       )
       // 清空阴影
@@ -336,6 +332,7 @@ export default class LuckyGrid extends Lucky {
         const lineHeight = isActive && activeStyle.lineHeight
           ? activeStyle.lineHeight
           : font.lineHeight || defaultStyle.lineHeight || font.fontSize || defaultStyle.fontSize
+        // console.log(size, font.text)
         ctx.font = `${fontWeight} ${size * dpr}px ${style}`
         ctx.fillStyle = (isActive && activeStyle.fontColor) ? activeStyle.fontColor : (font.fontColor || defaultStyle.fontColor!)
         let lines = [], text = String(font.text)
@@ -420,6 +417,7 @@ export default class LuckyGrid extends Lucky {
    */
   private run (num: number = 0): void {
     const { currIndex, prizes, prizeFlag, startTime, defaultConfig } = this
+    console.log(1, this.currIndex)
     let interval = Date.now() - startTime
     // 先完全旋转, 再停止
     if (interval >= defaultConfig.accelerationTime && prizeFlag !== undefined) {
@@ -434,7 +432,7 @@ export default class LuckyGrid extends Lucky {
       cancelAnimationFrame(this.animationId)
       return this.slowDown()
     }
-    this.currIndex = (currIndex + quad.easeIn(interval, 0.1, defaultConfig.speed, defaultConfig.accelerationTime)) % prizes.length
+    this.currIndex = (currIndex + quad.easeIn(interval, 0.1, defaultConfig.speed / 40, defaultConfig.accelerationTime)) % prizes.length
     this.draw()
     this.animationId = window.requestAnimationFrame(this.run.bind(this, num + 1))
   }
@@ -450,6 +448,7 @@ export default class LuckyGrid extends Lucky {
       this.endCallback?.({...prizes.find((prize, index) => index === prizeFlag)})
       return cancelAnimationFrame(this.animationId)
     }
+    console.log()
     this.currIndex = quad.easeOut(interval, stopIndex, endIndex, defaultConfig.decelerationTime) % prizes.length
     this.draw()
     this.animationId = window.requestAnimationFrame(this.slowDown.bind(this))
@@ -472,16 +471,24 @@ export default class LuckyGrid extends Lucky {
    * @return { array } [...真实坐标, width, height]
    */
   private getGeometricProperty ([x, y, col, row]: number[]) {
-    const { defaultConfig, cellWidth, cellHeight } = this
+    const { cellWidth, cellHeight } = this
+    const gutter = this.getGutter()
     let res = [
-      this.prizeArea!.x + (cellWidth + defaultConfig.gutter) * x,
-      this.prizeArea!.y + (cellHeight + defaultConfig.gutter) * y
+      this.prizeArea!.x + (cellWidth + gutter) * x,
+      this.prizeArea!.y + (cellHeight + gutter) * y
     ]
     col && row && res.push(
-      cellWidth * col + defaultConfig.gutter * (col - 1),
-      cellHeight * row + defaultConfig.gutter * (row - 1),
+      cellWidth * col + gutter * (col - 1),
+      cellHeight * row + gutter * (row - 1),
     )
     return res
+  }
+
+  /**
+   * 返回计算之后的 gutter
+   */
+  private getGutter (): number {
+    return this.getLength(this.defaultConfig.gutter) * this.dpr
   }
 
   /**
@@ -511,7 +518,7 @@ export default class LuckyGrid extends Lucky {
     if (isExpectType(width, 'number')) return (width as number) * this.dpr
     if (isExpectType(width, 'string')) return this.changeUnits(
       width as string,
-      { denominator: this.cellWidth * col + this.defaultConfig.gutter * (col - 1) }
+      { denominator: this.cellWidth * col + this.getGutter() * (col - 1) }
     )
     return 0
   }
@@ -529,7 +536,7 @@ export default class LuckyGrid extends Lucky {
     if (isExpectType(height, 'number')) return (height as number) * this.dpr
     if (isExpectType(height, 'string')) return this.changeUnits(
       height as string,
-      { denominator: this.cellHeight * row + this.defaultConfig.gutter * (row - 1) }
+      { denominator: this.cellHeight * row + this.getGutter() * (row - 1) }
     )
     return 0
   }
@@ -540,6 +547,6 @@ export default class LuckyGrid extends Lucky {
    * @param col 
    */
   private getOffsetX (width: number, col = 1) {
-    return (this.cellWidth * col + this.defaultConfig.gutter * (col - 1) - width) / 2
+    return (this.cellWidth * col + this.getGutter() * (col - 1) - width) / 2
   }
 }

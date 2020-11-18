@@ -14,5 +14,72 @@
   <ul>
     <li><a href="./examples/yyjk/index.html">九宫格抽奖 Demo</a></li>
   </ul>
+  <script>
+  function $set (obj, key, val) {
+    // obj[key] = val
+    this.defineReactive(obj, key, val)
+    // this.$forceUpdate()
+    console.log(key, '触发了 set')
+  }
+
+  /**
+   * vue2.x 响应式 - 重写数组的原型方法
+   */
+  function resetArrayPropo () {
+    const oldArrayProto = Array.prototype
+    const newArrayProto = Object.create(oldArrayProto)
+    const methods = ['push', 'pop', 'shift', 'unshift', 'sort', 'splice', 'reverse']
+    methods.forEach(name => {
+      newArrayProto[name] = function () {
+        _this.$forceUpdate()
+        console.log(name, '触发了 set')
+        oldArrayProto[name].call(this, ...arguments)
+      }
+    })
+  }
+
+  /**
+   * vue2.x 响应式 - 数据劫持
+   * @param obj 将要处理的数据
+   */
+  function observer (obj, params = []) {
+    if (typeof obj !== 'object' || obj === null) return
+    (params.length ? params : Object.keys(obj)).forEach(key => {
+      this.defineReactive(obj, key, obj[key])
+    })
+  }
+
+  /**
+   * vue2.x 响应式 - 重写 setter 和 getter
+   * @param obj 数据
+   * @param key 属性
+   * @param val 值
+   */
+   function defineReactive (obj, key, val) {
+
+    observer(val)
+    Object.defineProperty(obj, key, {
+      get () {
+        return val
+      },
+      set (newVal) {
+        if (newVal !== val) {
+          val = newVal
+          observer(val)
+          // _this.$forceUpdate()
+          console.log(key, '触发了 set')
+        }
+      }
+    })
+  }
+  let info = {
+    name: 'jack',
+    age: { number: 20 }
+  }
+  observer(info)
+  $set(info, 'sex', 1)
+  console.log(info)
+  // info.sex = 2
+  </script>
 </body>
 </html>

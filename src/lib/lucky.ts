@@ -67,14 +67,23 @@ export default class Lucky {
   }
 
   /**
-   * 更新并绘制 canvas
+   * 更新数据并重新绘制 canvas 画布
    */
-  protected update () {
+  public $forceUpdate () {}
 
+  /**
+   * vue2.x 响应式 - 添加一个新的响应式数据
+   * @param obj 数据
+   * @param key 属性
+   * @param val 新值
+   */
+  public $set (obj: object, key: string | number, val: any) {
+    this.defineReactive(obj, key, val)
+    console.log(key, '使用 $set 设置', val)
   }
 
   /**
-   * 重写数组的原型方法
+   * vue2.x 响应式 - 重写数组的原型方法
    */
   private resetArrayPropo () {
     const _this = this
@@ -83,7 +92,7 @@ export default class Lucky {
     const methods = ['push', 'pop', 'shift', 'unshift', 'sort', 'splice', 'reverse']
     methods.forEach(name => {
       newArrayProto[name] = function () {
-        _this.update()
+        _this.$forceUpdate()
         console.log(name, '触发了 set')
         oldArrayProto[name].call(this, ...arguments)
       }
@@ -102,7 +111,7 @@ export default class Lucky {
   }
 
   /**
-   * vue2.x 响应式 - 重写setter和getter
+   * vue2.x 响应式 - 重写 setter 和 getter
    * @param obj 数据
    * @param key 属性
    * @param val 值
@@ -118,8 +127,8 @@ export default class Lucky {
         if (newVal !== val) {
           val = newVal
           _this.observer(val)
-          console.log(key, '触发了 set')
-          _this.update()
+          _this.$forceUpdate()
+          console.log(key, '<set>', val)
         }
       }
     })
