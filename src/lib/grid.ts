@@ -105,6 +105,15 @@ export default class LuckyGrid extends Lucky {
     this.$set(this, 'button', data.button)
     this.$set(this, 'startCallback', data.start)
     this.$set(this, 'endCallback', data.end)
+    // this.defaultConfig = this.$computed(() => {
+    //   return {
+    //     gutter: 5,
+    //     speed: 20,
+    //     accelerationTime: 2500,
+    //     decelerationTime: 2500,
+    //     ...data.defaultConfig
+    //   }
+    // })
     this.$set(this, 'defaultConfig', {
       ...this.defaultConfig,
       ...data.defaultConfig

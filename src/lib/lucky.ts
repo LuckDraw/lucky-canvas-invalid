@@ -77,9 +77,8 @@ export default class Lucky {
    * @param key 属性
    * @param val 新值
    */
-  public $set (obj: object, key: string | number, val: any) {
+  protected $set (obj: object, key: string | number, val: any) {
     this.defineReactive(obj, key, val)
-    console.log(key, '使用 $set 设置', val)
   }
 
   /**
@@ -93,7 +92,6 @@ export default class Lucky {
     methods.forEach(name => {
       newArrayProto[name] = function () {
         _this.$forceUpdate()
-        console.log(name, '触发了 set')
         oldArrayProto[name].call(this, ...arguments)
       }
     })
@@ -103,9 +101,9 @@ export default class Lucky {
    * vue2.x 响应式 - 数据劫持
    * @param obj 将要处理的数据
    */
-  protected observer (obj: any, params: string[] = []): void {
+  protected observer (obj: any): void {
     if (typeof obj !== 'object' || obj === null) return
-    (params.length ? params : Object.keys(obj)).forEach(key => {
+    Object.keys(obj).forEach(key => {
       this.defineReactive(obj, key, obj[key])
     })
   }
@@ -117,18 +115,16 @@ export default class Lucky {
    * @param val 值
    */
   private defineReactive (obj: object, key: string | number, val: any): void {
-    const _this = this
-    _this.observer(val)
+    this.observer(val)
     Object.defineProperty(obj, key, {
-      get () {
+      get: () => {
         return val
       },
-      set (newVal) {
+      set: (newVal) => {
         if (newVal !== val) {
           val = newVal
-          _this.observer(val)
-          _this.$forceUpdate()
-          console.log(key, '<set>', val)
+          this.observer(val)
+          this.$forceUpdate()
         }
       }
     })
