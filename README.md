@@ -24,10 +24,10 @@
   </p>
   <p>
     <a href="https://github.com/buuing" target="_black">
-      <img src="https://img.shields.io/badge/Author-%20buuing%20-7289da.svg?&logo=github" alt="author" />
+      <img src="https://img.shields.io/badge/Author-%20buuing%20-7289da.svg?&logo=github&style=flat-square" alt="author" />
     </a>
     <a href="https://github.com/luckdraw/lucky-canvas/blob/master/LICENSE" target="_black">
-      <img src="https://img.shields.io/github/license/luckdraw/lucky-canvas?&logo=github" alt="license" />
+      <img src="https://img.shields.io/github/license/luckdraw/lucky-canvas?color=%232dce89&logo=github&style=flat-square" alt="license" />
     </a>
   </p>
 </div>
