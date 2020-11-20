@@ -9,20 +9,20 @@
     <a href="https://github.com/luckdraw/lucky-canvas/tree/master/en">English</a>
   </p>
   <p>
-    <a href="https://github.com/luckdraw/lucky-canvas/stargazers" target="_black">
-      <img src="https://img.shields.io/github/stars/luckdraw/lucky-canvas?&logo=github" alt="stars" />
+    <a href="https://github.com/LuckDraw/lucky-canvas" target="_black">
+      <img src="https://img.shields.io/badge/github-%20lucky--canvas%20-ffca28.svg?&logo=github&style=flat-square" alt="github" />
+    </a>
+    <a href="https://github.com/LuckDraw/lucky-canvas/stargazers" target="_black">
+      <img src="https://img.shields.io/github/stars/luckdraw/lucky-canvas?color=%23ffca28&logo=github&style=flat-square" alt="stars" />
     </a>
     <a href="https://github.com/luckdraw/lucky-canvas/network/members" target="_black">
       <img src="https://img.shields.io/github/forks/luckdraw/lucky-canvas?logo=github" alt="forks" />
     </a>
     <a href="https://www.npmjs.com/package/lucky-canvas" target="_black">
-      <img src="https://img.shields.io/github/package-json/v/luckdraw/lucky-canvas?&logo=npm" alt="version" />
+      <img src="https://img.shields.io/github/package-json/v/luckdraw/lucky-canvas?color=%23ffca28&logo=npm&style=flat-square" alt="version" />
     </a>
     <a href="https://www.npmjs.com/package/lucky-canvas" target="_black">
-      <img src="https://img.shields.io/npm/dm/lucky-canvas?&logo=npm" alt="downloads" />
-    </a>
-    <a href="https://github.com/luckdraw/lucky-canvas/tree/master/dist" target="_black">
-      <img src="https://img.shields.io/github/size/luckdraw/lucky-canvas/dist/lucky-canvas.umd.min.js?&logo=npm" alt="size" />
+      <img src="https://img.shields.io/npm/dm/lucky-canvas?color=%23ffca28&logo=npm&style=flat-square" alt="downloads" />
     </a>
   </p>
   <p>
