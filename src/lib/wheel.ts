@@ -485,8 +485,16 @@ export default class LuckyWheel extends Lucky {
       this.endTime = Date.now()
       // 记录开始停止的位置
       this.stopDeg = rotateDeg
-      // 最终停止的角度
-      this.endDeg = 360 * 5 - (prizeFlag as number) * prizeDeg - rotateDeg - _defaultConfig.offsetDegree
+      // 测算最终停止的角度
+      let i = 0
+      while (++i) {
+        const endDeg = 360 * i - prizeFlag * prizeDeg - rotateDeg - _defaultConfig.offsetDegree
+        let currSpeed = quad.easeOut(this.FPS, this.stopDeg, endDeg, _defaultConfig.decelerationTime) - this.stopDeg
+        if (currSpeed > _defaultConfig.speed) {
+          this.endDeg = endDeg
+          break
+        }
+      }
       cancelAnimationFrame(this.animationId)
       return this.slowDown()
     }

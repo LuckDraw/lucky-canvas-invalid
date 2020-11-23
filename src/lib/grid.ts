@@ -521,8 +521,16 @@ export default class LuckyGrid extends Lucky {
       this.endTime = Date.now()
       // 记录开始停止的索引
       this.stopIndex = currIndex
-      // 最终停止的索引
-      this.endIndex = prizes.length * 5 + prizeFlag - (currIndex >> 0)
+      // 测算最终停止的索引
+      let i = 0
+      while (++i) {
+        const endIndex = prizes.length * i + prizeFlag - (currIndex >> 0)
+        let currSpeed = quad.easeOut(this.FPS, this.stopIndex, endIndex, _defaultConfig.decelerationTime) - this.stopIndex
+        if (currSpeed > _defaultConfig.speed) {
+          this.endIndex = endIndex
+          break
+        }
+      }
       cancelAnimationFrame(this.animationId)
       return this.slowDown()
     }
