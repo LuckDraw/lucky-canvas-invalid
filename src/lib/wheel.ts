@@ -1,8 +1,9 @@
 import Lucky from './lucky'
 import LuckyWheelConfig, {
+  PrizeFontType, PrizeImgType,
+  ButtonFontType, ButtonImgType,
+  PrizeType, ButtonType,
   BlockType,
-  PrizeType,
-  ButtonType,
   DefaultConfigType,
   DefaultStyleType,
   StartCallbackType,
@@ -18,18 +19,21 @@ export default class LuckyWheel extends Lucky {
   private blocks: Array<BlockType> = []
   private prizes: Array<PrizeType> = []
   private buttons: Array<ButtonType> = []
-  private defaultConfig: DefaultConfigType = {
+  private defaultConfig: DefaultConfigType = {}
+  private _defaultConfig = {
     gutter: '0px',
     offsetDegree: 0,
     speed: 20,
     accelerationTime: 2500,
     decelerationTime: 2500,
   }
-  private defaultStyle: DefaultStyleType = {
+  private defaultStyle: DefaultStyleType = {}
+  private _defaultStyle = {
     fontSize: '18px',
     fontColor: '#000',
     fontStyle: 'microsoft yahei ui,microsoft yahei,simsun,sans-serif',
     fontWeight: '400',
+    lineHeight: '',
     background: '#fff',
     wordWrap: true,
     lengthLimit: '90%',
@@ -66,7 +70,9 @@ export default class LuckyWheel extends Lucky {
     this.canvas = document.createElement('canvas')
     this.box.appendChild(this.canvas)
     this.ctx = this.canvas.getContext('2d')!
-    this.setData(data)
+    this.initData(data)
+    this.initComputed()
+    this.initWatch()
     // 收集首次渲染的图片
     let willUpdate: Array<ImgType[] | undefined> = [[]]
     this.prizes && ( willUpdate = this.prizes.map(prize => prize.imgs))
@@ -79,18 +85,108 @@ export default class LuckyWheel extends Lucky {
    * 初始化数据
    * @param data 
    */
-  private setData (data: LuckyWheelConfig): void {
-    this.blocks = data.blocks || []
-    this.prizes = data.prizes || []
-    this.buttons = data.buttons || []
-    this.startCallback = data.start
-    this.endCallback = data.end
-    for (let key in data.defaultConfig) {
-      this.defaultConfig[key] = data.defaultConfig[key]
-    }
-    for (let key in data.defaultStyle) {
-      this.defaultStyle[key] = data.defaultStyle[key]
-    }
+  private initData (data: LuckyWheelConfig): void {
+    this.$set(this, 'blocks', data.blocks || [])
+    this.$set(this, 'prizes', data.prizes || [])
+    this.$set(this, 'buttons', data.buttons || [])
+    this.$set(this, 'defaultConfig', data.defaultConfig || {})
+    this.$set(this, 'defaultStyle', data.defaultStyle || {})
+    this.$set(this, 'startCallback', data.start)
+    this.$set(this, 'endCallback', data.end)
+  }
+
+  /**
+   * 初始化属性计算
+   */
+  private initComputed () {
+    // 默认配置
+    this.$computed(this, '_defaultConfig', () => {
+      const config = {
+        gutter: '0px',
+        offsetDegree: 0,
+        speed: 20,
+        accelerationTime: 2500,
+        decelerationTime: 2500,
+        ...this.defaultConfig
+      }
+      return config
+    })
+    // 默认样式
+    this.$computed(this, '_defaultStyle', () => {
+      const style = {
+        fontSize: '18px',
+        fontColor: '#000',
+        fontStyle: 'microsoft yahei ui,microsoft yahei,simsun,sans-serif',
+        fontWeight: '400',
+        background: '#fff',
+        wordWrap: true,
+        lengthLimit: '90%',
+        ...this.defaultStyle
+      }
+      return style
+    })
+  }
+
+  /**
+   * 初始化观察者
+   */
+  private initWatch () {
+    // 观察奖品数据的变化
+    this.$watch('prizes', (newData: Array<PrizeType>, oldData: Array<PrizeType>) => {
+      let willUpdate: Array<ImgType[] | undefined> = []
+      // 首次渲染时oldData为undefined
+      if (!oldData) willUpdate = newData.map(prize => prize.imgs)
+      // 此时新值一定存在
+      else if (newData) newData.forEach((newPrize, prizeIndex) => {
+        let prizeImgs: PrizeImgType[] = []
+        const oldPrize = oldData[prizeIndex]
+        // 如果旧奖品不存在
+        if (!oldPrize) prizeImgs = newPrize.imgs || []
+        // 新奖品有图片才能进行对比
+        else if (newPrize.imgs) newPrize.imgs.forEach((newImg, imgIndex) => {
+          if (!oldPrize.imgs) return prizeImgs[imgIndex] = newImg
+          const oldImg = oldPrize.imgs[imgIndex]
+          // 如果旧值不存在
+          if (!oldImg) prizeImgs[imgIndex] = newImg
+          // 如果缓存中没有奖品或图片
+          else if (!this.prizeImgs[prizeIndex] || !this.prizeImgs[prizeIndex][imgIndex]) {
+            prizeImgs[imgIndex] = newImg
+          }
+          // 如果新值和旧值的src不相等
+          else if (newImg.src !== oldImg.src) prizeImgs[imgIndex] = newImg
+        })
+        willUpdate[prizeIndex] = prizeImgs
+      })
+      return this.init(willUpdate)
+    })
+    // 观察按钮数据的变化
+    this.$watch('buttons', (newData: Array<ButtonType>, oldData: Array<ButtonType>) => {
+      let willUpdate: Array<ImgType[] | undefined> = []
+      // 首次渲染时oldData为undefined
+      if (!oldData) willUpdate = newData.map(btn => btn.imgs)
+      // 此时新值一定存在
+      else if (newData) newData.forEach((newBtn, btnIndex) => {
+        let btnImgs: ButtonImgType[] = []
+        const oldBtn = oldData[btnIndex]
+        // 如果旧奖品不存在或旧奖品的图片不存在
+        if (!oldBtn || !oldBtn.imgs) btnImgs = newBtn.imgs || []
+        // 新奖品有图片才能进行对比
+        else if (newBtn.imgs) newBtn.imgs.forEach((newImg, imgIndex) => {
+          if (!oldBtn.imgs) return btnImgs[imgIndex] = newImg
+          const oldImg = oldBtn.imgs[imgIndex]
+          // 如果旧值不存在
+          if (!oldImg) btnImgs[imgIndex] = newImg
+          // 如果缓存中没有按钮或图片
+          else if (!this.btnImgs[btnIndex] || !this.btnImgs[btnIndex][imgIndex]) {
+            btnImgs[imgIndex] = newImg
+          }
+          // 如果新值和旧值的src不相等
+          else if (newImg.src !== oldImg.src) btnImgs[imgIndex] = newImg
+        })
+        willUpdate[btnIndex] = btnImgs
+      })
+      return this.init([...new Array(this.prizes.length).fill(undefined), ...willUpdate])
+    })
   }
 
   /**
@@ -206,7 +302,7 @@ export default class LuckyWheel extends Lucky {
    * 开始绘制
    */
   protected draw (): void {
-    const { ctx, dpr, defaultConfig, defaultStyle } = this
+    const { ctx, dpr, _defaultConfig, _defaultStyle } = this
     ctx.clearRect(-this.Radius, -this.Radius, this.Radius * 2, this.Radius * 2)
     // 绘制blocks边框
     this.prizeRadius = this.blocks.reduce((radius, block) => {
@@ -219,7 +315,7 @@ export default class LuckyWheel extends Lucky {
     // 计算起始弧度
     this.prizeDeg = 360 / this.prizes.length
     this.prizeRadian = getAngle(this.prizeDeg)
-    let start = getAngle(-90 + this.rotateDeg + defaultConfig.offsetDegree)
+    let start = getAngle(-90 + this.rotateDeg + _defaultConfig.offsetDegree)
     // 计算文字横坐标
     const getFontX = (line: string) => {
       return this.getOffsetX(ctx.measureText(line).width)
@@ -227,7 +323,7 @@ export default class LuckyWheel extends Lucky {
     // 计算文字纵坐标
     const getFontY = (font: FontType, height: number, lineIndex: number) => {
       // 优先使用字体行高, 要么使用默认行高, 其次使用字体大小, 否则使用默认字体大小
-      const lineHeight = font.lineHeight || defaultStyle.lineHeight || font.fontSize || defaultStyle.fontSize
+      const lineHeight = font.lineHeight || _defaultStyle.lineHeight || font.fontSize || _defaultStyle.fontSize
       return this.getHeight(font.top, height) + (lineIndex + 1) * this.getLength(lineHeight) * dpr
     }
     ctx.save()
@@ -242,8 +338,8 @@ export default class LuckyWheel extends Lucky {
         ctx, this.maxBtnRadius, this.prizeRadius,
         currMiddleDeg - this.prizeRadian / 2,
         currMiddleDeg + this.prizeRadian / 2,
-        this.getLength(defaultConfig.gutter) * dpr,
-        prize.background || defaultStyle.background || 'rgba(0, 0, 0, 0)'
+        this.getLength(_defaultConfig.gutter) * dpr,
+        prize.background || _defaultStyle.background || 'rgba(0, 0, 0, 0)'
       )
       // 计算临时坐标并旋转文字
       let x = Math.cos(currMiddleDeg) * this.prizeRadius
@@ -268,22 +364,22 @@ export default class LuckyWheel extends Lucky {
       })
       // 逐行绘制文字
       prize.fonts && prize.fonts.forEach(font => {
-        let fontColor = font.fontColor || defaultStyle.fontColor
-        let fontWeight = font.fontWeight || defaultStyle.fontWeight
-        let fontSize = this.getLength(font.fontSize || defaultStyle.fontSize)
-        let fontStyle = font.fontStyle || defaultStyle.fontStyle
+        let fontColor = font.fontColor || _defaultStyle.fontColor
+        let fontWeight = font.fontWeight || _defaultStyle.fontWeight
+        let fontSize = this.getLength(font.fontSize || _defaultStyle.fontSize)
+        let fontStyle = font.fontStyle || _defaultStyle.fontStyle
         ctx.fillStyle = fontColor!
         ctx.font = `${fontWeight} ${fontSize * dpr}px ${fontStyle}`
         let lines = [], text = String(font.text)
-        if (font.hasOwnProperty('wordWrap') ? font.wordWrap : defaultStyle.wordWrap) {
+        if (font.hasOwnProperty('wordWrap') ? font.wordWrap : _defaultStyle.wordWrap) {
           text = removeEnter(text)
           let str = ''
           for (let i = 0; i < text.length; i++) {
             str += text[i]
             let currWidth = ctx.measureText(str).width
             let maxWidth = (this.prizeRadius - getFontY(font, prizeHeight, lines.length))
-              * Math.tan(this.prizeRadian / 2) * 2 - this.getLength(defaultConfig.gutter) * dpr
-            if (currWidth > this.getWidth(font.lengthLimit || defaultStyle.lengthLimit, maxWidth)) {
+              * Math.tan(this.prizeRadian / 2) * 2 - this.getLength(_defaultConfig.gutter) * dpr
+            if (currWidth > this.getWidth(font.lengthLimit || _defaultStyle.lengthLimit, maxWidth)) {
               lines.push(str.slice(0, -1))
               str = text[i]
             }
@@ -341,10 +437,10 @@ export default class LuckyWheel extends Lucky {
       })
       // 绘制按钮文字
       btn.fonts && btn.fonts.forEach(font => {
-        let fontColor = font.fontColor || defaultStyle.fontColor
-        let fontWeight = font.fontWeight || defaultStyle.fontWeight
-        let fontSize = this.getLength(font.fontSize || defaultStyle.fontSize)
-        let fontStyle = font.fontStyle || defaultStyle.fontStyle
+        let fontColor = font.fontColor || _defaultStyle.fontColor
+        let fontWeight = font.fontWeight || _defaultStyle.fontWeight
+        let fontSize = this.getLength(font.fontSize || _defaultStyle.fontSize)
+        let fontStyle = font.fontStyle || _defaultStyle.fontStyle
         ctx.fillStyle = fontColor!
         ctx.font = `${fontWeight} ${fontSize * dpr}px ${fontStyle}`
         String(font.text).split('\n').forEach((line, lineIndex) => {
@@ -379,10 +475,10 @@ export default class LuckyWheel extends Lucky {
    * @param num 记录帧动画执行多少次
    */
   private run (num: number = 0): void {
-    const { prizeFlag, prizeDeg, rotateDeg, defaultConfig } = this
+    const { prizeFlag, prizeDeg, rotateDeg, _defaultConfig } = this
     let interval = Date.now() - this.startTime
     // 先完全旋转, 再停止
-    if (interval >= defaultConfig.accelerationTime && prizeFlag !== undefined) {
+    if (interval >= _defaultConfig.accelerationTime && prizeFlag !== undefined) {
       // 记录帧率
       this.FPS = interval / num
       // 记录开始停止的时间戳
@@ -390,11 +486,11 @@ export default class LuckyWheel extends Lucky {
       // 记录开始停止的位置
       this.stopDeg = rotateDeg
       // 最终停止的角度
-      this.endDeg = 360 * 5 - (prizeFlag as number) * prizeDeg - rotateDeg - defaultConfig.offsetDegree
+      this.endDeg = 360 * 5 - (prizeFlag as number) * prizeDeg - rotateDeg - _defaultConfig.offsetDegree
       cancelAnimationFrame(this.animationId)
       return this.slowDown()
     }
-    this.rotateDeg = (rotateDeg + quad.easeIn(interval, 0, defaultConfig.speed, defaultConfig.accelerationTime)) % 360
+    this.rotateDeg = (rotateDeg + quad.easeIn(interval, 0, _defaultConfig.speed, _defaultConfig.accelerationTime)) % 360
     this.draw()
     this.animationId = window.requestAnimationFrame(this.run.bind(this, num + 1))
   }
@@ -403,14 +499,14 @@ export default class LuckyWheel extends Lucky {
    * 缓慢停止的方法
    */
   private slowDown (): void {
-    const { prizes, prizeFlag, stopDeg, endDeg, defaultConfig } = this
+    const { prizes, prizeFlag, stopDeg, endDeg, _defaultConfig } = this
     let interval = Date.now() - this.endTime
-    if (interval >= defaultConfig.decelerationTime) {
+    if (interval >= _defaultConfig.decelerationTime) {
       this.startTime = 0
       this.endCallback?.({...prizes.find((prize, index) => index === prizeFlag)})
       return cancelAnimationFrame(this.animationId)
     }
-    this.rotateDeg = quad.easeOut(interval, stopDeg, endDeg, defaultConfig.decelerationTime) % 360
+    this.rotateDeg = quad.easeOut(interval, stopDeg, endDeg, _defaultConfig.decelerationTime) % 360
     this.draw()
     this.animationId = window.requestAnimationFrame(this.slowDown.bind(this))
   }

@@ -47,28 +47,28 @@ export interface CellType<T, U> {
 }
 
 export interface DefaultConfigType {
-  gutter: number
-  speed: number
-  accelerationTime: number
-  decelerationTime: number
+  gutter?: number
+  speed?: number
+  accelerationTime?: number
+  decelerationTime?: number
 }
 
 export interface DefaultStyleType {
-  borderRadius: borderRadiusType
-  background: backgroundType
-  shadow: shadowType
-  fontColor: PrizeFontType['fontColor']
-  fontSize: PrizeFontType['fontSize']
-  fontStyle: PrizeFontType['fontStyle']
-  fontWeight: PrizeFontType['fontWeight']
+  borderRadius?: borderRadiusType
+  background?: backgroundType
+  shadow?: shadowType
+  fontColor?: PrizeFontType['fontColor']
+  fontSize?: PrizeFontType['fontSize']
+  fontStyle?: PrizeFontType['fontStyle']
+  fontWeight?: PrizeFontType['fontWeight']
   lineHeight?: PrizeFontType['lineHeight']
-  wordWrap: PrizeFontType['wordWrap']
-  lengthLimit: PrizeFontType['lengthLimit']
+  wordWrap?: PrizeFontType['wordWrap']
+  lengthLimit?: PrizeFontType['lengthLimit']
 }
 
 export interface ActiveStyleType {
-  background: backgroundType
-  shadow: shadowType
+  background?: backgroundType
+  shadow?: shadowType
   fontColor?: PrizeFontType['fontColor']
   fontSize?: PrizeFontType['fontSize']
   fontStyle?: PrizeFontType['fontStyle']

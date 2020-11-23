@@ -16,33 +16,45 @@ import { isExpectType, removeEnter, computePadding } from '../utils/index'
 import { drawRoundRect, getLinearGradient, } from '../utils/math'
 import { quad } from '../utils/tween'
 
+type PrizesType = CellType<PrizeFontType, PrizeImgType>[]
+type ButtonType = CellType<ButtonFontType, ButtonImgType>
+
 export default class LuckyGrid extends Lucky {
 
   private rows: RowsType = 3
   private cols: ColsType = 3
   private blocks: Array<BlockType> = []
-  private prizes: CellType<PrizeFontType, PrizeImgType>[] = []
-  private button?: CellType<ButtonFontType, ButtonImgType>
-  private defaultConfig: DefaultConfigType = {
+  private prizes: PrizesType = []
+  private button?: ButtonType
+  private defaultConfig: DefaultConfigType = {}
+  private _defaultConfig = { // 此处初始化无用, 是为了方便类型推导才加的
     gutter: 5,
     speed: 20,
     accelerationTime: 2500,
     decelerationTime: 2500,
   }
-  private defaultStyle: DefaultStyleType = {
+  private defaultStyle: DefaultStyleType = {}
+  private _defaultStyle = { // 此处初始化无用, 是为了方便类型推导才加的
     borderRadius: 20,
     fontColor: '#000',
     fontSize: '18px',
     fontStyle: 'microsoft yahei ui,microsoft yahei,simsun,sans-serif',
     fontWeight: '400',
+    lineHeight: '',
     background: '#fff',
     shadow: '',
     wordWrap: true,
     lengthLimit: '90%',
   }
-  private activeStyle: ActiveStyleType = {
+  private activeStyle: ActiveStyleType = {}
+  private _activeStyle = { // 此处初始化无用, 是为了方便类型推导才加的
     background: '#ffce98',
     shadow: '',
+    fontStyle: '',
+    fontWeight: '',
+    fontSize: '',
+    lineHeight: '',
+    fontColor: '',
   }
   private startCallback?: StartCallbackType
   private endCallback?: EndCallbackType
@@ -81,7 +93,9 @@ export default class LuckyGrid extends Lucky {
     this.canvas = document.createElement('canvas')
     this.box.appendChild(this.canvas)
     this.ctx = this.canvas.getContext('2d')!
-    this.setData(data)
+    this.initData(data)
+    this.initComputed()
+    this.initWatch()
     // 收集首次渲染的图片
     let willUpdate: Array<CellImgType[] | undefined> = [[]]
     this.prizes && (willUpdate = this.prizes.map(prize => prize.imgs))
@@ -89,42 +103,116 @@ export default class LuckyGrid extends Lucky {
     this.init(willUpdate)
   }
 
-  public $forceUpdate () {
-    this.draw()
-  }
-
   /**
    * 初始化数据
    * @param data
    */
-  private setData (data: LuckyGridConfig): void {
+  private initData (data: LuckyGridConfig): void {
     this.$set(this, 'rows', Number(data.rows) || 3)
     this.$set(this, 'cols', Number(data.cols) || 3)
     this.$set(this, 'blocks', data.blocks || [])
     this.$set(this, 'prizes', data.prizes || [])
     this.$set(this, 'button', data.button)
+    this.$set(this, 'defaultConfig', data.defaultConfig || {})
+    this.$set(this, 'defaultStyle', data.defaultStyle || {})
+    this.$set(this, 'activeStyle', data.activeStyle || {})
     this.$set(this, 'startCallback', data.start)
     this.$set(this, 'endCallback', data.end)
-    // this.defaultConfig = this.$computed(() => {
-    //   return {
-    //     gutter: 5,
-    //     speed: 20,
-    //     accelerationTime: 2500,
-    //     decelerationTime: 2500,
-    //     ...data.defaultConfig
-    //   }
-    // })
-    this.$set(this, 'defaultConfig', {
-      ...this.defaultConfig,
-      ...data.defaultConfig
+  }
+
+  /**
+   * 初始化属性计算
+   */
+  private initComputed (): void {
+    // 默认配置
+    this.$computed(this, '_defaultConfig', () => {
+      const config = {
+        gutter: 5,
+        speed: 20,
+        accelerationTime: 2500,
+        decelerationTime: 2500,
+        ...this.defaultConfig
+      }
+      config.gutter = this.getLength(config.gutter) * this.dpr
+      config.speed = config.speed / 40
+      return config
     })
-    this.$set(this, 'defaultStyle', {
-      ...this.defaultStyle,
-      ...data.defaultStyle
+    // 默认样式
+    this.$computed(this, '_defaultStyle', () => {
+      return {
+        borderRadius: 20,
+        fontColor: '#000',
+        fontSize: '18px',
+        fontStyle: 'microsoft yahei ui,microsoft yahei,simsun,sans-serif',
+        fontWeight: '400',
+        background: '#fff',
+        shadow: '',
+        wordWrap: true,
+        lengthLimit: '90%',
+        ...this.defaultStyle
+      }
     })
-    this.$set(this, 'activeStyle', {
-      ...this.activeStyle,
-      ...data.activeStyle
+    // 中奖样式
+    this.$computed(this, '_activeStyle', () => {
+      return {
+        background: '#ffce98',
+        shadow: '',
+        ...this.activeStyle
+      }
+    })
+  }
+
+  /**
+   * 初始化观察者
+   */
+  private initWatch (): void {
+    // 监听奖品数据的变化
+    this.$watch('prizes', (newData: PrizesType, oldData: PrizesType) => {
+      let willUpdate: Array<PrizeImgType[] | undefined> = []
+      // 首次渲染时oldData为undefined
+      if (!oldData) willUpdate = newData.map(prize => prize.imgs)
+      // 此时新值一定存在
+      else if (newData) newData.forEach((newPrize, prizeIndex) => {
+        let prizeImgs: PrizeImgType[] = []
+        const oldPrize = oldData[prizeIndex]
+        // 如果旧奖品不存在
+        if (!oldPrize) prizeImgs = newPrize.imgs || []
+        // 新奖品有图片才能进行对比
+        else if (newPrize.imgs) newPrize.imgs.forEach((newImg, imgIndex) => {
+          if (!oldPrize.imgs) return prizeImgs[imgIndex] = newImg
+          const oldImg = oldPrize.imgs[imgIndex]
+          // 如果旧值不存在
+          if (!oldImg) prizeImgs[imgIndex] = newImg
+          // 如果缓存中没有图片
+          else if (!this.cellImgs[prizeIndex][imgIndex]) prizeImgs[imgIndex] = newImg
+          // 如果新值和旧值的src不相等
+          else if (newImg.src !== oldImg.src) prizeImgs[imgIndex] = newImg
+        })
+        willUpdate[prizeIndex] = prizeImgs
+      })
+      return this.init(willUpdate)
+    })
+    // 监听按钮数据的变化
+    this.$watch('button', (newData: ButtonType, oldData: ButtonType) => {
+      let willUpdate = [], btnIndex = this.cols * this.rows - 1
+      // 首次渲染时, oldData不存在
+      if (!oldData || !oldData.imgs) willUpdate[btnIndex] = newData.imgs
+      // 如果新值存在img, 才能进行对比
+      else if (newData.imgs) {
+        const btnImg: ButtonImgType[] = []
+        newData.imgs.forEach((newImg, imgIndex) => {
+          if (!oldData.imgs) return btnImg[imgIndex] = newImg
+          const oldImg = oldData.imgs[imgIndex]
+          // 如果旧值不存在
+          if (!oldImg) btnImg[imgIndex] = newImg
+          // 如果缓存中没有图片
+          else if (!this.cellImgs[btnIndex][imgIndex]) btnImg[imgIndex] = newImg
+          // 如果新值和旧值的src不相等
+          else if (newImg.src !== oldImg.src) btnImg[imgIndex] = newImg
+        })
+        willUpdate[btnIndex] = btnImg
+      }
+      return this.init(willUpdate)
     })
   }
 
@@ -155,7 +243,6 @@ export default class LuckyGrid extends Lucky {
         ])
         if (e.offsetX < x || e.offsetY < y || e.offsetX > x + width || e.offsetY > y + height) return false
         if (this.startTime) return
-        console.log('点击了')
         this.startCallback?.(e)
       }
     }
@@ -251,7 +338,7 @@ export default class LuckyGrid extends Lucky {
    * 绘制九宫格抽奖
    */
   protected draw (): void {
-    const { ctx, dpr, defaultStyle, activeStyle } = this
+    const { ctx, dpr, _defaultConfig, _defaultStyle, _activeStyle } = this
     // 清空画布
     ctx.clearRect(0, 0, this.boxWidth, this.boxWidth)
     // 合并奖品和按钮
@@ -275,15 +362,15 @@ export default class LuckyGrid extends Lucky {
       }
     }, { x: 0, y: 0, w: this.boxWidth, h: this.boxHeight })
     // 计算单一奖品格子的宽度和高度
-    this.cellWidth = (this.prizeArea.w - this.getGutter() * (this.cols - 1)) / this.cols
-    this.cellHeight = (this.prizeArea.h - this.getGutter() * (this.rows - 1)) / this.rows
+    this.cellWidth = (this.prizeArea.w - _defaultConfig.gutter * (this.cols - 1)) / this.cols
+    this.cellHeight = (this.prizeArea.h - _defaultConfig.gutter * (this.rows - 1)) / this.rows
     // 绘制所有格子
     this.cells.forEach((prize, cellIndex) => {
       let [x, y, width, height] = this.getGeometricProperty([prize.x, prize.y, prize.col, prize.row])
       const isActive = cellIndex === this.currIndex % this.prizes.length >> 0
       // 处理阴影 (暂时先用any, 这里后续要优化)
       const shadow: any = (
-        isActive ? activeStyle.shadow : (prize.shadow || defaultStyle.shadow)
+        isActive ? _activeStyle.shadow! : (prize.shadow || _defaultStyle.shadow!)
       )
         .replace(/px/g, '') // 清空px字符串
         .split(',')[0].split(' ') // 防止有人声明多个阴影, 截取第一个阴影
@@ -300,7 +387,7 @@ export default class LuckyGrid extends Lucky {
       }
       drawRoundRect(
         ctx, x, y, width, height,
-        this.getLength(prize.borderRadius ? prize.borderRadius : defaultStyle.borderRadius) * dpr,
+        this.getLength(prize.borderRadius ? prize.borderRadius : _defaultStyle.borderRadius) * dpr,
         this.handleBackground(x, y, width, height, prize.background, isActive)
       )
       // 清空阴影
@@ -326,33 +413,32 @@ export default class LuckyGrid extends Lucky {
       // 绘制文字
       prize.fonts && prize.fonts.forEach(font => {
         // 字体样式
-        let style = isActive && activeStyle.fontStyle
-          ? activeStyle.fontStyle
-          : (font.fontStyle || defaultStyle.fontStyle)
+        let style = isActive && _activeStyle.fontStyle
+          ? _activeStyle.fontStyle
+          : (font.fontStyle || _defaultStyle.fontStyle)
         // 字体加粗
-        let fontWeight = isActive && activeStyle.fontWeight
-          ? activeStyle.fontWeight
-          : (font.fontWeight || defaultStyle.fontWeight)
+        let fontWeight = isActive && _activeStyle.fontWeight
+          ? _activeStyle.fontWeight
+          : (font.fontWeight || _defaultStyle.fontWeight)
         // 字体大小
-        let size = isActive && activeStyle.fontSize
-          ? this.getLength(activeStyle.fontSize)
-          : this.getLength(font.fontSize || defaultStyle.fontSize)
+        let size = isActive && _activeStyle.fontSize
+          ? this.getLength(_activeStyle.fontSize)
+          : this.getLength(font.fontSize || _defaultStyle.fontSize)
         // 字体行高
-        const lineHeight = isActive && activeStyle.lineHeight
-          ? activeStyle.lineHeight
-          : font.lineHeight || defaultStyle.lineHeight || font.fontSize || defaultStyle.fontSize
-        // console.log(size, font.text)
+        const lineHeight = isActive && _activeStyle.lineHeight
+          ? _activeStyle.lineHeight
+          : font.lineHeight || _defaultStyle.lineHeight || font.fontSize || _defaultStyle.fontSize
         ctx.font = `${fontWeight} ${size * dpr}px ${style}`
-        ctx.fillStyle = (isActive && activeStyle.fontColor) ? activeStyle.fontColor : (font.fontColor || defaultStyle.fontColor!)
+        ctx.fillStyle = (isActive && _activeStyle.fontColor) ? _activeStyle.fontColor : (font.fontColor || _defaultStyle.fontColor!)
         let lines = [], text = String(font.text)
         // 计算文字换行
-        if (font.hasOwnProperty('wordWrap') ? font.wordWrap : defaultStyle.wordWrap) {
+        if (font.hasOwnProperty('wordWrap') ? font.wordWrap : _defaultStyle.wordWrap) {
           text = removeEnter(text)
           let str = ''
           for (let i = 0; i < text.length; i++) {
             str += text[i]
             let currWidth = ctx.measureText(str).width
-            let maxWidth = this.getWidth(font.lengthLimit || defaultStyle.lengthLimit, prize.col)
+            let maxWidth = this.getWidth(font.lengthLimit || _defaultStyle.lengthLimit, prize.col)
             if (currWidth > maxWidth) {
               lines.push(str.slice(0, -1))
               str = text[i]
@@ -391,8 +477,8 @@ export default class LuckyGrid extends Lucky {
     background: string,
     isActive = false
   ) {
-    const { ctx, defaultStyle, activeStyle } = this
-    background = isActive ? activeStyle.background : (background || defaultStyle.background)
+    const { ctx, _defaultStyle, _activeStyle } = this
+    background = isActive ? _activeStyle.background! : (background || _defaultStyle.background!)
     // 处理线性渐变
     if (background.includes('linear-gradient')) {
       background = getLinearGradient(ctx, x, y, width, height, background)
@@ -425,11 +511,10 @@ export default class LuckyGrid extends Lucky {
    * @param num 记录帧动画执行多少次
    */
   private run (num: number = 0): void {
-    const { currIndex, prizes, prizeFlag, startTime, defaultConfig } = this
-    console.log(1, this.currIndex)
+    const { currIndex, prizes, prizeFlag, startTime, _defaultConfig } = this
     let interval = Date.now() - startTime
     // 先完全旋转, 再停止
-    if (interval >= defaultConfig.accelerationTime && prizeFlag !== undefined) {
+    if (interval >= _defaultConfig.accelerationTime && prizeFlag !== undefined) {
       // 记录帧率
       this.FPS = interval / num
       // 记录开始停止的时间戳
@@ -441,7 +526,7 @@ export default class LuckyGrid extends Lucky {
       cancelAnimationFrame(this.animationId)
       return this.slowDown()
     }
-    this.currIndex = (currIndex + quad.easeIn(interval, 0.1, defaultConfig.speed / 40, defaultConfig.accelerationTime)) % prizes.length
+    this.currIndex = (currIndex + quad.easeIn(interval, 0.1, _defaultConfig.speed, _defaultConfig.accelerationTime)) % prizes.length
     this.draw()
     this.animationId = window.requestAnimationFrame(this.run.bind(this, num + 1))
   }
@@ -450,15 +535,14 @@ export default class LuckyGrid extends Lucky {
    * 缓慢停止的方法
    */
   private slowDown (): void {
-    const { prizes, prizeFlag, stopIndex, endIndex, defaultConfig } = this
+    const { prizes, prizeFlag, stopIndex, endIndex, _defaultConfig } = this
     let interval = Date.now() - this.endTime
-    if (interval > defaultConfig.decelerationTime) {
+    if (interval > _defaultConfig.decelerationTime) {
       this.startTime = 0
       this.endCallback?.({...prizes.find((prize, index) => index === prizeFlag)})
       return cancelAnimationFrame(this.animationId)
     }
-    console.log()
-    this.currIndex = quad.easeOut(interval, stopIndex, endIndex, defaultConfig.decelerationTime) % prizes.length
+    this.currIndex = quad.easeOut(interval, stopIndex, endIndex, _defaultConfig.decelerationTime) % prizes.length
     this.draw()
     this.animationId = window.requestAnimationFrame(this.slowDown.bind(this))
   }
@@ -481,7 +565,7 @@ export default class LuckyGrid extends Lucky {
    */
   private getGeometricProperty ([x, y, col, row]: number[]) {
     const { cellWidth, cellHeight } = this
-    const gutter = this.getGutter()
+    const gutter = this._defaultConfig.gutter
     let res = [
       this.prizeArea!.x + (cellWidth + gutter) * x,
       this.prizeArea!.y + (cellHeight + gutter) * y
@@ -491,13 +575,6 @@ export default class LuckyGrid extends Lucky {
       cellHeight * row + gutter * (row - 1),
     )
     return res
-  }
-
-  /**
-   * 返回计算之后的 gutter
-   */
-  private getGutter (): number {
-    return this.getLength(this.defaultConfig.gutter) * this.dpr
   }
 
   /**
@@ -527,7 +604,7 @@ export default class LuckyGrid extends Lucky {
     if (isExpectType(width, 'number')) return (width as number) * this.dpr
     if (isExpectType(width, 'string')) return this.changeUnits(
       width as string,
-      { denominator: this.cellWidth * col + this.getGutter() * (col - 1) }
+      { denominator: this.cellWidth * col + this._defaultConfig.gutter * (col - 1) }
     )
     return 0
   }
@@ -545,7 +622,7 @@ export default class LuckyGrid extends Lucky {
     if (isExpectType(height, 'number')) return (height as number) * this.dpr
     if (isExpectType(height, 'string')) return this.changeUnits(
       height as string,
-      { denominator: this.cellHeight * row + this.getGutter() * (row - 1) }
+      { denominator: this.cellHeight * row + this._defaultConfig.gutter * (row - 1) }
     )
     return 0
   }
@@ -556,6 +633,6 @@ export default class LuckyGrid extends Lucky {
    * @param col 
    */
   private getOffsetX (width: number, col = 1) {
-    return (this.cellWidth * col + this.getGutter() * (col - 1) - width) / 2
+    return (this.cellWidth * col + this._defaultConfig.gutter * (col - 1) - width) / 2
   }
 }

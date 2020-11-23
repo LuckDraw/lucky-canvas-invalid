@@ -28,6 +28,12 @@ export default {
       name: 'LuckyCanvas',
       plugins: [terser()]
     },
+    {
+      file: `umd.min.js`,
+      format: 'umd',
+      name: 'LuckyCanvas',
+      plugins: [terser()]
+    },
   ],
   plugins: [
     ts(),

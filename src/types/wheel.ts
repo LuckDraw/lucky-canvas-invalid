@@ -31,22 +31,22 @@ export interface ButtonType {
 }
 
 export interface DefaultConfigType {
-  gutter: string | number
-  offsetDegree: number
-  speed: number
-  accelerationTime: number
-  decelerationTime: number
+  gutter?: string | number
+  offsetDegree?: number
+  speed?: number
+  accelerationTime?: number
+  decelerationTime?: number
 }
 
 export interface DefaultStyleType {
-  background: string
-  fontColor: PrizeFontType['fontColor']
-  fontSize: PrizeFontType['fontSize']
-  fontStyle: PrizeFontType['fontStyle']
-  fontWeight: PrizeFontType['fontWeight']
+  background?: string
+  fontColor?: PrizeFontType['fontColor']
+  fontSize?: PrizeFontType['fontSize']
+  fontStyle?: PrizeFontType['fontStyle']
+  fontWeight?: PrizeFontType['fontWeight']
   lineHeight?: PrizeFontType['lineHeight']
-  wordWrap: PrizeFontType['wordWrap']
-  lengthLimit: PrizeFontType['lengthLimit']
+  wordWrap?: PrizeFontType['wordWrap']
+  lengthLimit?: PrizeFontType['lengthLimit']
 }
 
 export type StartCallbackType = (e: MouseEvent) => void
