@@ -2,6 +2,7 @@ export default class Lucky {
 
   protected htmlFontSize: number = 16
   protected dpr: number = 1
+  private subs: object = {}
 
   constructor () {
     // 初始化
@@ -67,10 +68,76 @@ export default class Lucky {
   }
 
   /**
-   * 更新并绘制 canvas
+   * 更新数据并重新绘制 canvas 画布
    */
-  protected update () {
+  protected draw () {}
+  
+  /**
+   * 数据劫持
+   * @param obj 将要处理的数据
+   */
+  protected observer (data: object): void {
+    if (!data || typeof data !== 'object') return
+    Object.keys(data).forEach(key => {
+      this.defineReactive(data, key, data[key])
+    })
+  }
 
+  /**
+   * 重写 setter 和 getter
+   * @param obj 数据
+   * @param key 属性
+   * @param val 值
+   */
+  private defineReactive (data: object, key: string | number, value: any): void {
+    this.observer(value)
+    Object.defineProperty(data, key, {
+      get: () => {
+        return value
+      },
+      set: (newVal) => {
+        let oldVal = value
+        if (newVal === value) return
+        value = newVal
+        this.observer(value)
+        if (this.subs[key]) this.subs[key].call(this, value, oldVal)
+        this.draw()
+      }
+    })
+  }
+
+  /**
+   * 添加一个新的响应式数据
+   * @param data 数据
+   * @param key 属性
+   * @param value 新值
+   */
+  public $set (data: object, key: string | number, value: any) {
+    if (!data || typeof data !== 'object') return
+    this.defineReactive(data, key, value)
+  }
+
+  /**
+   * 添加一个属性计算
+   * @param data 源数据
+   * @param key 属性名
+   * @param callback 回调函数
+   */
+  protected $computed (data: object, key: string, callback: Function) {
+    Object.defineProperty(data, key, {
+      get: () => {
+        return callback.call(this)
+      }
+    })
+  }
+
+  /**
+   * 添加一个观察者
+   * @param key 属性名
+   * @param callback 回调函数
+   */
+  protected $watch (key: string, callback: Function) {
+    this.subs[key] = callback
   }
 
   /**
@@ -83,44 +150,8 @@ export default class Lucky {
     const methods = ['push', 'pop', 'shift', 'unshift', 'sort', 'splice', 'reverse']
     methods.forEach(name => {
       newArrayProto[name] = function () {
-        _this.update()
-        console.log(name, '触发了 set')
+        _this.draw()
         oldArrayProto[name].call(this, ...arguments)
-      }
-    })
-  }
-
-  /**
-   * vue2.x 响应式 - 数据劫持
-   * @param obj 将要处理的数据
-   */
-  protected observer (obj: any, params: string[] = []): void {
-    if (typeof obj !== 'object' || obj === null) return
-    (params.length ? params : Object.keys(obj)).forEach(key => {
-      this.defineReactive(obj, key, obj[key])
-    })
-  }
-
-  /**
-   * vue2.x 响应式 - 重写setter和getter
-   * @param obj 数据
-   * @param key 属性
-   * @param val 值
-   */
-  private defineReactive (obj: object, key: string | number, val: any): void {
-    const _this = this
-    _this.observer(val)
-    Object.defineProperty(obj, key, {
-      get () {
-        return val
-      },
-      set (newVal) {
-        if (newVal !== val) {
-          val = newVal
-          _this.observer(val)
-          console.log(key, '触发了 set')
-          _this.update()
-        }
       }
     })
   }
