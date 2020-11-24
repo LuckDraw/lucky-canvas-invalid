@@ -43,6 +43,8 @@ export default class Lucky {
     const compute = (len: number): number => {
       return (len * dpr - len) / (len * dpr) * (dpr / 2) * 100
     }
+    canvas.style.width = `${width}px`
+    canvas.style.height = `${height}px`
     canvas.style.transform = `scale(${1 / dpr}) translate(
       ${-compute(width)}%, ${-compute(height)}%
     )`

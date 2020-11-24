@@ -89,6 +89,8 @@
             var compute = function (len) {
                 return (len * dpr - len) / (len * dpr) * (dpr / 2) * 100;
             };
+            canvas.style.width = width + "px";
+            canvas.style.height = height + "px";
             canvas.style.transform = "scale(" + 1 / dpr + ") translate(\n      " + -compute(width) + "%, " + -compute(height) + "%\n    )";
         };
         /**
