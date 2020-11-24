@@ -40,9 +40,6 @@ export default class LuckyWheel extends Lucky {
   }
   private startCallback?: StartCallbackType
   private endCallback?: EndCallbackType
-  private readonly box: HTMLDivElement
-  private readonly canvas: HTMLCanvasElement
-  private readonly ctx: CanvasRenderingContext2D
   private Radius = 0                    // 大转盘半径
   private prizeRadius = 0               // 奖品区域半径
   private prizeDeg = 0                  // 奖品数学角度
@@ -64,12 +61,8 @@ export default class LuckyWheel extends Lucky {
    * @param el 元素标识
    * @param data 抽奖配置项
    */
-  constructor (el: string, data: LuckyWheelConfig = {}) {
-    super()
-    this.box = document.querySelector(el) as HTMLDivElement
-    this.canvas = document.createElement('canvas')
-    this.box.appendChild(this.canvas)
-    this.ctx = this.canvas.getContext('2d')!
+  constructor (el: string | HTMLDivElement, data: LuckyWheelConfig = {}) {
+    super(el)
     this.initData(data)
     this.initComputed()
     this.initWatch()

@@ -58,9 +58,6 @@ export default class LuckyGrid extends Lucky {
   }
   private startCallback?: StartCallbackType
   private endCallback?: EndCallbackType
-  private readonly box: HTMLDivElement
-  private readonly canvas: HTMLCanvasElement
-  private readonly ctx: CanvasRenderingContext2D
   private boxWidth = 0                  // 九宫格宽度
   private boxHeight = 0                 // 九宫格高度
   private cellWidth = 0                 // 格子宽度
@@ -87,12 +84,8 @@ export default class LuckyGrid extends Lucky {
    * @param el 元素标识
    * @param data 抽奖配置项
    */
-  constructor (el: string, data: LuckyGridConfig = {}) {
-    super()
-    this.box = document.querySelector(el) as HTMLDivElement
-    this.canvas = document.createElement('canvas')
-    this.box.appendChild(this.canvas)
-    this.ctx = this.canvas.getContext('2d')!
+  constructor (el: string | HTMLDivElement, data: LuckyGridConfig = {}) {
+    super(el)
     this.initData(data)
     this.initComputed()
     this.initWatch()

@@ -1,14 +1,21 @@
 export default class Lucky {
 
+  protected readonly box: HTMLDivElement
+  protected readonly canvas: HTMLCanvasElement
+  protected readonly ctx: CanvasRenderingContext2D
   protected htmlFontSize: number = 16
   protected dpr: number = 1
   private subs: object = {}
 
-  constructor () {
-    // 初始化
+  constructor (el: string | HTMLDivElement) {
     this.setDpr()
     this.setHTMLFontSize()
     this.resetArrayPropo()
+    this.box = typeof el === 'string'
+      ? document.querySelector(el) as HTMLDivElement : el
+    this.canvas = document.createElement('canvas')
+    this.box.appendChild(this.canvas)
+    this.ctx = this.canvas.getContext('2d')!
   }
 
   /**
@@ -151,7 +158,7 @@ export default class Lucky {
     methods.forEach(name => {
       newArrayProto[name] = function () {
         _this.draw()
-        oldArrayProto[name].call(this, ...arguments)
+        oldArrayProto[name].call(this, ...Array.from(arguments))
       }
     })
   }
