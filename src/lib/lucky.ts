@@ -1,12 +1,5 @@
+import { isExpectType } from '../utils/index'
 export default class Lucky {
-
-  protected readonly box: HTMLDivElement
-  protected readonly canvas: HTMLCanvasElement
-  protected readonly ctx: CanvasRenderingContext2D
-  protected htmlFontSize: number = 16
-  protected dpr: number = 1
-  private subs: object = {}
-
   constructor (el: string | HTMLDivElement) {
     this.setDpr()
     this.setHTMLFontSize()
@@ -17,6 +10,15 @@ export default class Lucky {
     this.box.appendChild(this.canvas)
     this.ctx = this.canvas.getContext('2d')!
   }
+
+  protected readonly box: HTMLDivElement
+  protected readonly canvas: HTMLCanvasElement
+  protected readonly ctx: CanvasRenderingContext2D
+  protected boxWidth: number = 0
+  protected boxHeight: number = 0
+  protected htmlFontSize: number = 16
+  protected dpr: number = 1
+  private subs: object = {}
 
   /**
    * 设备像素比
@@ -29,34 +31,45 @@ export default class Lucky {
    * 根标签的字体大小
    */
   protected setHTMLFontSize (): void {
-    this.htmlFontSize = +getComputedStyle(document.documentElement).fontSize.slice(0, -2)
+    this.htmlFontSize = +window.getComputedStyle(document.documentElement).fontSize.slice(0, -2)
   }
 
   /**
    * 根据 dpr 缩放 canvas 并处理位移
-   * @param canvas 画布
-   * @param width 将要等比缩放的宽
-   * @param height 将要等比缩放的高
    */
-  protected optimizeClarity (canvas: HTMLCanvasElement, width: number, height: number): void {
-    const { dpr } = this
-    const compute = (len: number): number => {
-      return (len * dpr - len) / (len * dpr) * (dpr / 2) * 100
-    }
-    canvas.style.width = `${width}px`
-    canvas.style.height = `${height}px`
+  protected zoomCanvas (): void {
+    const { box, canvas, ctx, dpr } = this
+    const compute = (len: number) => (len * dpr - len) / (len * dpr) * (dpr / 2) * 100
+    this.boxWidth = box.offsetWidth
+    this.boxHeight = box.offsetHeight
+    canvas.width = this.boxWidth * dpr
+    canvas.height = this.boxHeight * dpr
+    canvas.style.width = `${canvas.width}px`
+    canvas.style.height = `${canvas.height}px`
     canvas.style.transform = `scale(${1 / dpr}) translate(
-      ${-compute(width)}%, ${-compute(height)}%
+      ${-compute(canvas.width)}%, ${-compute(canvas.height)}%
     )`
+    ctx.scale(dpr, dpr)
+  }
+
+  /**
+   * 获取长度
+   * @param length 将要转换的长度
+   * @return 返回长度
+   */
+  protected getLength (length: string | number | undefined): number {
+    if (isExpectType(length, 'number')) return length as number
+    if (isExpectType(length, 'string')) return this.changeUnits(length as string)
+    return 0
   }
 
   /**
    * 转换单位
    * @param { string } value 将要转换的值
-   * @param config 
+   * @param { number } denominator 分子
    * @return { number } 返回新的字符串
    */
-  protected changeUnits (value: string, { denominator = 1, clean = false }): number {
+  protected changeUnits (value: string, denominator = 1): number {
     return Number(value.replace(/^(\-*[0-9.]*)([a-z%]*)$/, (value, num, unit) => {
       switch (unit) {
         case '%':
@@ -72,7 +85,7 @@ export default class Lucky {
           num *= 1
           break
       }
-      return clean || unit === '%' ? num : num * this.dpr
+      return num
     }))
   }
 

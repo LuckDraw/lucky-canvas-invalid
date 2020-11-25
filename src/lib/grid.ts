@@ -20,6 +20,22 @@ type PrizesType = CellType<PrizeFontType, PrizeImgType>[]
 type ButtonType = CellType<ButtonFontType, ButtonImgType>
 
 export default class LuckyGrid extends Lucky {
+  /**
+   * 九宫格构造器
+   * @param el 元素标识
+   * @param data 抽奖配置项
+   */
+  constructor (el: string | HTMLDivElement, data: LuckyGridConfig = {}) {
+    super(el)
+    this.initData(data)
+    this.initComputed()
+    this.initWatch()
+    // 收集首次渲染的图片
+    let willUpdate: Array<CellImgType[] | undefined> = [[]]
+    this.prizes && (willUpdate = this.prizes.map(prize => prize.imgs))
+    this.button && (willUpdate[this.cols * this.rows - 1] = this.button.imgs)
+    this.init(willUpdate)
+  }
 
   private rows: RowsType = 3
   private cols: ColsType = 3
@@ -58,8 +74,6 @@ export default class LuckyGrid extends Lucky {
   }
   private startCallback?: StartCallbackType
   private endCallback?: EndCallbackType
-  private boxWidth = 0                  // 九宫格宽度
-  private boxHeight = 0                 // 九宫格高度
   private cellWidth = 0                 // 格子宽度
   private cellHeight = 0                // 格子高度
   private startTime = 0                 // 开始时间戳
@@ -78,23 +92,6 @@ export default class LuckyGrid extends Lucky {
   private cellImgs: Array<{ defaultImg: HTMLImageElement, activeImg?: HTMLImageElement }[]> = []
   // 奖品区域几何信息
   private prizeArea: { x: number, y: number, w: number, h: number } | undefined
-
-  /**
-   * 九宫格构造器
-   * @param el 元素标识
-   * @param data 抽奖配置项
-   */
-  constructor (el: string | HTMLDivElement, data: LuckyGridConfig = {}) {
-    super(el)
-    this.initData(data)
-    this.initComputed()
-    this.initWatch()
-    // 收集首次渲染的图片
-    let willUpdate: Array<CellImgType[] | undefined> = [[]]
-    this.prizes && (willUpdate = this.prizes.map(prize => prize.imgs))
-    this.button && (willUpdate[this.cols * this.rows - 1] = this.button.imgs)
-    this.init(willUpdate)
-  }
 
   /**
    * 初始化数据
@@ -126,7 +123,7 @@ export default class LuckyGrid extends Lucky {
         decelerationTime: 2500,
         ...this.defaultConfig
       }
-      config.gutter = this.getLength(config.gutter) * this.dpr
+      config.gutter = this.getLength(config.gutter)
       config.speed = config.speed / 40
       return config
     })
@@ -214,27 +211,26 @@ export default class LuckyGrid extends Lucky {
    * @param willUpdateImgs 需要更新的图片
    */
   public init (willUpdateImgs: Array<CellImgType[] | undefined>): void {
+    const { ctx, button } = this
     this.setDpr()
     this.setHTMLFontSize()
-    const { box, canvas, dpr } = this
-    if (!box) return
-    this.boxWidth = canvas.width = box.offsetWidth * dpr
-    this.boxHeight = canvas.height = box.offsetHeight * dpr
-    this.optimizeClarity(canvas, this.boxWidth, this.boxHeight)
+    this.zoomCanvas()
     const endCallBack = (): void => {
       // 开始首次渲染
       this.draw()
       // 中奖标识开始游走
       this.demo && this.walk()
       // 点击按钮开始, 这里不能使用 addEventListener
-      if (this.button) canvas.onclick = e => {
+      if (button) this.canvas.onclick = e => {
         const [x, y, width, height] = this.getGeometricProperty([
-          this.button!.x,
-          this.button!.y,
-          this.button!.col || 1,
-          this.button!.row || 1
+          button.x,
+          button.y,
+          button.col || 1,
+          button.row || 1
         ])
-        if (e.offsetX < x || e.offsetY < y || e.offsetX > x + width || e.offsetY > y + height) return false
+        ctx.beginPath()
+        ctx.rect(x, y, width, height)
+        if (!ctx.isPointInPath(e.offsetX, e.offsetY)) return
         if (this.startTime) return
         this.startCallback?.(e)
       }
@@ -331,7 +327,7 @@ export default class LuckyGrid extends Lucky {
    * 绘制九宫格抽奖
    */
   protected draw (): void {
-    const { ctx, dpr, _defaultConfig, _defaultStyle, _activeStyle } = this
+    const { ctx, _defaultConfig, _defaultStyle, _activeStyle } = this
     // 清空画布
     ctx.clearRect(0, 0, this.boxWidth, this.boxWidth)
     // 合并奖品和按钮
@@ -343,8 +339,8 @@ export default class LuckyGrid extends Lucky {
     })
     // 计算获取奖品区域的几何信息
     this.prizeArea = this.blocks.reduce(({x, y, w, h}, block) => {
-      const [paddingTop, paddingBottom, paddingLeft, paddingRight] = computePadding(block).map(n => n * dpr)
-      const r = block.borderRadius ? this.getLength(block.borderRadius) * dpr : 0
+      const [paddingTop, paddingBottom, paddingLeft, paddingRight] = computePadding(block).map(n => ~~n)
+      const r = block.borderRadius ? this.getLength(block.borderRadius) : 0
       // 绘制边框
       drawRoundRect(ctx, x, y, w, h, r, this.handleBackground(x, y, w, h, block.background))
       return {
@@ -367,7 +363,7 @@ export default class LuckyGrid extends Lucky {
       )
         .replace(/px/g, '') // 清空px字符串
         .split(',')[0].split(' ') // 防止有人声明多个阴影, 截取第一个阴影
-        .map((n, i) => i < 3 ? Number(n) * dpr : n) // 把数组的前三个值*像素比
+        .map((n, i) => i < 3 ? Number(n) : n) // 把数组的前三个值*像素比
       // 绘制阴影
       if (shadow.length === 4) {
         ctx.shadowColor = shadow[3]
@@ -380,7 +376,7 @@ export default class LuckyGrid extends Lucky {
       }
       drawRoundRect(
         ctx, x, y, width, height,
-        this.getLength(prize.borderRadius ? prize.borderRadius : _defaultStyle.borderRadius) * dpr,
+        this.getLength(prize.borderRadius ? prize.borderRadius : _defaultStyle.borderRadius),
         this.handleBackground(x, y, width, height, prize.background, isActive)
       )
       // 清空阴影
@@ -421,7 +417,7 @@ export default class LuckyGrid extends Lucky {
         const lineHeight = isActive && _activeStyle.lineHeight
           ? _activeStyle.lineHeight
           : font.lineHeight || _defaultStyle.lineHeight || font.fontSize || _defaultStyle.fontSize
-        ctx.font = `${fontWeight} ${size * dpr}px ${style}`
+        ctx.font = `${fontWeight} ${size}px ${style}`
         ctx.fillStyle = (isActive && _activeStyle.fontColor) ? _activeStyle.fontColor : (font.fontColor || _defaultStyle.fontColor!)
         let lines = [], text = String(font.text)
         // 计算文字换行
@@ -446,7 +442,7 @@ export default class LuckyGrid extends Lucky {
           ctx.fillText(
             line,
             x + this.getOffsetX(ctx.measureText(line).width, prize.col),
-            y + this.getHeight(font.top, prize.row) + (lineIndex + 1) * this.getLength(lineHeight) * dpr
+            y + this.getHeight(font.top, prize.row) + (lineIndex + 1) * this.getLength(lineHeight)
           )
         })
       })
@@ -579,20 +575,6 @@ export default class LuckyGrid extends Lucky {
   }
 
   /**
-   * 获取长度
-   * @param length 将要转换的长度
-   * @return 返回长度
-   */
-  private getLength (length: string | number | undefined): number {
-    if (isExpectType(length, 'number')) return length as number
-    if (isExpectType(length, 'string')) return this.changeUnits(
-      length as string,
-      { clean: true }
-    )
-    return 0
-  }
-
-  /**
    * 转换并获取宽度
    * @param width 将要转换的宽度
    * @param col 横向合并的格子
@@ -602,10 +584,10 @@ export default class LuckyGrid extends Lucky {
     width: string | number | undefined,
     col: number = 1
   ) {
-    if (isExpectType(width, 'number')) return (width as number) * this.dpr
+    if (isExpectType(width, 'number')) return (width as number)
     if (isExpectType(width, 'string')) return this.changeUnits(
       width as string,
-      { denominator: this.cellWidth * col + this._defaultConfig.gutter * (col - 1) }
+      this.cellWidth * col + this._defaultConfig.gutter * (col - 1)
     )
     return 0
   }
@@ -620,10 +602,10 @@ export default class LuckyGrid extends Lucky {
     height: string | number | undefined,
     row: number = 1
   ) {
-    if (isExpectType(height, 'number')) return (height as number) * this.dpr
+    if (isExpectType(height, 'number')) return (height as number)
     if (isExpectType(height, 'string')) return this.changeUnits(
       height as string,
-      { denominator: this.cellHeight * row + this._defaultConfig.gutter * (row - 1) }
+      this.cellHeight * row + this._defaultConfig.gutter * (row - 1)
     )
     return 0
   }

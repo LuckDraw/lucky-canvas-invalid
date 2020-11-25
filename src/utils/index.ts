@@ -17,9 +17,6 @@ export const removeEnter = (str: string): string => {
   return [].filter.call(str, s => s !== '\n').join('')
 }
 
-// 获取设备像素比
-export const dpr = window.devicePixelRatio
-
 /**
  * 参数校验器
  * @param data 将要校验的参数

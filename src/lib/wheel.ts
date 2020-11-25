@@ -15,6 +15,22 @@ import { getAngle, drawSector } from '../utils/math'
 import { quad } from '../utils/tween'
 
 export default class LuckyWheel extends Lucky {
+  /**
+   * 大转盘构造器
+   * @param el 元素标识
+   * @param data 抽奖配置项
+   */
+  constructor (el: string | HTMLDivElement, data: LuckyWheelConfig = {}) {
+    super(el)
+    this.initData(data)
+    this.initComputed()
+    this.initWatch()
+    // 收集首次渲染的图片
+    let willUpdate: Array<ImgType[] | undefined> = [[]]
+    this.prizes && ( willUpdate = this.prizes.map(prize => prize.imgs))
+    this.buttons && (willUpdate.push(...this.buttons.map(btn => btn.imgs)))
+    this.init(willUpdate)
+  }
 
   private blocks: Array<BlockType> = []
   private prizes: Array<PrizeType> = []
@@ -55,24 +71,6 @@ export default class LuckyWheel extends Lucky {
   private FPS = 16.6                    // 屏幕刷新率
   private prizeImgs: Array<HTMLImageElement[]> = [[]]
   private btnImgs: Array<HTMLImageElement[]> = [[]]
-
-  /**
-   * 大转盘构造器
-   * @param el 元素标识
-   * @param data 抽奖配置项
-   */
-  constructor (el: string | HTMLDivElement, data: LuckyWheelConfig = {}) {
-    super(el)
-    this.initData(data)
-    this.initComputed()
-    this.initWatch()
-    // 收集首次渲染的图片
-    let willUpdate: Array<ImgType[] | undefined> = [[]]
-    this.prizes && ( willUpdate = this.prizes.map(prize => prize.imgs))
-    this.buttons && (willUpdate.push(...this.buttons.map(btn => btn.imgs)))
-    this.init(willUpdate)
-  }
-
   
   /**
    * 初始化数据
@@ -187,19 +185,17 @@ export default class LuckyWheel extends Lucky {
    * @param { Array<ImgType[]> } willUpdateImgs 需要更新的图片
    */
   public init (willUpdateImgs: Array<ImgType[] | undefined>): void {
+    const { ctx } = this
     this.setDpr()
     this.setHTMLFontSize()
-    const { box, canvas, ctx, dpr } = this
-    if (!box) return
-    canvas.width = canvas.height = box.offsetWidth * dpr
-    this.Radius = canvas.width / 2
-    this.optimizeClarity(canvas, this.Radius * 2, this.Radius * 2)
+    this.zoomCanvas()
+    this.Radius = Math.min(this.boxWidth, this.boxHeight) / 2
     ctx.translate(this.Radius, this.Radius)
     const endCallBack = (): void => {
       // 开始绘制
       this.draw()
       // 防止多次绑定点击事件
-      canvas.onclick = e => {
+      this.canvas.onclick = e => {
         ctx.beginPath()
         ctx.arc(0, 0, this.maxBtnRadius, 0, Math.PI * 2, false)
         if (!ctx.isPointInPath(e.offsetX, e.offsetY)) return
@@ -295,7 +291,7 @@ export default class LuckyWheel extends Lucky {
    * 开始绘制
    */
   protected draw (): void {
-    const { ctx, dpr, _defaultConfig, _defaultStyle } = this
+    const { ctx, _defaultConfig, _defaultStyle } = this
     ctx.clearRect(-this.Radius, -this.Radius, this.Radius * 2, this.Radius * 2)
     // 绘制blocks边框
     this.prizeRadius = this.blocks.reduce((radius, block) => {
@@ -303,7 +299,7 @@ export default class LuckyWheel extends Lucky {
       ctx.fillStyle = block.background
       ctx.arc(0, 0, radius, 0, Math.PI * 2, false)
       ctx.fill()
-      return radius - this.getLength(block.padding.split(' ')[0]) * dpr
+      return radius - this.getLength(block.padding.split(' ')[0])
     }, this.Radius)
     // 计算起始弧度
     this.prizeDeg = 360 / this.prizes.length
@@ -317,7 +313,7 @@ export default class LuckyWheel extends Lucky {
     const getFontY = (font: FontType, height: number, lineIndex: number) => {
       // 优先使用字体行高, 要么使用默认行高, 其次使用字体大小, 否则使用默认字体大小
       const lineHeight = font.lineHeight || _defaultStyle.lineHeight || font.fontSize || _defaultStyle.fontSize
-      return this.getHeight(font.top, height) + (lineIndex + 1) * this.getLength(lineHeight) * dpr
+      return this.getHeight(font.top, height) + (lineIndex + 1) * this.getLength(lineHeight)
     }
     ctx.save()
     // 绘制prizes奖品区域
@@ -331,7 +327,7 @@ export default class LuckyWheel extends Lucky {
         ctx, this.maxBtnRadius, this.prizeRadius,
         currMiddleDeg - this.prizeRadian / 2,
         currMiddleDeg + this.prizeRadian / 2,
-        this.getLength(_defaultConfig.gutter) * dpr,
+        this.getLength(_defaultConfig.gutter),
         prize.background || _defaultStyle.background || 'rgba(0, 0, 0, 0)'
       )
       // 计算临时坐标并旋转文字
@@ -362,7 +358,7 @@ export default class LuckyWheel extends Lucky {
         let fontSize = this.getLength(font.fontSize || _defaultStyle.fontSize)
         let fontStyle = font.fontStyle || _defaultStyle.fontStyle
         ctx.fillStyle = fontColor!
-        ctx.font = `${fontWeight} ${fontSize * dpr}px ${fontStyle}`
+        ctx.font = `${fontWeight} ${fontSize}px ${fontStyle}`
         let lines = [], text = String(font.text)
         if (font.hasOwnProperty('wordWrap') ? font.wordWrap : _defaultStyle.wordWrap) {
           text = removeEnter(text)
@@ -371,7 +367,7 @@ export default class LuckyWheel extends Lucky {
             str += text[i]
             let currWidth = ctx.measureText(str).width
             let maxWidth = (this.prizeRadius - getFontY(font, prizeHeight, lines.length))
-              * Math.tan(this.prizeRadian / 2) * 2 - this.getLength(_defaultConfig.gutter) * dpr
+              * Math.tan(this.prizeRadian / 2) * 2 - this.getLength(_defaultConfig.gutter)
             if (currWidth > this.getWidth(font.lengthLimit || _defaultStyle.lengthLimit, maxWidth)) {
               lines.push(str.slice(0, -1))
               str = text[i]
@@ -435,7 +431,7 @@ export default class LuckyWheel extends Lucky {
         let fontSize = this.getLength(font.fontSize || _defaultStyle.fontSize)
         let fontStyle = font.fontStyle || _defaultStyle.fontStyle
         ctx.fillStyle = fontColor!
-        ctx.font = `${fontWeight} ${fontSize * dpr}px ${fontStyle}`
+        ctx.font = `${fontWeight} ${fontSize}px ${fontStyle}`
         String(font.text).split('\n').forEach((line, lineIndex) => {
           ctx.fillText(line, getFontX(line), getFontY(font, radius, lineIndex))
         })
@@ -513,20 +509,6 @@ export default class LuckyWheel extends Lucky {
   }
 
   /**
-   * 获取长度
-   * @param length 将要转换的长度
-   * @return 返回长度
-   */
-  private getLength (length: string | number | undefined): number {
-    if (isExpectType(length, 'number')) return length as number
-    if (isExpectType(length, 'string')) return this.changeUnits(
-      length as string,
-      { clean: true }
-    )
-    return 0
-  }
-
-  /**
    * 获取相对宽度
    * @param length 将要转换的宽度
    * @param width 宽度计算百分比
@@ -536,11 +518,8 @@ export default class LuckyWheel extends Lucky {
     length: string | number | undefined,
     width = this.prizeRadian * this.prizeRadius
   ): number {
-    if (isExpectType(length, 'number')) return (length as number) * this.dpr
-    if (isExpectType(length, 'string')) return this.changeUnits(
-      length as string,
-      { denominator: width }
-    )
+    if (isExpectType(length, 'number')) return (length as number)
+    if (isExpectType(length, 'string')) return this.changeUnits(length as string, width)
     return 0
   }
 
@@ -554,11 +533,8 @@ export default class LuckyWheel extends Lucky {
     length: string | number | undefined,
     height = this.prizeRadius
   ): number {
-    if (isExpectType(length, 'number')) return (length as number) * this.dpr
-    if (isExpectType(length, 'string')) return this.changeUnits(
-      length as string,
-      { denominator: height }
-    )
+    if (isExpectType(length, 'number')) return (length as number)
+    if (isExpectType(length, 'string')) return this.changeUnits(length as string, height)
     return 0
   }
 

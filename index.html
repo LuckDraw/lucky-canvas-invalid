@@ -14,28 +14,5 @@
   <ul>
     <li><a href="./examples/yyjk/index.html">九宫格抽奖 Demo</a></li>
   </ul>
-  <canvas id="canvas" style="border: 1px solid red;"></canvas>
-  <script>
-    const dpr = window.devicePixelRatio
-    const ctx = canvas.getContext('2d')
-    const width = 300 * dpr
-    const height = 150 * dpr
-    console.log(dpr)
-    const compute = (len) => {
-      return (len * dpr - len) / (len * dpr) * (dpr / 2) * 100
-    }
-    canvas.width = width
-    canvas.height = height
-    canvas.style.width = `${width}px`
-    canvas.style.height = `${height}px`
-    canvas.style.transform = `scale(${1 / dpr}) translate(
-      ${-compute(width)}%, ${-compute(height)}%
-    )`
-    ctx.scale(dpr, dpr)
-    ctx.beginPath()
-    ctx.fillStyle = '#000'
-    ctx.arc(0, 75, 75, 0, Math.PI*2, true)
-    ctx.fill()
-  </script>
 </body>
 </html>
