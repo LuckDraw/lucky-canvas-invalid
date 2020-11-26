@@ -481,7 +481,7 @@ export default class LuckyGrid extends Lucky {
    */
   public play (): void {
     if (this.startTime) return
-    clearInterval(this.timer)
+    this.clearInterval(this.timer)
     this.cAF(this.animationId)
     this.startTime = Date.now()
     this.prizeFlag = undefined
@@ -549,7 +549,7 @@ export default class LuckyGrid extends Lucky {
    * 开启中奖标识自动游走
    */
   public walk (): void {
-    clearInterval(this.timer)
+    this.clearInterval(this.timer)
     this.timer = this.setInterval(() => {
       this.currIndex += 1
       this.draw()
