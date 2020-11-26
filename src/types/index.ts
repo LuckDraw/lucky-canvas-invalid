@@ -16,3 +16,13 @@ export interface ImgType {
   width?: string
   height?: string
 }
+
+export interface ConfigType {
+  nodeType: number
+  el?: string
+  divElement?: HTMLDivElement
+  canvasElement?: HTMLCanvasElement
+  ctx: CanvasRenderingContext2D
+  width: number
+  height: number
+}

@@ -1,4 +1,5 @@
 import Lucky from './lucky'
+import { ConfigType } from '../types/index'
 import LuckyWheelConfig, {
   PrizeFontType, PrizeImgType,
   ButtonFontType, ButtonImgType,
@@ -17,11 +18,11 @@ import { quad } from '../utils/tween'
 export default class LuckyWheel extends Lucky {
   /**
    * 大转盘构造器
-   * @param el 元素标识
+   * @param config 元素标识
    * @param data 抽奖配置项
    */
-  constructor (el: string | HTMLDivElement, data: LuckyWheelConfig = {}) {
-    super(el)
+  constructor (config: string | HTMLDivElement | ConfigType, data: LuckyWheelConfig = {}) {
+    super(config)
     this.initData(data)
     this.initComputed()
     this.initWatch()
@@ -185,17 +186,17 @@ export default class LuckyWheel extends Lucky {
    * @param { Array<ImgType[]> } willUpdateImgs 需要更新的图片
    */
   public init (willUpdateImgs: Array<ImgType[] | undefined>): void {
-    const { ctx } = this
+    const { config, ctx } = this
     this.setDpr()
     this.setHTMLFontSize()
     this.zoomCanvas()
-    this.Radius = Math.min(this.boxWidth, this.boxHeight) / 2
+    this.Radius = Math.min(config.width, config.height) / 2
     ctx.translate(this.Radius, this.Radius)
     const endCallBack = (): void => {
       // 开始绘制
       this.draw()
       // 防止多次绑定点击事件
-      this.canvas.onclick = e => {
+      if (config.canvasElement) config.canvasElement.onclick = e => {
         ctx.beginPath()
         ctx.arc(0, 0, this.maxBtnRadius, 0, Math.PI * 2, false)
         if (!ctx.isPointInPath(e.offsetX, e.offsetY)) return

@@ -1,4 +1,5 @@
 import Lucky from './lucky'
+import { ConfigType } from '../types/index'
 import LuckyGridConfig, {
   PrizeFontType, PrizeImgType,
   ButtonFontType, ButtonImgType,
@@ -22,11 +23,11 @@ type ButtonType = CellType<ButtonFontType, ButtonImgType>
 export default class LuckyGrid extends Lucky {
   /**
    * 九宫格构造器
-   * @param el 元素标识
+   * @param config 元素标识
    * @param data 抽奖配置项
    */
-  constructor (el: string | HTMLDivElement, data: LuckyGridConfig = {}) {
-    super(el)
+  constructor (config: string | HTMLDivElement | ConfigType, data: LuckyGridConfig = {}) {
+    super(config)
     this.initData(data)
     this.initComputed()
     this.initWatch()
@@ -211,7 +212,7 @@ export default class LuckyGrid extends Lucky {
    * @param willUpdateImgs 需要更新的图片
    */
   public init (willUpdateImgs: Array<CellImgType[] | undefined>): void {
-    const { ctx, button } = this
+    const { config, ctx, button } = this
     this.setDpr()
     this.setHTMLFontSize()
     this.zoomCanvas()
@@ -221,7 +222,7 @@ export default class LuckyGrid extends Lucky {
       // 中奖标识开始游走
       this.demo && this.walk()
       // 点击按钮开始, 这里不能使用 addEventListener
-      if (button) this.canvas.onclick = e => {
+      if (button && config.canvasElement) config.canvasElement.onclick = e => {
         const [x, y, width, height] = this.getGeometricProperty([
           button.x,
           button.y,
@@ -327,9 +328,9 @@ export default class LuckyGrid extends Lucky {
    * 绘制九宫格抽奖
    */
   protected draw (): void {
-    const { ctx, _defaultConfig, _defaultStyle, _activeStyle } = this
+    const { config, ctx, _defaultConfig, _defaultStyle, _activeStyle } = this
     // 清空画布
-    ctx.clearRect(0, 0, this.boxWidth, this.boxWidth)
+    ctx.clearRect(0, 0, config.width, config.height)
     // 合并奖品和按钮
     this.cells = [...this.prizes]
     if (this.button) this.cells[this.cols * this.rows - 1] = this.button
@@ -349,7 +350,7 @@ export default class LuckyGrid extends Lucky {
         w: w - paddingLeft - paddingRight,
         h: h - paddingTop - paddingBottom
       }
-    }, { x: 0, y: 0, w: this.boxWidth, h: this.boxHeight })
+    }, { x: 0, y: 0, w: config.width, h: config.height })
     // 计算单一奖品格子的宽度和高度
     this.cellWidth = (this.prizeArea.w - _defaultConfig.gutter * (this.cols - 1)) / this.cols
     this.cellHeight = (this.prizeArea.h - _defaultConfig.gutter * (this.rows - 1)) / this.rows

@@ -1,21 +1,35 @@
 import { isExpectType } from '../utils/index'
+import { ConfigType } from '../types/index'
 export default class Lucky {
-  constructor (el: string | HTMLDivElement) {
+  /**
+   * 公共构造器
+   * @param config 
+   */
+  constructor (config: string | HTMLDivElement | ConfigType) {
     this.setDpr()
     this.setHTMLFontSize()
-    this.resetArrayPropo()
-    this.box = typeof el === 'string'
-      ? document.querySelector(el) as HTMLDivElement : el
-    this.canvas = document.createElement('canvas')
-    this.box.appendChild(this.canvas)
-    this.ctx = this.canvas.getContext('2d')!
+    this.resetArrayProto()
+    // 兼容代码开始: 为了处理 v1.0.6 版本在这里传入了一个 dom
+    if (typeof config === 'string') config = { el: config } as ConfigType
+    else if (config.nodeType === 1) config = { el: '', divElement: config } as ConfigType
+    config = config as ConfigType
+    // 兼容代码结束
+    if (config.el) config.divElement = document.querySelector(config.el) as HTMLDivElement
+    if (config.divElement) {
+      config.width = config.divElement.offsetWidth
+      config.height = config.divElement.offsetHeight
+      config.canvasElement = document.createElement('canvas')
+      config.divElement.appendChild(config.canvasElement)
+    }
+    if (config.width) config.width = this.getLength(config.width)
+    if (config.height) config.height = this.getLength(config.height)
+    if (config.canvasElement) config.ctx = config.canvasElement.getContext('2d')!
+    this.ctx = config.ctx as CanvasRenderingContext2D
+    this.config = config
+    if (!config.ctx || !config.width || !config.height) return
   }
-
-  protected readonly box: HTMLDivElement
-  protected readonly canvas: HTMLCanvasElement
+  protected readonly config: ConfigType
   protected readonly ctx: CanvasRenderingContext2D
-  protected boxWidth: number = 0
-  protected boxHeight: number = 0
   protected htmlFontSize: number = 16
   protected dpr: number = 1
   private subs: object = {}
@@ -38,16 +52,18 @@ export default class Lucky {
    * 根据 dpr 缩放 canvas 并处理位移
    */
   protected zoomCanvas (): void {
-    const { box, canvas, ctx, dpr } = this
+    const { config, ctx, dpr } = this
+    const { divElement, canvasElement } = config
     const compute = (len: number) => (len * dpr - len) / (len * dpr) * (dpr / 2) * 100
-    this.boxWidth = box.offsetWidth
-    this.boxHeight = box.offsetHeight
-    canvas.width = this.boxWidth * dpr
-    canvas.height = this.boxHeight * dpr
-    canvas.style.width = `${canvas.width}px`
-    canvas.style.height = `${canvas.height}px`
-    canvas.style.transform = `scale(${1 / dpr}) translate(
-      ${-compute(canvas.width)}%, ${-compute(canvas.height)}%
+    if (!divElement || !canvasElement) return
+    config.width = divElement.offsetWidth
+    config.height = divElement.offsetHeight
+    canvasElement.width = config.width * dpr
+    canvasElement.height = config.height * dpr
+    canvasElement.style.width = `${canvasElement.width}px`
+    canvasElement.style.height = `${canvasElement.height}px`
+    canvasElement.style.transform = `scale(${1 / dpr}) translate(
+      ${-compute(canvasElement.width)}%, ${-compute(canvasElement.height)}%
     )`
     ctx.scale(dpr, dpr)
   }
@@ -165,7 +181,7 @@ export default class Lucky {
   /**
    * 重写数组的原型方法
    */
-  private resetArrayPropo () {
+  private resetArrayProto () {
     const _this = this
     const oldArrayProto = Array.prototype
     const newArrayProto = Object.create(oldArrayProto)
