@@ -482,7 +482,7 @@ export default class LuckyGrid extends Lucky {
   public play (): void {
     if (this.startTime) return
     clearInterval(this.timer)
-    cancelAnimationFrame(this.animationId)
+    this.cAF(this.animationId)
     this.startTime = Date.now()
     this.prizeFlag = undefined
     this.run()
@@ -521,12 +521,12 @@ export default class LuckyGrid extends Lucky {
           break
         }
       }
-      cancelAnimationFrame(this.animationId)
+      this.cAF(this.animationId)
       return this.slowDown()
     }
     this.currIndex = (currIndex + quad.easeIn(interval, 0.1, _defaultConfig.speed, _defaultConfig.accelerationTime)) % prizes.length
     this.draw()
-    this.animationId = window.requestAnimationFrame(this.run.bind(this, num + 1))
+    this.animationId = this.rAF(this.run.bind(this, num + 1))
   }
 
   /**
@@ -538,11 +538,11 @@ export default class LuckyGrid extends Lucky {
     if (interval > _defaultConfig.decelerationTime) {
       this.startTime = 0
       this.endCallback?.({...prizes.find((prize, index) => index === prizeFlag)})
-      return cancelAnimationFrame(this.animationId)
+      return this.cAF(this.animationId)
     }
     this.currIndex = quad.easeOut(interval, stopIndex, endIndex, _defaultConfig.decelerationTime) % prizes.length
     this.draw()
-    this.animationId = window.requestAnimationFrame(this.slowDown.bind(this))
+    this.animationId = this.rAF(this.slowDown.bind(this))
   }
 
   /**
@@ -550,7 +550,7 @@ export default class LuckyGrid extends Lucky {
    */
   public walk (): void {
     clearInterval(this.timer)
-    this.timer = window.setInterval(() => {
+    this.timer = this.setInterval(() => {
       this.currIndex += 1
       this.draw()
     }, 1300)

@@ -446,7 +446,7 @@ export default class LuckyWheel extends Lucky {
   public play (): void {
     // 再次拦截, 因为play是可以异步调用的
     if (this.startTime) return
-    cancelAnimationFrame(this.animationId)
+    this.cAF(this.animationId)
     this.startTime = Date.now()
     this.prizeFlag = undefined
     this.run()
@@ -485,12 +485,12 @@ export default class LuckyWheel extends Lucky {
           break
         }
       }
-      cancelAnimationFrame(this.animationId)
+      this.cAF(this.animationId)
       return this.slowDown()
     }
     this.rotateDeg = (rotateDeg + quad.easeIn(interval, 0, _defaultConfig.speed, _defaultConfig.accelerationTime)) % 360
     this.draw()
-    this.animationId = window.requestAnimationFrame(this.run.bind(this, num + 1))
+    this.animationId = this.rAF(this.run.bind(this, num + 1))
   }
 
   /**
@@ -502,11 +502,11 @@ export default class LuckyWheel extends Lucky {
     if (interval >= _defaultConfig.decelerationTime) {
       this.startTime = 0
       this.endCallback?.({...prizes.find((prize, index) => index === prizeFlag)})
-      return cancelAnimationFrame(this.animationId)
+      return this.cAF(this.animationId)
     }
     this.rotateDeg = quad.easeOut(interval, stopDeg, endDeg, _defaultConfig.decelerationTime) % 360
     this.draw()
-    this.animationId = window.requestAnimationFrame(this.slowDown.bind(this))
+    this.animationId = this.rAF(this.slowDown.bind(this))
   }
 
   /**

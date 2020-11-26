@@ -9,6 +9,7 @@ export default class Lucky {
     this.setDpr()
     this.setHTMLFontSize()
     this.resetArrayProto()
+    this.initWindowFunction()
     // 兼容代码开始: 为了处理 v1.0.6 版本在这里传入了一个 dom
     if (typeof config === 'string') config = { el: config } as ConfigType
     else if (config.nodeType === 1) config = { el: '', divElement: config } as ConfigType
@@ -28,16 +29,21 @@ export default class Lucky {
     this.config = config
     if (!config.ctx || !config.width || !config.height) return
   }
+
   protected readonly config: ConfigType
   protected readonly ctx: CanvasRenderingContext2D
   protected htmlFontSize: number = 16
   protected dpr: number = 1
   private subs: object = {}
-
+  protected rAF: Function = function () {}
+  protected cAF: Function = function () {}
+  protected setInterval: Function = function () {}
+  
   /**
    * 设备像素比
    */
   protected setDpr (): void {
+    if (!window) return
     (window as any).dpr = this.dpr = (window.devicePixelRatio || 2 ) * 1.3
   }
 
@@ -45,7 +51,18 @@ export default class Lucky {
    * 根标签的字体大小
    */
   protected setHTMLFontSize (): void {
+    if (!window) return
     this.htmlFontSize = +window.getComputedStyle(document.documentElement).fontSize.slice(0, -2)
+  }
+
+  /**
+   * 从 window 对象上获取一些方法
+   */
+  private initWindowFunction (): void {
+    if (!window) return
+    this.rAF = window.requestAnimationFrame
+    this.cAF = window.cancelAnimationFrame
+    this.setInterval = window.setInterval
   }
 
   /**
