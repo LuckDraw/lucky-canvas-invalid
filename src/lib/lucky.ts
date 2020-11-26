@@ -114,6 +114,9 @@ export default class Lucky {
         case 'rem':
           num *= this.htmlFontSize
           break
+        case 'rpx':
+          num *= wx.getSystemInfoSync().windowWidth / 750
+          break
         default:
           num *= 1
           break
