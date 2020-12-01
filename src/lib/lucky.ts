@@ -38,7 +38,8 @@ export default class Lucky {
   protected rAF: Function = function () {}
   protected cAF: Function = function () {}
   protected setInterval: Function = function () {}
-  
+  protected clearInterval: Function = function () {}
+
   /**
    * 设备像素比
    */
@@ -63,6 +64,7 @@ export default class Lucky {
     this.rAF = window.requestAnimationFrame
     this.cAF = window.cancelAnimationFrame
     this.setInterval = window.setInterval
+    this.clearInterval = window.clearInterval
   }
 
   /**
@@ -115,7 +117,7 @@ export default class Lucky {
           num *= this.htmlFontSize
           break
         case 'rpx':
-          num *= wx.getSystemInfoSync().windowWidth / 750
+          num *= Lucky.rpx2px(num)
           break
         default:
           num *= 1
@@ -123,6 +125,26 @@ export default class Lucky {
       }
       return num
     }))
+  }
+
+  /**
+   * 对微信小程序暴露 px 转 rpx 的方法
+   * @param value 输入px
+   * @return 返回rpx
+   */
+  static px2rpx (value: number): number {
+    if (!wx) return value
+    return 750 / wx.getSystemInfoSync().windowWidth * value
+  }
+
+  /**
+   * 对微信小程序暴露 rpx 转 px 的方法
+   * @param value 输入rpx
+   * @return 返回px
+   */
+  static rpx2px (value: number): number {
+    if (!wx) return value
+    return wx.getSystemInfoSync().windowWidth / 750 * value
   }
 
   /**

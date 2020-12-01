@@ -444,9 +444,10 @@ export default class LuckyWheel extends Lucky {
    * 对外暴露: 开始抽奖方法
    */
   public play (): void {
+    const { cAF } = this
     // 再次拦截, 因为play是可以异步调用的
     if (this.startTime) return
-    this.cAF(this.animationId)
+    cAF(this.animationId)
     this.startTime = Date.now()
     this.prizeFlag = undefined
     this.run()
@@ -465,7 +466,7 @@ export default class LuckyWheel extends Lucky {
    * @param num 记录帧动画执行多少次
    */
   private run (num: number = 0): void {
-    const { prizeFlag, prizeDeg, rotateDeg, _defaultConfig } = this
+    const { rAF, cAF, prizeFlag, prizeDeg, rotateDeg, _defaultConfig } = this
     let interval = Date.now() - this.startTime
     // 先完全旋转, 再停止
     if (interval >= _defaultConfig.accelerationTime && prizeFlag !== undefined) {
@@ -485,28 +486,28 @@ export default class LuckyWheel extends Lucky {
           break
         }
       }
-      this.cAF(this.animationId)
+      cAF(this.animationId)
       return this.slowDown()
     }
     this.rotateDeg = (rotateDeg + quad.easeIn(interval, 0, _defaultConfig.speed, _defaultConfig.accelerationTime)) % 360
     this.draw()
-    this.animationId = this.rAF(this.run.bind(this, num + 1))
+    this.animationId = rAF(this.run.bind(this, num + 1))
   }
 
   /**
    * 缓慢停止的方法
    */
   private slowDown (): void {
-    const { prizes, prizeFlag, stopDeg, endDeg, _defaultConfig } = this
+    const { rAF, cAF, prizes, prizeFlag, stopDeg, endDeg, _defaultConfig } = this
     let interval = Date.now() - this.endTime
     if (interval >= _defaultConfig.decelerationTime) {
       this.startTime = 0
       this.endCallback?.({...prizes.find((prize, index) => index === prizeFlag)})
-      return this.cAF(this.animationId)
+      return cAF(this.animationId)
     }
     this.rotateDeg = quad.easeOut(interval, stopDeg, endDeg, _defaultConfig.decelerationTime) % 360
     this.draw()
-    this.animationId = this.rAF(this.slowDown.bind(this))
+    this.animationId = rAF(this.slowDown.bind(this))
   }
 
   /**
