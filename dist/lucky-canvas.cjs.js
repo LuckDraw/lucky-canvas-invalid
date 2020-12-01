@@ -251,7 +251,7 @@ var Lucky = /** @class */ (function () {
                     num *= _this_1.htmlFontSize;
                     break;
                 case 'rpx':
-                    num *= Lucky.rpx2px(num);
+                    num = _this_1.rpx2px(num);
                     break;
                 default:
                     num *= 1;
@@ -261,21 +261,25 @@ var Lucky = /** @class */ (function () {
         }));
     };
     /**
-     * 对微信小程序暴露 px 转 rpx 的方法
+     * px 转 rpx 的方法
      * @param value 输入px
      * @return 返回rpx
      */
-    Lucky.px2rpx = function (value) {
+    Lucky.prototype.px2rpx = function (value) {
+        if (typeof value === 'string')
+            value = Number(value.replace(/[a-z]*/g, ''));
         if (!wx)
             return value;
         return 750 / wx.getSystemInfoSync().windowWidth * value;
     };
     /**
-     * 对微信小程序暴露 rpx 转 px 的方法
+     * rpx 转 px 的方法
      * @param value 输入rpx
      * @return 返回px
      */
-    Lucky.rpx2px = function (value) {
+    Lucky.prototype.rpx2px = function (value) {
+        if (typeof value === 'string')
+            value = Number(value.replace(/[a-z]*/g, ''));
         if (!wx)
             return value;
         return wx.getSystemInfoSync().windowWidth / 750 * value;
