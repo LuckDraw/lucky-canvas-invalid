@@ -19,6 +19,9 @@
       "dom",
       "dom.iterable",
       "scripthost"
+    ],
+    "typeRoots": [
+      "./typings"
     ]
   },
   "exclude": [
