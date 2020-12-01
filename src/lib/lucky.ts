@@ -6,10 +6,6 @@ export default class Lucky {
    * @param config 
    */
   constructor (config: string | HTMLDivElement | ConfigType) {
-    this.setDpr()
-    this.setHTMLFontSize()
-    this.resetArrayProto()
-    this.initWindowFunction()
     // 兼容代码开始: 为了处理 v1.0.6 版本在这里传入了一个 dom
     if (typeof config === 'string') config = { el: config } as ConfigType
     else if (config.nodeType === 1) config = { el: '', divElement: config } as ConfigType
@@ -27,7 +23,13 @@ export default class Lucky {
     if (config.canvasElement) config.ctx = config.canvasElement.getContext('2d')!
     this.ctx = config.ctx as CanvasRenderingContext2D
     this.config = config
+    // 如果最后得不到 canvas 上下文那就无法进行绘制
     if (!config.ctx || !config.width || !config.height) return
+    // 初始化
+    this.setDpr()
+    this.setHTMLFontSize()
+    this.resetArrayProto()
+    this.initWindowFunction()
   }
 
   protected readonly config: ConfigType
@@ -36,7 +38,7 @@ export default class Lucky {
   protected dpr: number = 1
   private subs: object = {}
   protected rAF: Function = function () {}
-  protected cAF: Function = function () {}
+  protected setTimeout: Function = function () {}
   protected setInterval: Function = function () {}
   protected clearInterval: Function = function () {}
 
@@ -60,11 +62,20 @@ export default class Lucky {
    * 从 window 对象上获取一些方法
    */
   private initWindowFunction (): void {
-    if (!window) return
-    this.rAF = window.requestAnimationFrame
-    this.cAF = window.cancelAnimationFrame
-    this.setInterval = window.setInterval
-    this.clearInterval = window.clearInterval
+    if (window) {
+      this.rAF = window.requestAnimationFrame
+      this.setInterval = window.setInterval
+      this.clearInterval = window.clearInterval
+      return
+    }
+    if (this.config.rAF) {
+      this.rAF = this.config.rAF
+    } else if (this.config.setTimeout) {
+      const timeout = this.config.setTimeout
+      this.rAF = (callback: Function): number => timeout(callback, 16)
+    } else {
+      this.rAF = (callback: Function): number => setTimeout(callback, 16)
+    }
   }
 
   /**

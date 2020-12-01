@@ -480,10 +480,9 @@ export default class LuckyGrid extends Lucky {
    * 对外暴露: 开始抽奖方法
    */
   public play (): void {
-    const { cAF, clearInterval } = this
+    const { clearInterval } = this
     if (this.startTime) return
     clearInterval(this.timer)
-    cAF(this.animationId)
     this.startTime = Date.now()
     this.prizeFlag = undefined
     this.run()
@@ -502,7 +501,7 @@ export default class LuckyGrid extends Lucky {
    * @param num 记录帧动画执行多少次
    */
   private run (num: number = 0): void {
-    const { rAF, cAF, currIndex, prizes, prizeFlag, startTime, _defaultConfig } = this
+    const { rAF, currIndex, prizes, prizeFlag, startTime, _defaultConfig } = this
     let interval = Date.now() - startTime
     // 先完全旋转, 再停止
     if (interval >= _defaultConfig.accelerationTime && prizeFlag !== undefined) {
@@ -522,7 +521,6 @@ export default class LuckyGrid extends Lucky {
           break
         }
       }
-      cAF(this.animationId)
       return this.slowDown()
     }
     this.currIndex = (currIndex + quad.easeIn(interval, 0.1, _defaultConfig.speed, _defaultConfig.accelerationTime)) % prizes.length
@@ -534,12 +532,12 @@ export default class LuckyGrid extends Lucky {
    * 缓慢停止的方法
    */
   private slowDown (): void {
-    const { rAF, cAF, prizes, prizeFlag, stopIndex, endIndex, _defaultConfig } = this
+    const { rAF, prizes, prizeFlag, stopIndex, endIndex, _defaultConfig } = this
     let interval = Date.now() - this.endTime
     if (interval > _defaultConfig.decelerationTime) {
       this.startTime = 0
       this.endCallback?.({...prizes.find((prize, index) => index === prizeFlag)})
-      return cAF(this.animationId)
+      return
     }
     this.currIndex = quad.easeOut(interval, stopIndex, endIndex, _defaultConfig.decelerationTime) % prizes.length
     this.draw()

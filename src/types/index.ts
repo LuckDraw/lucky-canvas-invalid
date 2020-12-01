@@ -25,4 +25,8 @@ export interface ConfigType {
   ctx: CanvasRenderingContext2D
   width: number
   height: number
+  rAF?: Function
+  setTimeout?: Function
+  setInterval: Function
+  clearInterval: Function
 }
