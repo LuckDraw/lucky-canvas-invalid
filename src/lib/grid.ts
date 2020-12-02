@@ -448,6 +448,7 @@ export default class LuckyGrid extends Lucky {
         })
       })
     })
+    if (ctx.draw) ctx.draw()
   }
 
   /**

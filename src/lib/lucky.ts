@@ -145,8 +145,9 @@ export default class Lucky {
    */
   px2rpx (value: string | number): number {
     if (typeof value === 'string') value = Number(value.replace(/[a-z]*/g, ''))
-    if (!wx) return value
-    return 750 / wx.getSystemInfoSync().windowWidth * value
+    if (uni) return 750 / uni.getSystemInfoSync().windowWidth * value
+    if (wx) return 750 / wx.getSystemInfoSync().windowWidth * value
+    return value
   }
 
   /**
@@ -156,8 +157,9 @@ export default class Lucky {
    */
   rpx2px (value: string | number): number {
     if (typeof value === 'string') value = Number(value.replace(/[a-z]*/g, ''))
-    if (!wx) return value
-    return wx.getSystemInfoSync().windowWidth / 750 * value
+    if (uni) return uni.getSystemInfoSync().windowWidth / 750 * value
+    if (wx) return wx.getSystemInfoSync().windowWidth / 750 * value
+    return value
   }
 
   /**
