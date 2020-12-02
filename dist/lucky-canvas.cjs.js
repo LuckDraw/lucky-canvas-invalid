@@ -140,13 +140,9 @@ var Lucky = /** @class */ (function () {
         this.dpr = 1;
         this.subs = {};
         this.rAF = function () { };
-        this.cAF = function () { };
+        this.setTimeout = function () { };
         this.setInterval = function () { };
         this.clearInterval = function () { };
-        this.setDpr();
-        this.setHTMLFontSize();
-        this.resetArrayProto();
-        this.initWindowFunction();
         // 兼容代码开始: 为了处理 v1.0.6 版本在这里传入了一个 dom
         if (typeof config === 'string')
             config = { el: config };
@@ -170,8 +166,14 @@ var Lucky = /** @class */ (function () {
             config.ctx = config.canvasElement.getContext('2d');
         this.ctx = config.ctx;
         this.config = config;
+        // 如果最后得不到 canvas 上下文那就无法进行绘制
         if (!config.ctx || !config.width || !config.height)
             return;
+        // 初始化
+        this.setDpr();
+        this.setHTMLFontSize();
+        this.resetArrayProto();
+        this.initWindowFunction();
     }
     /**
      * 设备像素比
@@ -193,12 +195,22 @@ var Lucky = /** @class */ (function () {
      * 从 window 对象上获取一些方法
      */
     Lucky.prototype.initWindowFunction = function () {
-        if (!window)
+        if (window) {
+            this.rAF = window.requestAnimationFrame;
+            this.setInterval = window.setInterval;
+            this.clearInterval = window.clearInterval;
             return;
-        this.rAF = window.requestAnimationFrame;
-        this.cAF = window.cancelAnimationFrame;
-        this.setInterval = window.setInterval;
-        this.clearInterval = window.clearInterval;
+        }
+        if (this.config.rAF) {
+            this.rAF = this.config.rAF;
+        }
+        else if (this.config.setTimeout) {
+            var timeout_1 = this.config.setTimeout;
+            this.rAF = function (callback) { return timeout_1(callback, 16); };
+        }
+        else {
+            this.rAF = function (callback) { return setTimeout(callback, 16); };
+        }
     };
     /**
      * 根据 dpr 缩放 canvas 并处理位移
@@ -268,9 +280,11 @@ var Lucky = /** @class */ (function () {
     Lucky.prototype.px2rpx = function (value) {
         if (typeof value === 'string')
             value = Number(value.replace(/[a-z]*/g, ''));
-        if (!wx)
-            return value;
-        return 750 / wx.getSystemInfoSync().windowWidth * value;
+        if (uni)
+            return 750 / uni.getSystemInfoSync().windowWidth * value;
+        if (wx)
+            return 750 / wx.getSystemInfoSync().windowWidth * value;
+        return value;
     };
     /**
      * rpx 转 px 的方法
@@ -280,9 +294,11 @@ var Lucky = /** @class */ (function () {
     Lucky.prototype.rpx2px = function (value) {
         if (typeof value === 'string')
             value = Number(value.replace(/[a-z]*/g, ''));
-        if (!wx)
-            return value;
-        return wx.getSystemInfoSync().windowWidth / 750 * value;
+        if (uni)
+            return uni.getSystemInfoSync().windowWidth / 750 * value;
+        if (wx)
+            return wx.getSystemInfoSync().windowWidth / 750 * value;
+        return value;
     };
     /**
      * 更新数据并重新绘制 canvas 画布
@@ -835,6 +851,9 @@ var LuckyWheel = /** @class */ (function (_super) {
     LuckyWheel.prototype.draw = function () {
         var _this = this;
         var _a = this, ctx = _a.ctx, _defaultConfig = _a._defaultConfig, _defaultStyle = _a._defaultStyle;
+        // uniApp 的 draw 方法会初始化圆心
+        if (ctx.draw)
+            ctx.translate(this.Radius, this.Radius);
         ctx.clearRect(-this.Radius, -this.Radius, this.Radius * 2, this.Radius * 2);
         // 绘制blocks边框
         this.prizeRadius = this.blocks.reduce(function (radius, block) {
@@ -965,16 +984,16 @@ var LuckyWheel = /** @class */ (function (_super) {
                 });
             });
         });
+        if (ctx.draw)
+            ctx.draw();
     };
     /**
      * 对外暴露: 开始抽奖方法
      */
     LuckyWheel.prototype.play = function () {
-        var cAF = this.cAF;
         // 再次拦截, 因为play是可以异步调用的
         if (this.startTime)
             return;
-        cAF(this.animationId);
         this.startTime = Date.now();
         this.prizeFlag = undefined;
         this.run();
@@ -992,7 +1011,7 @@ var LuckyWheel = /** @class */ (function (_super) {
      */
     LuckyWheel.prototype.run = function (num) {
         if (num === void 0) { num = 0; }
-        var _a = this, rAF = _a.rAF, cAF = _a.cAF, prizeFlag = _a.prizeFlag, prizeDeg = _a.prizeDeg, rotateDeg = _a.rotateDeg, _defaultConfig = _a._defaultConfig;
+        var _a = this, rAF = _a.rAF, prizeFlag = _a.prizeFlag, prizeDeg = _a.prizeDeg, rotateDeg = _a.rotateDeg, _defaultConfig = _a._defaultConfig;
         var interval = Date.now() - this.startTime;
         // 先完全旋转, 再停止
         if (interval >= _defaultConfig.accelerationTime && prizeFlag !== undefined) {
@@ -1012,7 +1031,6 @@ var LuckyWheel = /** @class */ (function (_super) {
                     break;
                 }
             }
-            cAF(this.animationId);
             return this.slowDown();
         }
         this.rotateDeg = (rotateDeg + quad.easeIn(interval, 0, _defaultConfig.speed, _defaultConfig.accelerationTime)) % 360;
@@ -1024,12 +1042,12 @@ var LuckyWheel = /** @class */ (function (_super) {
      */
     LuckyWheel.prototype.slowDown = function () {
         var _a;
-        var _b = this, rAF = _b.rAF, cAF = _b.cAF, prizes = _b.prizes, prizeFlag = _b.prizeFlag, stopDeg = _b.stopDeg, endDeg = _b.endDeg, _defaultConfig = _b._defaultConfig;
+        var _b = this, rAF = _b.rAF, prizes = _b.prizes, prizeFlag = _b.prizeFlag, stopDeg = _b.stopDeg, endDeg = _b.endDeg, _defaultConfig = _b._defaultConfig;
         var interval = Date.now() - this.endTime;
         if (interval >= _defaultConfig.decelerationTime) {
             this.startTime = 0;
             (_a = this.endCallback) === null || _a === void 0 ? void 0 : _a.call(this, __assign({}, prizes.find(function (prize, index) { return index === prizeFlag; })));
-            return cAF(this.animationId);
+            return;
         }
         this.rotateDeg = quad.easeOut(interval, stopDeg, endDeg, _defaultConfig.decelerationTime) % 360;
         this.draw();
@@ -1483,6 +1501,8 @@ var LuckyGrid = /** @class */ (function (_super) {
                 });
             });
         });
+        if (ctx.draw)
+            ctx.draw();
     };
     /**
      * 处理背景色
@@ -1507,11 +1527,10 @@ var LuckyGrid = /** @class */ (function (_super) {
      * 对外暴露: 开始抽奖方法
      */
     LuckyGrid.prototype.play = function () {
-        var _a = this, cAF = _a.cAF, clearInterval = _a.clearInterval;
+        var clearInterval = this.clearInterval;
         if (this.startTime)
             return;
         clearInterval(this.timer);
-        cAF(this.animationId);
         this.startTime = Date.now();
         this.prizeFlag = undefined;
         this.run();
@@ -1529,7 +1548,7 @@ var LuckyGrid = /** @class */ (function (_super) {
      */
     LuckyGrid.prototype.run = function (num) {
         if (num === void 0) { num = 0; }
-        var _a = this, rAF = _a.rAF, cAF = _a.cAF, currIndex = _a.currIndex, prizes = _a.prizes, prizeFlag = _a.prizeFlag, startTime = _a.startTime, _defaultConfig = _a._defaultConfig;
+        var _a = this, rAF = _a.rAF, currIndex = _a.currIndex, prizes = _a.prizes, prizeFlag = _a.prizeFlag, startTime = _a.startTime, _defaultConfig = _a._defaultConfig;
         var interval = Date.now() - startTime;
         // 先完全旋转, 再停止
         if (interval >= _defaultConfig.accelerationTime && prizeFlag !== undefined) {
@@ -1549,7 +1568,6 @@ var LuckyGrid = /** @class */ (function (_super) {
                     break;
                 }
             }
-            cAF(this.animationId);
             return this.slowDown();
         }
         this.currIndex = (currIndex + quad.easeIn(interval, 0.1, _defaultConfig.speed, _defaultConfig.accelerationTime)) % prizes.length;
@@ -1561,12 +1579,12 @@ var LuckyGrid = /** @class */ (function (_super) {
      */
     LuckyGrid.prototype.slowDown = function () {
         var _a;
-        var _b = this, rAF = _b.rAF, cAF = _b.cAF, prizes = _b.prizes, prizeFlag = _b.prizeFlag, stopIndex = _b.stopIndex, endIndex = _b.endIndex, _defaultConfig = _b._defaultConfig;
+        var _b = this, rAF = _b.rAF, prizes = _b.prizes, prizeFlag = _b.prizeFlag, stopIndex = _b.stopIndex, endIndex = _b.endIndex, _defaultConfig = _b._defaultConfig;
         var interval = Date.now() - this.endTime;
         if (interval > _defaultConfig.decelerationTime) {
             this.startTime = 0;
             (_a = this.endCallback) === null || _a === void 0 ? void 0 : _a.call(this, __assign({}, prizes.find(function (prize, index) { return index === prizeFlag; })));
-            return cAF(this.animationId);
+            return;
         }
         this.currIndex = quad.easeOut(interval, stopIndex, endIndex, _defaultConfig.decelerationTime) % prizes.length;
         this.draw();
