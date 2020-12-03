@@ -199,7 +199,8 @@ export default class LuckyWheel extends Lucky {
     this.Radius = Math.min(config.width, config.height) / 2
     ctx.translate(this.Radius, this.Radius)
     const endCallBack = (): void => {
-      // 开始绘制
+      // 由于 uni-app 的奇怪渲染 bug, 这里需要绘制两次修正圆心
+      this.draw()
       this.draw()
       // 防止多次绑定点击事件
       if (config.canvasElement) config.canvasElement.onclick = e => {
@@ -219,7 +220,6 @@ export default class LuckyWheel extends Lucky {
         imgs.forEach((imgInfo, imgIndex) => {
           sum++
           this.loadAndCacheImg(cellIndex, imgIndex, () => {
-            console.log('???')
             num++
             if (sum === num) endCallBack.call(this)
           })
@@ -265,7 +265,6 @@ export default class LuckyWheel extends Lucky {
         src: imgInfo.src,
         success: (imgObj: UniImageType) => {
           this[imgName][cellIndex][imgIndex] = imgObj
-          console.log(`success imgName[${cellIndex}][${imgIndex}]`, imgObj)
           callBack.call(this)
         },
         fail: () => console.error('在 uni-app 的限制下 src 必须为一个字符串')
