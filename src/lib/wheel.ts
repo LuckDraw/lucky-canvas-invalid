@@ -15,6 +15,12 @@ import { isExpectType, removeEnter } from '../utils/index'
 import { getAngle, drawSector } from '../utils/math'
 import { quad } from '../utils/tween'
 
+interface UniImageType {
+  path: string
+  width: number
+  height: number
+}
+
 export default class LuckyWheel extends Lucky {
   /**
    * 大转盘构造器
@@ -70,8 +76,8 @@ export default class LuckyWheel extends Lucky {
   private prizeFlag: number | undefined // 中奖索引
   private animationId = 0               // 帧动画id
   private FPS = 16.6                    // 屏幕刷新率
-  private prizeImgs: Array<HTMLImageElement[]> = [[]]
-  private btnImgs: Array<HTMLImageElement[]> = [[]]
+  private prizeImgs: Array<HTMLImageElement[] | UniImageType> = [[]]
+  private btnImgs: Array<HTMLImageElement[] | UniImageType> = [[]]
   
   /**
    * 初始化数据
@@ -213,6 +219,7 @@ export default class LuckyWheel extends Lucky {
         imgs.forEach((imgInfo, imgIndex) => {
           sum++
           this.loadAndCacheImg(cellIndex, imgIndex, () => {
+            console.log('???')
             num++
             if (sum === num) endCallBack.call(this)
           })
@@ -245,7 +252,7 @@ export default class LuckyWheel extends Lucky {
     if (!imgInfo) return
     if (!this[imgName][cellIndex]) this[imgName][cellIndex] = []
     // 兼容代码
-    if (['WEB', 'UNI-H5'].includes(this.config.flag)) {
+    if (this.config.flag === 'WEB') {
       // 只有浏览器环境下才存在 Image 对象
       let imgObj = new Image()
       // 创建缓存
@@ -253,9 +260,16 @@ export default class LuckyWheel extends Lucky {
       imgObj.src = imgInfo.src
       imgObj.onload = () => callBack.call(this)
     } else if (this.config.flag.indexOf('UNI-') === 0) {
-      // uni-app 下直接读src
-      this[imgName][cellIndex][imgIndex] = imgInfo.src
-      callBack.call(this)
+      // uni-app 下通过方法获取图片对象
+      uni.getImageInfo({
+        src: imgInfo.src,
+        success: (imgObj: UniImageType) => {
+          this[imgName][cellIndex][imgIndex] = imgObj
+          console.log(`success imgName[${cellIndex}][${imgIndex}]`, imgObj)
+          callBack.call(this)
+        },
+        fail: () => console.error('在 uni-app 的限制下 src 必须为一个字符串')
+      })
     }
   }
 
@@ -358,12 +372,9 @@ export default class LuckyWheel extends Lucky {
         if (this.config.flag === 'WEB') {
           // 浏览器中直接绘制标签即可
           ctx.drawImage(prizeImg, imgX, imgY, trueWidth, trueHeight)
-        } else if (this.config.flag === 'UNI-H5') {
-          // 我真的无法理解 uni-app 的 H5 端不让绘制标签
-          ctx.drawImage(imgInfo.src, imgX, imgY, trueWidth, trueHeight)
-        } else if (this.config.flag.indexOf('UNI-MINI-') === 0) {
+        } else if (this.config.flag.indexOf('UNI-') === 0) {
           // 小程序中直接绘制一个路径
-          ctx.drawImage(prizeImg, imgX, imgY, trueWidth, trueHeight)
+          ctx.drawImage(prizeImg.path, imgX, imgY, trueWidth, trueHeight)
         }
       })
       // 逐行绘制文字
