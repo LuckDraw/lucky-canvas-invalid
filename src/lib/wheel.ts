@@ -243,13 +243,20 @@ export default class LuckyWheel extends Lucky {
     if (!cell || !cell.imgs) return
     const imgInfo = cell.imgs[imgIndex]
     if (!imgInfo) return
-    // 创建图片
-    let imgObj = new Image()
     if (!this[imgName][cellIndex]) this[imgName][cellIndex] = []
-    // 创建缓存
-    this[imgName][cellIndex][imgIndex] = imgObj
-    imgObj.src = imgInfo.src
-    imgObj.onload = () => callBack.call(this)
+    // 兼容代码
+    if (['WEB', 'UNI-H5'].includes(this.config.flag)) {
+      // 只有浏览器环境下才存在 Image 对象
+      let imgObj = new Image()
+      // 创建缓存
+      this[imgName][cellIndex][imgIndex] = imgObj
+      imgObj.src = imgInfo.src
+      imgObj.onload = () => callBack.call(this)
+    } else if (this.config.flag.indexOf('UNI-') === 0) {
+      // uni-app 下直接读src
+      this[imgName][cellIndex][imgIndex] = imgInfo.src
+      callBack.call(this)
+    }
   }
 
   /**
@@ -294,7 +301,7 @@ export default class LuckyWheel extends Lucky {
   protected draw (): void {
     const { ctx, _defaultConfig, _defaultStyle } = this
     // uniApp 的 draw 方法会初始化圆心
-    if (ctx.draw) ctx.translate(this.Radius, this.Radius)
+    if (this.config.flag.indexOf('UNI-') === 0) ctx.translate(this.Radius, this.Radius)
     ctx.clearRect(-this.Radius, -this.Radius, this.Radius * 2, this.Radius * 2)
     // 绘制blocks边框
     this.prizeRadius = this.blocks.reduce((radius, block) => {
@@ -346,13 +353,18 @@ export default class LuckyWheel extends Lucky {
         const [trueWidth, trueHeight] = this.computedWidthAndHeight(
           prizeImg, imgInfo, this.prizeRadian * this.prizeRadius, prizeHeight
         )
-        ctx.drawImage(
-          prizeImg,
-          this.getOffsetX(trueWidth),
-          this.getHeight(imgInfo.top, prizeHeight),
-          trueWidth,
-          trueHeight
-        )
+        const [imgX, imgY] = [this.getOffsetX(trueWidth), this.getHeight(imgInfo.top, prizeHeight)]
+        // 兼容代码
+        if (this.config.flag === 'WEB') {
+          // 浏览器中直接绘制标签即可
+          ctx.drawImage(prizeImg, imgX, imgY, trueWidth, trueHeight)
+        } else if (this.config.flag === 'UNI-H5') {
+          // 我真的无法理解 uni-app 的 H5 端不让绘制标签
+          ctx.drawImage(imgInfo.src, imgX, imgY, trueWidth, trueHeight)
+        } else if (this.config.flag.indexOf('UNI-MINI-') === 0) {
+          // 小程序中直接绘制一个路径
+          ctx.drawImage(prizeImg, imgX, imgY, trueWidth, trueHeight)
+        }
       })
       // 逐行绘制文字
       prize.fonts && prize.fonts.forEach(font => {
@@ -418,14 +430,9 @@ export default class LuckyWheel extends Lucky {
         const [trueWidth, trueHeight] = this.computedWidthAndHeight(
           btnImg, imgInfo, this.getHeight(btn.radius) * 2, this.getHeight(btn.radius) * 2
         )
-        // 绘制图片
-        ctx.drawImage(
-          btnImg,
-          this.getOffsetX(trueWidth),
-          this.getHeight(imgInfo.top, radius),
-          trueWidth,
-          trueHeight
-        )
+        const [imgX, imgY] = [this.getOffsetX(trueWidth), this.getHeight(imgInfo.top, radius)]
+        // 兼容代码
+        ctx.drawImage(btnImg, imgX, imgY, trueWidth, trueHeight)
       })
       // 绘制按钮文字
       btn.fonts && btn.fonts.forEach(font => {
@@ -440,7 +447,7 @@ export default class LuckyWheel extends Lucky {
         })
       })
     })
-    if (ctx.draw) ctx.draw()
+    if (this.config.flag.indexOf('UNI-') === 0) ctx.draw()
   }
 
   /**

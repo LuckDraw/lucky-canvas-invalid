@@ -11,6 +11,7 @@ export default class Lucky {
     else if (config.nodeType === 1) config = { el: '', divElement: config } as ConfigType
     config = config as ConfigType
     // 兼容代码结束
+    if (!config.flag) config.flag = 'WEB'
     if (config.el) config.divElement = document.querySelector(config.el) as HTMLDivElement
     if (config.divElement) {
       config.width = config.divElement.offsetWidth

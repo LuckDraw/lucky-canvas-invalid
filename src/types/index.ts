@@ -29,4 +29,5 @@ export interface ConfigType {
   setTimeout?: Function
   setInterval: Function
   clearInterval: Function
+  flag: 'WEB' | 'MINI-WX' | 'UNI-H5' | 'UNI-MINI-WX'
 }
