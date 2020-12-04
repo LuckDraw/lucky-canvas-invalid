@@ -10,16 +10,10 @@ import LuckyWheelConfig, {
   StartCallbackType,
   EndCallbackType
 } from '../types/wheel'
-import { FontType, ImgType } from '../types/index'
+import { FontType, ImgType, UniImageType } from '../types/index'
 import { isExpectType, removeEnter } from '../utils/index'
 import { getAngle, drawSector } from '../utils/math'
 import { quad } from '../utils/tween'
-
-interface UniImageType {
-  path: string
-  width: number
-  height: number
-}
 
 export default class LuckyWheel extends Lucky {
   /**
@@ -267,7 +261,7 @@ export default class LuckyWheel extends Lucky {
           this[imgName][cellIndex][imgIndex] = imgObj
           callBack.call(this)
         },
-        fail: () => console.error('在 uni-app 的限制下 src 必须为一个字符串')
+        fail: () => console.error('uni.getImageInfo 加载图片失败', imgInfo.src)
       })
     }
   }
@@ -367,14 +361,14 @@ export default class LuckyWheel extends Lucky {
           prizeImg, imgInfo, this.prizeRadian * this.prizeRadius, prizeHeight
         )
         const [imgX, imgY] = [this.getOffsetX(trueWidth), this.getHeight(imgInfo.top, prizeHeight)]
+        let drawImg
         // 兼容代码
-        if (this.config.flag === 'WEB') {
-          // 浏览器中直接绘制标签即可
-          ctx.drawImage(prizeImg, imgX, imgY, trueWidth, trueHeight)
-        } else if (this.config.flag.indexOf('UNI-') === 0) {
-          // 小程序中直接绘制一个路径
-          ctx.drawImage(prizeImg.path, imgX, imgY, trueWidth, trueHeight)
-        }
+        if (this.config.flag === 'WEB')
+          drawImg = prizeImg
+        else if (this.config.flag.indexOf('UNI-') === 0)
+          drawImg = prizeImg.path
+        // 绘制图片
+        ctx.drawImage(drawImg, imgX, imgY, trueWidth, trueHeight)
       })
       // 逐行绘制文字
       prize.fonts && prize.fonts.forEach(font => {
@@ -442,7 +436,13 @@ export default class LuckyWheel extends Lucky {
         )
         const [imgX, imgY] = [this.getOffsetX(trueWidth), this.getHeight(imgInfo.top, radius)]
         // 兼容代码
-        ctx.drawImage(btnImg, imgX, imgY, trueWidth, trueHeight)
+        let drawImg
+        if (this.config.flag === 'WEB') 
+          drawImg = btnImg
+        else if (this.config.flag.indexOf('UNI-') === 0)
+          drawImg = btnImg.path
+        // 绘制图片
+        ctx.drawImage(drawImg, imgX, imgY, trueWidth, trueHeight)
       })
       // 绘制按钮文字
       btn.fonts && btn.fonts.forEach(font => {

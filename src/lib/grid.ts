@@ -1,5 +1,5 @@
 import Lucky from './lucky'
-import { ConfigType } from '../types/index'
+import { ConfigType, UniImageType } from '../types/index'
 import LuckyGridConfig, {
   PrizeFontType, PrizeImgType,
   ButtonFontType, ButtonImgType,
@@ -89,10 +89,13 @@ export default class LuckyGrid extends Lucky {
   private prizeFlag: number | undefined // 中奖索引
   // 所有格子
   private cells: CellType<CellFontType, CellImgType>[] = []
-  // 图片缓存
-  private cellImgs: Array<{ defaultImg: HTMLImageElement, activeImg?: HTMLImageElement }[]> = []
   // 奖品区域几何信息
   private prizeArea: { x: number, y: number, w: number, h: number } | undefined
+  // 图片缓存
+  private cellImgs: Array<{
+    defaultImg: HTMLImageElement | UniImageType,
+    activeImg?: HTMLImageElement | UniImageType
+  }[]> = []
 
   /**
    * 初始化数据
@@ -269,24 +272,49 @@ export default class LuckyGrid extends Lucky {
     if (!prize || !prize.imgs) return
     const imgInfo = prize.imgs[imgIndex]
     if (!this.cellImgs[prizeIndex]) this.cellImgs[prizeIndex] = []
-    // 加载 defaultImg 默认图片
-    let defaultImg = new Image()
-    this.cellImgs[prizeIndex][imgIndex] = { defaultImg }
-    defaultImg.src = imgInfo.src
     let num = 0, sum = 1
-    defaultImg.onload = () => {
-      num++
-      num === sum && callBack.call(this)
+    // 加载 defaultImg 默认图片
+    if (this.config.flag === 'WEB') {
+      let defaultImg = new Image()
+      this.cellImgs[prizeIndex][imgIndex] = { defaultImg }
+      defaultImg.src = imgInfo.src
+      defaultImg.onload = () => {
+        num++
+        num === sum && callBack.call(this)
+      }
+    } else if (this.config.flag.indexOf('UNI-') === 0) {
+      uni.getImageInfo({
+        src: imgInfo.src,
+        success: (imgObj: UniImageType) => {
+          this.cellImgs[prizeIndex][imgIndex] = { defaultImg: imgObj }
+          num++
+          num === sum && callBack.call(this)
+        },
+        fail: () => console.error('uni.getImageInfo 加载图片失败', imgInfo.src)
+      })
     }
     // 如果有 activeImg 则多加载一张
     if (!imgInfo.hasOwnProperty('activeSrc')) return
     sum++
-    let activeImg = new Image()
-    this.cellImgs[prizeIndex][imgIndex].activeImg = activeImg
-    activeImg.src = (imgInfo as PrizeImgType).activeSrc!
-    activeImg.onload = () => {
-      num++
-      num === sum && callBack.call(this)
+    // 加载中奖图片
+    if (this.config.flag === 'WEB') {
+      let activeImg = new Image()
+      this.cellImgs[prizeIndex][imgIndex].activeImg = activeImg
+      activeImg.src = (imgInfo as PrizeImgType).activeSrc!
+      activeImg.onload = () => {
+        num++
+        num === sum && callBack.call(this)
+      }
+    } else if (this.config.flag.indexOf('UNI-') === 0) {
+      uni.getImageInfo({
+        src: (imgInfo as PrizeImgType).activeSrc!,
+        success: (imgObj: UniImageType) => {
+          this.cellImgs[prizeIndex][imgIndex].activeImg = imgObj
+          num++
+          num === sum && callBack.call(this)
+        },
+        fail: () => console.error('uni.getImageInfo 加载图片失败', (imgInfo as PrizeImgType).activeSrc!)
+      })
     }
   }
 
@@ -298,7 +326,7 @@ export default class LuckyGrid extends Lucky {
    * @return [渲染宽度, 渲染高度]
    */
   private computedWidthAndHeight (
-    imgObj: HTMLImageElement,
+    imgObj: HTMLImageElement | UniImageType,
     imgInfo: CellImgType,
     cell: CellType<CellFontType, CellImgType>
   ): [number, number] {
@@ -390,15 +418,18 @@ export default class LuckyGrid extends Lucky {
         if (!this.cellImgs[cellIndex]) return false
         const cellImg = this.cellImgs[cellIndex][imgIndex]
         if (!cellImg) return false
-        const renderImg: HTMLImageElement = (isActive && cellImg.activeImg) || cellImg.defaultImg
+        const renderImg = (isActive && cellImg.activeImg) || cellImg.defaultImg
         const [trueWidth, trueHeight] = this.computedWidthAndHeight(renderImg, imgInfo, prize)
-        ctx.drawImage(
-          renderImg,
-          x + this.getOffsetX(trueWidth, prize.col),
-          y + this.getHeight(imgInfo.top, prize.row),
-          trueWidth,
-          trueHeight
-        )
+        const [imgX, imgY] = [x + this.getOffsetX(trueWidth, prize.col), y + this.getHeight(imgInfo.top, prize.row)]
+        let drawImg
+        if (this.config.flag === 'WEB') {
+          // 浏览器中直接绘制标签即可
+          drawImg = renderImg
+        } else if (this.config.flag.indexOf('UNI-') === 0) {
+          // 小程序中直接绘制一个路径
+          drawImg = (renderImg as UniImageType).path
+        }
+        ctx.drawImage(drawImg, imgX, imgY, trueWidth, trueHeight)
       })
       // 绘制文字
       prize.fonts && prize.fonts.forEach(font => {

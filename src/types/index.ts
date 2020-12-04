@@ -31,3 +31,9 @@ export interface ConfigType {
   clearInterval: Function
   flag: 'WEB' | 'MINI-WX' | 'UNI-H5' | 'UNI-MINI-WX'
 }
+
+export interface UniImageType {
+  path: string
+  width: number
+  height: number
+}
