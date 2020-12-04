@@ -150,6 +150,8 @@ var Lucky = /** @class */ (function () {
             config = { el: '', divElement: config };
         config = config;
         // 兼容代码结束
+        if (!config.flag)
+            config.flag = 'WEB';
         if (config.el)
             config.divElement = document.querySelector(config.el);
         if (config.divElement) {
@@ -749,7 +751,8 @@ var LuckyWheel = /** @class */ (function (_super) {
         this.Radius = Math.min(config.width, config.height) / 2;
         ctx.translate(this.Radius, this.Radius);
         var endCallBack = function () {
-            // 开始绘制
+            // 由于 uni-app 的奇怪渲染 bug, 这里需要绘制两次修正圆心
+            _this.draw();
             _this.draw();
             // 防止多次绑定点击事件
             if (config.canvasElement)
@@ -804,14 +807,28 @@ var LuckyWheel = /** @class */ (function (_super) {
         var imgInfo = cell.imgs[imgIndex];
         if (!imgInfo)
             return;
-        // 创建图片
-        var imgObj = new Image();
         if (!this[imgName][cellIndex])
             this[imgName][cellIndex] = [];
-        // 创建缓存
-        this[imgName][cellIndex][imgIndex] = imgObj;
-        imgObj.src = imgInfo.src;
-        imgObj.onload = function () { return callBack.call(_this); };
+        // 兼容代码
+        if (this.config.flag === 'WEB') {
+            // 只有浏览器环境下才存在 Image 对象
+            var imgObj = new Image();
+            // 创建缓存
+            this[imgName][cellIndex][imgIndex] = imgObj;
+            imgObj.src = imgInfo.src;
+            imgObj.onload = function () { return callBack.call(_this); };
+        }
+        else if (this.config.flag.indexOf('UNI-') === 0) {
+            // uni-app 下通过方法获取图片对象
+            uni.getImageInfo({
+                src: imgInfo.src,
+                success: function (imgObj) {
+                    _this[imgName][cellIndex][imgIndex] = imgObj;
+                    callBack.call(_this);
+                },
+                fail: function () { return console.error('uni.getImageInfo 加载图片失败', imgInfo.src); }
+            });
+        }
     };
     /**
      * 计算图片的渲染宽高
@@ -852,7 +869,7 @@ var LuckyWheel = /** @class */ (function (_super) {
         var _this = this;
         var _a = this, ctx = _a.ctx, _defaultConfig = _a._defaultConfig, _defaultStyle = _a._defaultStyle;
         // uniApp 的 draw 方法会初始化圆心
-        if (ctx.draw)
+        if (this.config.flag.indexOf('UNI-') === 0)
             ctx.translate(this.Radius, this.Radius);
         ctx.clearRect(-this.Radius, -this.Radius, this.Radius * 2, this.Radius * 2);
         // 绘制blocks边框
@@ -899,7 +916,15 @@ var LuckyWheel = /** @class */ (function (_super) {
                 if (!prizeImg)
                     return;
                 var _a = _this.computedWidthAndHeight(prizeImg, imgInfo, _this.prizeRadian * _this.prizeRadius, prizeHeight), trueWidth = _a[0], trueHeight = _a[1];
-                ctx.drawImage(prizeImg, _this.getOffsetX(trueWidth), _this.getHeight(imgInfo.top, prizeHeight), trueWidth, trueHeight);
+                var _b = [_this.getOffsetX(trueWidth), _this.getHeight(imgInfo.top, prizeHeight)], imgX = _b[0], imgY = _b[1];
+                var drawImg;
+                // 兼容代码
+                if (_this.config.flag === 'WEB')
+                    drawImg = prizeImg;
+                else if (_this.config.flag.indexOf('UNI-') === 0)
+                    drawImg = prizeImg.path;
+                // 绘制图片
+                ctx.drawImage(drawImg, imgX, imgY, trueWidth, trueHeight);
             });
             // 逐行绘制文字
             prize.fonts && prize.fonts.forEach(function (font) {
@@ -968,8 +993,15 @@ var LuckyWheel = /** @class */ (function (_super) {
                     return;
                 // 计算图片真实宽高
                 var _a = _this.computedWidthAndHeight(btnImg, imgInfo, _this.getHeight(btn.radius) * 2, _this.getHeight(btn.radius) * 2), trueWidth = _a[0], trueHeight = _a[1];
+                var _b = [_this.getOffsetX(trueWidth), _this.getHeight(imgInfo.top, radius)], imgX = _b[0], imgY = _b[1];
+                // 兼容代码
+                var drawImg;
+                if (_this.config.flag === 'WEB')
+                    drawImg = btnImg;
+                else if (_this.config.flag.indexOf('UNI-') === 0)
+                    drawImg = btnImg.path;
                 // 绘制图片
-                ctx.drawImage(btnImg, _this.getOffsetX(trueWidth), _this.getHeight(imgInfo.top, radius), trueWidth, trueHeight);
+                ctx.drawImage(drawImg, imgX, imgY, trueWidth, trueHeight);
             });
             // 绘制按钮文字
             btn.fonts && btn.fonts.forEach(function (font) {
@@ -984,7 +1016,7 @@ var LuckyWheel = /** @class */ (function (_super) {
                 });
             });
         });
-        if (ctx.draw)
+        if (this.config.flag.indexOf('UNI-') === 0)
             ctx.draw();
     };
     /**
@@ -1333,26 +1365,53 @@ var LuckyGrid = /** @class */ (function (_super) {
         var imgInfo = prize.imgs[imgIndex];
         if (!this.cellImgs[prizeIndex])
             this.cellImgs[prizeIndex] = [];
-        // 加载 defaultImg 默认图片
-        var defaultImg = new Image();
-        this.cellImgs[prizeIndex][imgIndex] = { defaultImg: defaultImg };
-        defaultImg.src = imgInfo.src;
         var num = 0, sum = 1;
-        defaultImg.onload = function () {
-            num++;
-            num === sum && callBack.call(_this);
-        };
+        // 加载 defaultImg 默认图片
+        if (this.config.flag === 'WEB') {
+            var defaultImg = new Image();
+            this.cellImgs[prizeIndex][imgIndex] = { defaultImg: defaultImg };
+            defaultImg.src = imgInfo.src;
+            defaultImg.onload = function () {
+                num++;
+                num === sum && callBack.call(_this);
+            };
+        }
+        else if (this.config.flag.indexOf('UNI-') === 0) {
+            uni.getImageInfo({
+                src: imgInfo.src,
+                success: function (imgObj) {
+                    _this.cellImgs[prizeIndex][imgIndex] = { defaultImg: imgObj };
+                    num++;
+                    num === sum && callBack.call(_this);
+                },
+                fail: function () { return console.error('uni.getImageInfo 加载图片失败', imgInfo.src); }
+            });
+        }
         // 如果有 activeImg 则多加载一张
         if (!imgInfo.hasOwnProperty('activeSrc'))
             return;
         sum++;
-        var activeImg = new Image();
-        this.cellImgs[prizeIndex][imgIndex].activeImg = activeImg;
-        activeImg.src = imgInfo.activeSrc;
-        activeImg.onload = function () {
-            num++;
-            num === sum && callBack.call(_this);
-        };
+        // 加载中奖图片
+        if (this.config.flag === 'WEB') {
+            var activeImg = new Image();
+            this.cellImgs[prizeIndex][imgIndex].activeImg = activeImg;
+            activeImg.src = imgInfo.activeSrc;
+            activeImg.onload = function () {
+                num++;
+                num === sum && callBack.call(_this);
+            };
+        }
+        else if (this.config.flag.indexOf('UNI-') === 0) {
+            uni.getImageInfo({
+                src: imgInfo.activeSrc,
+                success: function (imgObj) {
+                    _this.cellImgs[prizeIndex][imgIndex].activeImg = imgObj;
+                    num++;
+                    num === sum && callBack.call(_this);
+                },
+                fail: function () { return console.error('uni.getImageInfo 加载图片失败', imgInfo.activeSrc); }
+            });
+        }
     };
     /**
      * 计算图片的渲染宽高
@@ -1452,7 +1511,17 @@ var LuckyGrid = /** @class */ (function (_super) {
                     return false;
                 var renderImg = (isActive && cellImg.activeImg) || cellImg.defaultImg;
                 var _a = _this.computedWidthAndHeight(renderImg, imgInfo, prize), trueWidth = _a[0], trueHeight = _a[1];
-                ctx.drawImage(renderImg, x + _this.getOffsetX(trueWidth, prize.col), y + _this.getHeight(imgInfo.top, prize.row), trueWidth, trueHeight);
+                var _b = [x + _this.getOffsetX(trueWidth, prize.col), y + _this.getHeight(imgInfo.top, prize.row)], imgX = _b[0], imgY = _b[1];
+                var drawImg;
+                if (_this.config.flag === 'WEB') {
+                    // 浏览器中直接绘制标签即可
+                    drawImg = renderImg;
+                }
+                else if (_this.config.flag.indexOf('UNI-') === 0) {
+                    // 小程序中直接绘制一个路径
+                    drawImg = renderImg.path;
+                }
+                ctx.drawImage(drawImg, imgX, imgY, trueWidth, trueHeight);
             });
             // 绘制文字
             prize.fonts && prize.fonts.forEach(function (font) {
