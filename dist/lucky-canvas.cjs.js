@@ -154,16 +154,16 @@ var Lucky = /** @class */ (function () {
             config.flag = 'WEB';
         if (config.el)
             config.divElement = document.querySelector(config.el);
+        var boxWidth = 0, boxHeight = 0;
         if (config.divElement) {
-            config.width = config.divElement.offsetWidth;
-            config.height = config.divElement.offsetHeight;
+            boxWidth = config.divElement.offsetWidth;
+            boxHeight = config.divElement.offsetHeight;
             config.canvasElement = document.createElement('canvas');
             config.divElement.appendChild(config.canvasElement);
         }
-        if (config.width)
-            config.width = this.getLength(config.width);
-        if (config.height)
-            config.height = this.getLength(config.height);
+        // 宽高优先从config里取, 其次从style上面取
+        config.width = this.getLength(config.width) || boxWidth;
+        config.height = this.getLength(config.height) || boxHeight;
         if (config.canvasElement)
             config.ctx = config.canvasElement.getContext('2d');
         this.ctx = config.ctx;
@@ -204,13 +204,16 @@ var Lucky = /** @class */ (function () {
             return;
         }
         if (this.config.rAF) {
+            // 优先使用帧动画
             this.rAF = this.config.rAF;
         }
         else if (this.config.setTimeout) {
+            // 其次使用定时器
             var timeout_1 = this.config.setTimeout;
             this.rAF = function (callback) { return timeout_1(callback, 16); };
         }
         else {
+            // 如果config里面没有提供, 那就假设全局方法存在setTimeout
             this.rAF = function (callback) { return setTimeout(callback, 16); };
         }
     };
@@ -219,12 +222,10 @@ var Lucky = /** @class */ (function () {
      */
     Lucky.prototype.zoomCanvas = function () {
         var _a = this, config = _a.config, ctx = _a.ctx, dpr = _a.dpr;
-        var divElement = config.divElement, canvasElement = config.canvasElement;
+        var canvasElement = config.canvasElement;
         var compute = function (len) { return (len * dpr - len) / (len * dpr) * (dpr / 2) * 100; };
-        if (!divElement || !canvasElement)
+        if (!canvasElement)
             return;
-        config.width = divElement.offsetWidth;
-        config.height = divElement.offsetHeight;
         canvasElement.width = config.width * dpr;
         canvasElement.height = config.height * dpr;
         canvasElement.style.width = canvasElement.width + "px";
@@ -1067,7 +1068,7 @@ var LuckyWheel = /** @class */ (function (_super) {
         }
         this.rotateDeg = (rotateDeg + quad.easeIn(interval, 0, _defaultConfig.speed, _defaultConfig.accelerationTime)) % 360;
         this.draw();
-        this.animationId = rAF(this.run.bind(this, num + 1));
+        rAF(this.run.bind(this, num + 1));
     };
     /**
      * 缓慢停止的方法
@@ -1083,7 +1084,7 @@ var LuckyWheel = /** @class */ (function (_super) {
         }
         this.rotateDeg = quad.easeOut(interval, stopDeg, endDeg, _defaultConfig.decelerationTime) % 360;
         this.draw();
-        this.animationId = rAF(this.slowDown.bind(this));
+        rAF(this.slowDown.bind(this));
     };
     /**
      * 获取相对宽度
@@ -1641,7 +1642,7 @@ var LuckyGrid = /** @class */ (function (_super) {
         }
         this.currIndex = (currIndex + quad.easeIn(interval, 0.1, _defaultConfig.speed, _defaultConfig.accelerationTime)) % prizes.length;
         this.draw();
-        this.animationId = rAF(this.run.bind(this, num + 1));
+        rAF(this.run.bind(this, num + 1));
     };
     /**
      * 缓慢停止的方法
@@ -1657,7 +1658,7 @@ var LuckyGrid = /** @class */ (function (_super) {
         }
         this.currIndex = quad.easeOut(interval, stopIndex, endIndex, _defaultConfig.decelerationTime) % prizes.length;
         this.draw();
-        this.animationId = rAF(this.slowDown.bind(this));
+        rAF(this.slowDown.bind(this));
     };
     /**
      * 开启中奖标识自动游走
