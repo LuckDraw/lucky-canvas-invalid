@@ -557,7 +557,7 @@ export default class LuckyGrid extends Lucky {
     }
     this.currIndex = (currIndex + quad.easeIn(interval, 0.1, _defaultConfig.speed, _defaultConfig.accelerationTime)) % prizes.length
     this.draw()
-    this.animationId = rAF(this.run.bind(this, num + 1))
+    rAF(this.run.bind(this, num + 1))
   }
 
   /**
@@ -573,7 +573,7 @@ export default class LuckyGrid extends Lucky {
     }
     this.currIndex = quad.easeOut(interval, stopIndex, endIndex, _defaultConfig.decelerationTime) % prizes.length
     this.draw()
-    this.animationId = rAF(this.slowDown.bind(this))
+    rAF(this.slowDown.bind(this))
   }
 
   /**

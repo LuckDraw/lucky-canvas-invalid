@@ -13,14 +13,16 @@ export default class Lucky {
     // 兼容代码结束
     if (!config.flag) config.flag = 'WEB'
     if (config.el) config.divElement = document.querySelector(config.el) as HTMLDivElement
+    let boxWidth = 0, boxHeight = 0
     if (config.divElement) {
-      config.width = config.divElement.offsetWidth
-      config.height = config.divElement.offsetHeight
+      boxWidth = config.divElement.offsetWidth
+      boxHeight = config.divElement.offsetHeight
       config.canvasElement = document.createElement('canvas')
       config.divElement.appendChild(config.canvasElement)
     }
-    if (config.width) config.width = this.getLength(config.width)
-    if (config.height) config.height = this.getLength(config.height)
+    // 宽高优先从config里取, 其次从style上面取
+    config.width = this.getLength(config.width) || boxWidth
+    config.height = this.getLength(config.height) || boxHeight
     if (config.canvasElement) config.ctx = config.canvasElement.getContext('2d')!
     this.ctx = config.ctx as CanvasRenderingContext2D
     this.config = config
@@ -70,11 +72,14 @@ export default class Lucky {
       return
     }
     if (this.config.rAF) {
+      // 优先使用帧动画
       this.rAF = this.config.rAF
     } else if (this.config.setTimeout) {
+      // 其次使用定时器
       const timeout = this.config.setTimeout
       this.rAF = (callback: Function): number => timeout(callback, 16)
     } else {
+      // 如果config里面没有提供, 那就假设全局方法存在setTimeout
       this.rAF = (callback: Function): number => setTimeout(callback, 16)
     }
   }
@@ -84,11 +89,9 @@ export default class Lucky {
    */
   protected zoomCanvas (): void {
     const { config, ctx, dpr } = this
-    const { divElement, canvasElement } = config
+    const { canvasElement } = config
     const compute = (len: number) => (len * dpr - len) / (len * dpr) * (dpr / 2) * 100
-    if (!divElement || !canvasElement) return
-    config.width = divElement.offsetWidth
-    config.height = divElement.offsetHeight
+    if (!canvasElement) return
     canvasElement.width = config.width * dpr
     canvasElement.height = config.height * dpr
     canvasElement.style.width = `${canvasElement.width}px`

@@ -72,7 +72,7 @@ export default class LuckyWheel extends Lucky {
   private FPS = 16.6                    // 屏幕刷新率
   private prizeImgs: Array<HTMLImageElement[] | UniImageType> = [[]]
   private btnImgs: Array<HTMLImageElement[] | UniImageType> = [[]]
-  
+
   /**
    * 初始化数据
    * @param data 
@@ -508,7 +508,7 @@ export default class LuckyWheel extends Lucky {
     }
     this.rotateDeg = (rotateDeg + quad.easeIn(interval, 0, _defaultConfig.speed, _defaultConfig.accelerationTime)) % 360
     this.draw()
-    this.animationId = rAF(this.run.bind(this, num + 1))
+    rAF(this.run.bind(this, num + 1))
   }
 
   /**
@@ -524,7 +524,7 @@ export default class LuckyWheel extends Lucky {
     }
     this.rotateDeg = quad.easeOut(interval, stopDeg, endDeg, _defaultConfig.decelerationTime) % 360
     this.draw()
-    this.animationId = rAF(this.slowDown.bind(this))
+    rAF(this.slowDown.bind(this))
   }
 
   /**
