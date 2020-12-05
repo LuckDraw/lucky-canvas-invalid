@@ -23,6 +23,11 @@ export default class Lucky {
     // 宽高优先从config里取, 其次从style上面取
     config.width = this.getLength(config.width) || boxWidth
     config.height = this.getLength(config.height) || boxHeight
+    // 重新把宽高赋给盒子
+    if (config.divElement) {
+      config.divElement.style.width = config.width + 'px'
+      config.divElement.style.height = config.height + 'px'
+    }
     if (config.canvasElement) config.ctx = config.canvasElement.getContext('2d')!
     this.ctx = config.ctx as CanvasRenderingContext2D
     this.config = config
