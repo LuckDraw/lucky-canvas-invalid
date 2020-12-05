@@ -7,7 +7,7 @@
 </head>
 <body>
   <body>
-    <div id="my-lucky" style="width: 310px; height: 310px"></div>
+    <div id="my-lucky"></div>
     <script src="../lucky-canvas.umd.min.js"></script>
     <script>
       // 设置奖品
@@ -22,7 +22,11 @@
         })
       })
       // 创建大转盘抽奖
-      let luckyWheel = new LuckyCanvas.LuckyWheel('#my-lucky', {
+      let luckyWheel = new LuckyCanvas.LuckyWheel({
+        el: '#my-lucky',
+        width: '300px',
+        height: '300px',
+      }, {
         prizes: prizes,
         defaultStyle: {
           fontColor: '#d64737',

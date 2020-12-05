@@ -6,12 +6,16 @@
   <title>Document</title>
 </head>
 <body>
-  <div id="my-lucky" style="width: 310px; height: 310px"></div>
+  <div id="my-lucky"></div>
   <script src="../lucky-canvas.umd.min.js"></script>
   <script>
     let luckyNum = 1
     // 创建九宫格抽奖
-    let luckyGrid = new LuckyCanvas.LuckyGrid('#my-lucky', {
+    let luckyGrid = new LuckyCanvas.LuckyGrid({
+      el: '#my-lucky',
+      width: '300px',
+      height: '300px'
+    }, {
       blocks: [
         { padding: '15px', background: '#ffc27a', borderRadius: 28 },
         { padding: '4px', background: '#ff4a4c', borderRadius: 23 },
@@ -25,7 +29,7 @@
           { text: `${luckyNum} 次`, fontColor: '#fff', top: '73%', fontSize: '11px' },
         ],
         imgs: [
-          { src: './img/button.png', width: '65%', top: '13%' },
+          { src: './img/button.png', width: '65%', top: '12%' },
           { src: './img/btn.png', width: '50%', top: '73%' }
         ]
       },
@@ -76,8 +80,8 @@
         prizes.push({
           name: item.name,
           index: i, x: axis[i][0], y: axis[i][1],
-          fonts: [{ text: item.name, top: '72%' }],
-          imgs: [{ src: item.img, width: '55%', top: '10%' }]
+          fonts: [{ text: item.name, top: '70%' }],
+          imgs: [{ src: item.img, width: '53%', top: '8%' }]
         })
       }
       luckyGrid.prizes = prizes
