@@ -253,15 +253,14 @@ export default class LuckyWheel extends Lucky {
       this[imgName][cellIndex][imgIndex] = imgObj
       imgObj.src = imgInfo.src
       imgObj.onload = () => callBack.call(this)
-    } else if (this.config.flag.indexOf('UNI-') === 0) {
-      // uni-app 下通过方法获取图片对象
-      uni.getImageInfo({
+    } else if (['UNI-H5', 'UNI-MINI-WX', 'MINI-WX'].includes(this.config.flag)) {
+      this.global.getImageInfo({
         src: imgInfo.src,
         success: (imgObj: UniImageType) => {
           this[imgName][cellIndex][imgIndex] = imgObj
           callBack.call(this)
         },
-        fail: () => console.error('uni.getImageInfo 加载图片失败', imgInfo.src)
+        fail: () => console.error('API `getImageInfo` 加载图片失败', imgInfo.src)
       })
     }
   }
@@ -365,7 +364,7 @@ export default class LuckyWheel extends Lucky {
         // 兼容代码
         if (this.config.flag === 'WEB')
           drawImg = prizeImg
-        else if (this.config.flag.indexOf('UNI-') === 0)
+        else if (['MINI-WX', 'UNI-H5', 'UNI-MINI-WX'].includes(this.config.flag))
           drawImg = prizeImg.path
         // 绘制图片
         ctx.drawImage(drawImg, imgX, imgY, trueWidth, trueHeight)
@@ -439,7 +438,7 @@ export default class LuckyWheel extends Lucky {
         let drawImg
         if (this.config.flag === 'WEB') 
           drawImg = btnImg
-        else if (this.config.flag.indexOf('UNI-') === 0)
+        else if (['MINI-WX', 'UNI-H5', 'UNI-MINI-WX'].includes(this.config.flag))
           drawImg = btnImg.path
         // 绘制图片
         ctx.drawImage(drawImg, imgX, imgY, trueWidth, trueHeight)

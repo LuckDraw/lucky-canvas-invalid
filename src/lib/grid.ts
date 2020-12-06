@@ -282,15 +282,15 @@ export default class LuckyGrid extends Lucky {
         num++
         num === sum && callBack.call(this)
       }
-    } else if (this.config.flag.indexOf('UNI-') === 0) {
-      uni.getImageInfo({
+    } else if (['MINI-WX', 'UNI-H5', 'UNI-MINI-WX'].includes(this.config.flag)) {
+      this.global.getImageInfo({
         src: imgInfo.src,
         success: (imgObj: UniImageType) => {
           this.cellImgs[prizeIndex][imgIndex] = { defaultImg: imgObj }
           num++
           num === sum && callBack.call(this)
         },
-        fail: () => console.error('uni.getImageInfo 加载图片失败', imgInfo.src)
+        fail: () => console.error('API `getImageInfo` 加载图片失败', imgInfo.src)
       })
     }
     // 如果有 activeImg 则多加载一张
@@ -305,15 +305,15 @@ export default class LuckyGrid extends Lucky {
         num++
         num === sum && callBack.call(this)
       }
-    } else if (this.config.flag.indexOf('UNI-') === 0) {
-      uni.getImageInfo({
+    } else if (['MINI-WX', 'UNI-H5', 'UNI-MINI-WX'].includes(this.config.flag)) {
+      this.global.getImageInfo({
         src: (imgInfo as PrizeImgType).activeSrc!,
         success: (imgObj: UniImageType) => {
           this.cellImgs[prizeIndex][imgIndex].activeImg = imgObj
           num++
           num === sum && callBack.call(this)
         },
-        fail: () => console.error('uni.getImageInfo 加载图片失败', (imgInfo as PrizeImgType).activeSrc!)
+        fail: () => console.error('API `getImageInfo` 加载图片失败', (imgInfo as PrizeImgType).activeSrc!)
       })
     }
   }
@@ -425,7 +425,7 @@ export default class LuckyGrid extends Lucky {
         if (this.config.flag === 'WEB') {
           // 浏览器中直接绘制标签即可
           drawImg = renderImg
-        } else if (this.config.flag.indexOf('UNI-') === 0) {
+        } else if (['MINI-WX', 'UNI-H5', 'UNI-MINI-WX'].includes(this.config.flag)) {
           // 小程序中直接绘制一个路径
           drawImg = (renderImg as UniImageType).path
         }

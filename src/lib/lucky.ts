@@ -12,6 +12,13 @@ export default class Lucky {
     config = config as ConfigType
     // 兼容代码结束
     if (!config.flag) config.flag = 'WEB'
+    if (config.flag.indexOf('UNI-') === 0) {
+      this.global = uni
+    } else if (config.flag === 'MINI-WX') {
+      this.global = wx
+    } else {
+      this.global = uni
+    }
     if (config.el) config.divElement = document.querySelector(config.el) as HTMLDivElement
     let boxWidth = 0, boxHeight = 0
     if (config.divElement) {
@@ -42,6 +49,7 @@ export default class Lucky {
 
   protected readonly config: ConfigType
   protected readonly ctx: CanvasRenderingContext2D
+  protected global = wx
   protected htmlFontSize: number = 16
   protected dpr: number = 1
   private subs: object = {}
@@ -153,10 +161,10 @@ export default class Lucky {
    * @return 返回rpx
    */
   px2rpx (value: string | number): number {
+    const { global } = this
     if (typeof value === 'string') value = Number(value.replace(/[a-z]*/g, ''))
-    if (uni) return 750 / uni.getSystemInfoSync().windowWidth * value
-    if (wx) return 750 / wx.getSystemInfoSync().windowWidth * value
-    return value
+    if (!global) return value
+    return 750 / global.getSystemInfoSync().windowWidth * value
   }
 
   /**
@@ -165,10 +173,10 @@ export default class Lucky {
    * @return 返回px
    */
   rpx2px (value: string | number): number {
+    const { global } = this
     if (typeof value === 'string') value = Number(value.replace(/[a-z]*/g, ''))
-    if (uni) return uni.getSystemInfoSync().windowWidth / 750 * value
-    if (wx) return wx.getSystemInfoSync().windowWidth / 750 * value
-    return value
+    if (!global) return value
+    return global.getSystemInfoSync().windowWidth / 750 * value
   }
 
   /**
