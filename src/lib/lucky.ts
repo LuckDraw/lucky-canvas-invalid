@@ -1,5 +1,6 @@
 import { isExpectType } from '../utils/index'
-import { ConfigType } from '../types/index'
+import { ConfigType, UniImageType } from '../types/index'
+
 export default class Lucky {
   /**
    * 公共构造器
@@ -16,8 +17,6 @@ export default class Lucky {
       this.global = uni
     } else if (config.flag === 'MINI-WX') {
       this.global = wx
-    } else {
-      this.global = uni
     }
     if (config.el) config.divElement = document.querySelector(config.el) as HTMLDivElement
     let boxWidth = 0, boxHeight = 0
@@ -49,8 +48,8 @@ export default class Lucky {
 
   protected readonly config: ConfigType
   protected readonly ctx: CanvasRenderingContext2D
-  protected global = wx
-  protected htmlFontSize: number = 16
+  protected global = {}
+  protected htmlFontSize: number = 0
   protected dpr: number = 1
   private subs: object = {}
   protected rAF: Function = function () {}
@@ -113,6 +112,22 @@ export default class Lucky {
       ${-compute(canvasElement.width)}%, ${-compute(canvasElement.height)}%
     )`
     ctx.scale(dpr, dpr)
+  }
+
+  protected loadImg (src: string) {
+    return new Promise(resolve => {
+      if (this.config.flag === 'WEB') {
+        let imgObj = new Image()
+        imgObj.src = src
+        imgObj.onload = () => resolve(imgObj)
+      } else if (['MINI-WX', 'UNI-H5', 'UNI-MINI-WX'].includes(this.config.flag)) {
+        this.global.getImageInfo({
+          src: src,
+          success: (imgObj: UniImageType) => resolve(imgObj),
+          fail: () => console.error('API `getImageInfo` 加载图片失败', src)
+        })
+      }
+    })
   }
 
   /**

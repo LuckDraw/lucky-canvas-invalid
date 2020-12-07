@@ -263,59 +263,25 @@ export default class LuckyGrid extends Lucky {
    * @param { number } imgIndex 奖品图片索引
    * @param { Function } callBack 图片加载完毕回调
    */
-  private loadAndCacheImg (
+  private async loadAndCacheImg (
     prizeIndex: number,
     imgIndex: number,
     callBack: () => void
-  ): void {
+  ) {
     const prize = this.cells[prizeIndex]
     if (!prize || !prize.imgs) return
     const imgInfo = prize.imgs[imgIndex]
     if (!this.cellImgs[prizeIndex]) this.cellImgs[prizeIndex] = []
-    let num = 0, sum = 1
     // 加载 defaultImg 默认图片
-    if (this.config.flag === 'WEB') {
-      let defaultImg = new Image()
-      this.cellImgs[prizeIndex][imgIndex] = { defaultImg }
-      defaultImg.src = imgInfo.src
-      defaultImg.onload = () => {
-        num++
-        num === sum && callBack.call(this)
-      }
-    } else if (['MINI-WX', 'UNI-H5', 'UNI-MINI-WX'].includes(this.config.flag)) {
-      this.global.getImageInfo({
-        src: imgInfo.src,
-        success: (imgObj: UniImageType) => {
-          this.cellImgs[prizeIndex][imgIndex] = { defaultImg: imgObj }
-          num++
-          num === sum && callBack.call(this)
-        },
-        fail: () => console.error('API `getImageInfo` 加载图片失败', imgInfo.src)
-      })
+    this.cellImgs[prizeIndex][imgIndex] = {
+      defaultImg: await this.loadImg(imgInfo.src) as HTMLImageElement
     }
     // 如果有 activeImg 则多加载一张
-    if (!imgInfo.hasOwnProperty('activeSrc')) return
-    sum++
-    // 加载中奖图片
-    if (this.config.flag === 'WEB') {
-      let activeImg = new Image()
+    if (imgInfo.hasOwnProperty('activeSrc')) {
+      const activeImg = await this.loadImg((imgInfo as PrizeImgType).activeSrc!) as HTMLImageElement
       this.cellImgs[prizeIndex][imgIndex].activeImg = activeImg
-      activeImg.src = (imgInfo as PrizeImgType).activeSrc!
-      activeImg.onload = () => {
-        num++
-        num === sum && callBack.call(this)
-      }
-    } else if (['MINI-WX', 'UNI-H5', 'UNI-MINI-WX'].includes(this.config.flag)) {
-      this.global.getImageInfo({
-        src: (imgInfo as PrizeImgType).activeSrc!,
-        success: (imgObj: UniImageType) => {
-          this.cellImgs[prizeIndex][imgIndex].activeImg = imgObj
-          num++
-          num === sum && callBack.call(this)
-        },
-        fail: () => console.error('API `getImageInfo` 加载图片失败', (imgInfo as PrizeImgType).activeSrc!)
-      })
     }
+    callBack.call(this)
   }
 
   /**

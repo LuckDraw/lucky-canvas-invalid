@@ -44,6 +44,44 @@
         return __assign.apply(this, arguments);
     };
 
+    function __awaiter(thisArg, _arguments, P, generator) {
+        function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+        return new (P || (P = Promise))(function (resolve, reject) {
+            function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+            function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+            function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+            step((generator = generator.apply(thisArg, _arguments || [])).next());
+        });
+    }
+
+    function __generator(thisArg, body) {
+        var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
+        return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
+        function verb(n) { return function (v) { return step([n, v]); }; }
+        function step(op) {
+            if (f) throw new TypeError("Generator is already executing.");
+            while (_) try {
+                if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
+                if (y = 0, t) op = [op[0] & 2, t.value];
+                switch (op[0]) {
+                    case 0: case 1: t = op; break;
+                    case 4: _.label++; return { value: op[1], done: false };
+                    case 5: _.label++; y = op[1]; op = [0]; continue;
+                    case 7: op = _.ops.pop(); _.trys.pop(); continue;
+                    default:
+                        if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
+                        if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
+                        if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
+                        if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
+                        if (t[2]) _.ops.pop();
+                        _.trys.pop(); continue;
+                }
+                op = body.call(thisArg, _);
+            } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
+            if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
+        }
+    }
+
     function __spreadArrays() {
         for (var s = 0, i = 0, il = arguments.length; i < il; i++) s += arguments[i].length;
         for (var r = Array(s), k = 0, i = 0; i < il; i++)
@@ -138,7 +176,8 @@
          * @param config
          */
         function Lucky(config) {
-            this.htmlFontSize = 16;
+            this.global = {};
+            this.htmlFontSize = 0;
             this.dpr = 1;
             this.subs = {};
             this.rAF = function () { };
@@ -154,6 +193,12 @@
             // 兼容代码结束
             if (!config.flag)
                 config.flag = 'WEB';
+            if (config.flag.indexOf('UNI-') === 0) {
+                this.global = uni;
+            }
+            else if (config.flag === 'MINI-WX') {
+                this.global = wx;
+            }
             if (config.el)
                 config.divElement = document.querySelector(config.el);
             var boxWidth = 0, boxHeight = 0;
@@ -240,6 +285,23 @@
             canvasElement.style.transform = "scale(" + 1 / dpr + ") translate(\n      " + -compute(canvasElement.width) + "%, " + -compute(canvasElement.height) + "%\n    )";
             ctx.scale(dpr, dpr);
         };
+        Lucky.prototype.loadImg = function (src) {
+            var _this_1 = this;
+            return new Promise(function (resolve) {
+                if (_this_1.config.flag === 'WEB') {
+                    var imgObj_1 = new Image();
+                    imgObj_1.src = src;
+                    imgObj_1.onload = function () { return resolve(imgObj_1); };
+                }
+                else if (['MINI-WX', 'UNI-H5', 'UNI-MINI-WX'].includes(_this_1.config.flag)) {
+                    _this_1.global.getImageInfo({
+                        src: src,
+                        success: function (imgObj) { return resolve(imgObj); },
+                        fail: function () { return console.error('API `getImageInfo` 加载图片失败', src); }
+                    });
+                }
+            });
+        };
         /**
          * 获取长度
          * @param length 将要转换的长度
@@ -288,13 +350,12 @@
          * @return 返回rpx
          */
         Lucky.prototype.px2rpx = function (value) {
+            var global = this.global;
             if (typeof value === 'string')
                 value = Number(value.replace(/[a-z]*/g, ''));
-            if (uni)
-                return 750 / uni.getSystemInfoSync().windowWidth * value;
-            if (wx)
-                return 750 / wx.getSystemInfoSync().windowWidth * value;
-            return value;
+            if (!global)
+                return value;
+            return 750 / global.getSystemInfoSync().windowWidth * value;
         };
         /**
          * rpx 转 px 的方法
@@ -302,13 +363,12 @@
          * @return 返回px
          */
         Lucky.prototype.rpx2px = function (value) {
+            var global = this.global;
             if (typeof value === 'string')
                 value = Number(value.replace(/[a-z]*/g, ''));
-            if (uni)
-                return uni.getSystemInfoSync().windowWidth / 750 * value;
-            if (wx)
-                return wx.getSystemInfoSync().windowWidth / 750 * value;
-            return value;
+            if (!global)
+                return value;
+            return global.getSystemInfoSync().windowWidth / 750 * value;
         };
         /**
          * 更新数据并重新绘制 canvas 画布
@@ -757,7 +817,8 @@
             this.setHTMLFontSize();
             this.zoomCanvas();
             this.Radius = Math.min(config.width, config.height) / 2;
-            ctx.translate(this.Radius, this.Radius);
+            if (config.flag === 'WEB')
+                ctx.translate(this.Radius, this.Radius);
             var endCallBack = function () {
                 // 由于 uni-app 的奇怪渲染 bug, 这里需要绘制两次修正圆心
                 _this.draw();
@@ -802,41 +863,34 @@
          * @param { Function } callBack 图片加载完毕回调
          */
         LuckyWheel.prototype.loadAndCacheImg = function (cellIndex, imgIndex, callBack) {
-            var _this = this;
-            // 先判断index是奖品图片还是按钮图片, 并修正index的值
-            var isPrize = cellIndex < this.prizes.length;
-            var cellName = isPrize ? 'prizes' : 'buttons';
-            var imgName = isPrize ? 'prizeImgs' : 'btnImgs';
-            cellIndex = isPrize ? cellIndex : cellIndex - this.prizes.length;
-            // 获取图片信息
-            var cell = this[cellName][cellIndex];
-            if (!cell || !cell.imgs)
-                return;
-            var imgInfo = cell.imgs[imgIndex];
-            if (!imgInfo)
-                return;
-            if (!this[imgName][cellIndex])
-                this[imgName][cellIndex] = [];
-            // 兼容代码
-            if (this.config.flag === 'WEB') {
-                // 只有浏览器环境下才存在 Image 对象
-                var imgObj = new Image();
-                // 创建缓存
-                this[imgName][cellIndex][imgIndex] = imgObj;
-                imgObj.src = imgInfo.src;
-                imgObj.onload = function () { return callBack.call(_this); };
-            }
-            else if (this.config.flag.indexOf('UNI-') === 0) {
-                // uni-app 下通过方法获取图片对象
-                uni.getImageInfo({
-                    src: imgInfo.src,
-                    success: function (imgObj) {
-                        _this[imgName][cellIndex][imgIndex] = imgObj;
-                        callBack.call(_this);
-                    },
-                    fail: function () { return console.error('uni.getImageInfo 加载图片失败', imgInfo.src); }
+            return __awaiter(this, void 0, void 0, function () {
+                var isPrize, cellName, imgName, cell, imgInfo, _a, _b;
+                return __generator(this, function (_c) {
+                    switch (_c.label) {
+                        case 0:
+                            isPrize = cellIndex < this.prizes.length;
+                            cellName = isPrize ? 'prizes' : 'buttons';
+                            imgName = isPrize ? 'prizeImgs' : 'btnImgs';
+                            cellIndex = isPrize ? cellIndex : cellIndex - this.prizes.length;
+                            cell = this[cellName][cellIndex];
+                            if (!cell || !cell.imgs)
+                                return [2 /*return*/];
+                            imgInfo = cell.imgs[imgIndex];
+                            if (!imgInfo)
+                                return [2 /*return*/];
+                            // 同步加载图片
+                            if (!this[imgName][cellIndex])
+                                this[imgName][cellIndex] = [];
+                            _a = this[imgName][cellIndex];
+                            _b = imgIndex;
+                            return [4 /*yield*/, this.loadImg(imgInfo.src)];
+                        case 1:
+                            _a[_b] = _c.sent();
+                            callBack.call(this);
+                            return [2 /*return*/];
+                    }
                 });
-            }
+            });
         };
         /**
          * 计算图片的渲染宽高
@@ -929,7 +983,7 @@
                     // 兼容代码
                     if (_this.config.flag === 'WEB')
                         drawImg = prizeImg;
-                    else if (_this.config.flag.indexOf('UNI-') === 0)
+                    else if (['MINI-WX', 'UNI-H5', 'UNI-MINI-WX'].includes(_this.config.flag))
                         drawImg = prizeImg.path;
                     // 绘制图片
                     ctx.drawImage(drawImg, imgX, imgY, trueWidth, trueHeight);
@@ -1006,7 +1060,7 @@
                     var drawImg;
                     if (_this.config.flag === 'WEB')
                         drawImg = btnImg;
-                    else if (_this.config.flag.indexOf('UNI-') === 0)
+                    else if (['MINI-WX', 'UNI-H5', 'UNI-MINI-WX'].includes(_this.config.flag))
                         drawImg = btnImg.path;
                     // 绘制图片
                     ctx.drawImage(drawImg, imgX, imgY, trueWidth, trueHeight);
@@ -1366,60 +1420,39 @@
          * @param { Function } callBack 图片加载完毕回调
          */
         LuckyGrid.prototype.loadAndCacheImg = function (prizeIndex, imgIndex, callBack) {
-            var _this = this;
-            var prize = this.cells[prizeIndex];
-            if (!prize || !prize.imgs)
-                return;
-            var imgInfo = prize.imgs[imgIndex];
-            if (!this.cellImgs[prizeIndex])
-                this.cellImgs[prizeIndex] = [];
-            var num = 0, sum = 1;
-            // 加载 defaultImg 默认图片
-            if (this.config.flag === 'WEB') {
-                var defaultImg = new Image();
-                this.cellImgs[prizeIndex][imgIndex] = { defaultImg: defaultImg };
-                defaultImg.src = imgInfo.src;
-                defaultImg.onload = function () {
-                    num++;
-                    num === sum && callBack.call(_this);
-                };
-            }
-            else if (this.config.flag.indexOf('UNI-') === 0) {
-                uni.getImageInfo({
-                    src: imgInfo.src,
-                    success: function (imgObj) {
-                        _this.cellImgs[prizeIndex][imgIndex] = { defaultImg: imgObj };
-                        num++;
-                        num === sum && callBack.call(_this);
-                    },
-                    fail: function () { return console.error('uni.getImageInfo 加载图片失败', imgInfo.src); }
+            return __awaiter(this, void 0, void 0, function () {
+                var prize, imgInfo, _a, _b, activeImg;
+                var _c;
+                return __generator(this, function (_d) {
+                    switch (_d.label) {
+                        case 0:
+                            prize = this.cells[prizeIndex];
+                            if (!prize || !prize.imgs)
+                                return [2 /*return*/];
+                            imgInfo = prize.imgs[imgIndex];
+                            if (!this.cellImgs[prizeIndex])
+                                this.cellImgs[prizeIndex] = [];
+                            // 加载 defaultImg 默认图片
+                            _a = this.cellImgs[prizeIndex];
+                            _b = imgIndex;
+                            _c = {};
+                            return [4 /*yield*/, this.loadImg(imgInfo.src)];
+                        case 1:
+                            // 加载 defaultImg 默认图片
+                            _a[_b] = (_c.defaultImg = (_d.sent()),
+                                _c);
+                            if (!imgInfo.hasOwnProperty('activeSrc')) return [3 /*break*/, 3];
+                            return [4 /*yield*/, this.loadImg(imgInfo.activeSrc)];
+                        case 2:
+                            activeImg = _d.sent();
+                            this.cellImgs[prizeIndex][imgIndex].activeImg = activeImg;
+                            _d.label = 3;
+                        case 3:
+                            callBack.call(this);
+                            return [2 /*return*/];
+                    }
                 });
-            }
-            // 如果有 activeImg 则多加载一张
-            if (!imgInfo.hasOwnProperty('activeSrc'))
-                return;
-            sum++;
-            // 加载中奖图片
-            if (this.config.flag === 'WEB') {
-                var activeImg = new Image();
-                this.cellImgs[prizeIndex][imgIndex].activeImg = activeImg;
-                activeImg.src = imgInfo.activeSrc;
-                activeImg.onload = function () {
-                    num++;
-                    num === sum && callBack.call(_this);
-                };
-            }
-            else if (this.config.flag.indexOf('UNI-') === 0) {
-                uni.getImageInfo({
-                    src: imgInfo.activeSrc,
-                    success: function (imgObj) {
-                        _this.cellImgs[prizeIndex][imgIndex].activeImg = imgObj;
-                        num++;
-                        num === sum && callBack.call(_this);
-                    },
-                    fail: function () { return console.error('uni.getImageInfo 加载图片失败', imgInfo.activeSrc); }
-                });
-            }
+            });
         };
         /**
          * 计算图片的渲染宽高
@@ -1525,7 +1558,7 @@
                         // 浏览器中直接绘制标签即可
                         drawImg = renderImg;
                     }
-                    else if (_this.config.flag.indexOf('UNI-') === 0) {
+                    else if (['MINI-WX', 'UNI-H5', 'UNI-MINI-WX'].includes(_this.config.flag)) {
                         // 小程序中直接绘制一个路径
                         drawImg = renderImg.path;
                     }

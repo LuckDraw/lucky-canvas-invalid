@@ -191,7 +191,7 @@ export default class LuckyWheel extends Lucky {
     this.setHTMLFontSize()
     this.zoomCanvas()
     this.Radius = Math.min(config.width, config.height) / 2
-    ctx.translate(this.Radius, this.Radius)
+    if (config.flag === 'WEB') ctx.translate(this.Radius, this.Radius)
     const endCallBack = (): void => {
       // 由于 uni-app 的奇怪渲染 bug, 这里需要绘制两次修正圆心
       this.draw()
@@ -229,11 +229,11 @@ export default class LuckyWheel extends Lucky {
    * @param { number } imgIndex 奖品图片索引
    * @param { Function } callBack 图片加载完毕回调
    */
-  private loadAndCacheImg (
+  private async loadAndCacheImg (
     cellIndex: number,
     imgIndex: number,
     callBack: () => void
-  ): void {
+  ) {
     // 先判断index是奖品图片还是按钮图片, 并修正index的值
     const isPrize = cellIndex < this.prizes.length
     const cellName = isPrize ? 'prizes' : 'buttons'
@@ -244,25 +244,10 @@ export default class LuckyWheel extends Lucky {
     if (!cell || !cell.imgs) return
     const imgInfo = cell.imgs[imgIndex]
     if (!imgInfo) return
+    // 同步加载图片
     if (!this[imgName][cellIndex]) this[imgName][cellIndex] = []
-    // 兼容代码
-    if (this.config.flag === 'WEB') {
-      // 只有浏览器环境下才存在 Image 对象
-      let imgObj = new Image()
-      // 创建缓存
-      this[imgName][cellIndex][imgIndex] = imgObj
-      imgObj.src = imgInfo.src
-      imgObj.onload = () => callBack.call(this)
-    } else if (['UNI-H5', 'UNI-MINI-WX', 'MINI-WX'].includes(this.config.flag)) {
-      this.global.getImageInfo({
-        src: imgInfo.src,
-        success: (imgObj: UniImageType) => {
-          this[imgName][cellIndex][imgIndex] = imgObj
-          callBack.call(this)
-        },
-        fail: () => console.error('API `getImageInfo` 加载图片失败', imgInfo.src)
-      })
-    }
+    this[imgName][cellIndex][imgIndex] = await this.loadImg(imgInfo.src)
+    callBack.call(this)
   }
 
   /**
