@@ -53,17 +53,25 @@
 
 
 ```html
-<div id="my-lucky" style="width: 300px; height: 300px"></div>
+<div id="my-lucky"></div>
 <script src="https://cdn.jsdelivr.net/npm/lucky-canvas/umd.min.js"></script>
 <script>
 
   // 大转盘抽奖
-  let luckyWheel = new LuckyCanvas.LuckyWheel('#my-lucky', {
+  let luckyWheel = new LuckyCanvas.LuckyWheel({
+    el: '#my-lucky',
+    width: '300px',
+    height: '300px'
+  }, {
     // ...你的配置
   })
   
   // 九宫格抽奖
-  let luckyGrid = new LuckyCanvas.LuckyGrid('#my-lucky', {
+  let luckyGrid = new LuckyCanvas.LuckyGrid({
+    el: '#my-lucky',
+    width: '300px',
+    height: '300px'
+  }, {
     // ...你的配置
   })
 
@@ -72,4 +80,8 @@
 
 ## 在 vue2.x / vue3.x 中使用
 
-> [vue-luck-draw](https://github.com/luckdraw/vue-luck-draw#readme)
+- [vue-luck-draw](https://github.com/luckdraw/vue-luck-draw#readme)
+
+## 在 uni-app 中使用
+
+- [uni-luck-draw](https://github.com/luckdraw/uni-luck-draw#readme)
