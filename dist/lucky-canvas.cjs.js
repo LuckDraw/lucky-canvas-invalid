@@ -182,6 +182,8 @@ var Lucky = /** @class */ (function () {
         this.setTimeout = function () { };
         this.setInterval = function () { };
         this.clearInterval = function () { };
+        this.setDpr();
+        this.setHTMLFontSize();
         // 兼容代码开始: 为了处理 v1.0.6 版本在这里传入了一个 dom
         if (typeof config === 'string')
             config = { el: config };
@@ -221,9 +223,6 @@ var Lucky = /** @class */ (function () {
         // 如果最后得不到 canvas 上下文那就无法进行绘制
         if (!config.ctx || !config.width || !config.height)
             return;
-        // 初始化
-        this.setDpr();
-        this.setHTMLFontSize();
         this.resetArrayProto();
         this.initWindowFunction();
     }
@@ -283,7 +282,12 @@ var Lucky = /** @class */ (function () {
         canvasElement.style.transform = "scale(" + 1 / dpr + ") translate(\n      " + -compute(canvasElement.width) + "%, " + -compute(canvasElement.height) + "%\n    )";
         ctx.scale(dpr, dpr);
     };
-    Lucky.prototype.loadImg = function (src) {
+    /**
+     * 异步加载图片并返回图片的几何信息
+     * @param src 图片路径
+     * @param info 图片信息
+     */
+    Lucky.prototype.loadImg = function (src, info) {
         var _this_1 = this;
         return new Promise(function (resolve) {
             if (_this_1.config.flag === 'WEB') {
@@ -292,6 +296,11 @@ var Lucky = /** @class */ (function () {
                 imgObj_1.onload = function () { return resolve(imgObj_1); };
             }
             else if (['MINI-WX', 'UNI-H5', 'UNI-MINI-WX'].includes(_this_1.config.flag)) {
+                // 修复 uni.getImageInfo 无法处理 base64 格式的图片的问题
+                if (/^data:image\/([a-z]+);base64,/.test(src)) {
+                    info.$resolve = resolve;
+                    return;
+                }
                 _this_1.global.getImageInfo({
                     src: src,
                     success: function (imgObj) { return resolve(imgObj); },
@@ -881,7 +890,7 @@ var LuckyWheel = /** @class */ (function (_super) {
                             this[imgName][cellIndex] = [];
                         _a = this[imgName][cellIndex];
                         _b = imgIndex;
-                        return [4 /*yield*/, this.loadImg(imgInfo.src)];
+                        return [4 /*yield*/, this.loadImg(imgInfo.src, imgInfo)];
                     case 1:
                         _a[_b] = _c.sent();
                         callBack.call(this);
