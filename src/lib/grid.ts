@@ -274,11 +274,11 @@ export default class LuckyGrid extends Lucky {
     if (!this.cellImgs[prizeIndex]) this.cellImgs[prizeIndex] = []
     // 加载 defaultImg 默认图片
     this.cellImgs[prizeIndex][imgIndex] = {
-      defaultImg: await this.loadImg(imgInfo.src) as HTMLImageElement
+      defaultImg: await this.loadImg(imgInfo.src, imgInfo) as HTMLImageElement
     }
     // 如果有 activeImg 则多加载一张
     if (imgInfo.hasOwnProperty('activeSrc')) {
-      const activeImg = await this.loadImg((imgInfo as PrizeImgType).activeSrc!) as HTMLImageElement
+      const activeImg = await this.loadImg((imgInfo as PrizeImgType).activeSrc!, imgInfo) as HTMLImageElement
       this.cellImgs[prizeIndex][imgIndex].activeImg = activeImg
     }
     callBack.call(this)
@@ -445,7 +445,7 @@ export default class LuckyGrid extends Lucky {
         })
       })
     })
-    if (ctx.draw) ctx.draw()
+    if (this.config.flag.indexOf('UNI-') === 0) ctx.draw()
   }
 
   /**

@@ -177,7 +177,7 @@
          */
         function Lucky(config) {
             this.global = {};
-            this.htmlFontSize = 0;
+            this.htmlFontSize = 16;
             this.dpr = 1;
             this.subs = {};
             this.rAF = function () { };
@@ -1445,13 +1445,13 @@
                             _a = this.cellImgs[prizeIndex];
                             _b = imgIndex;
                             _c = {};
-                            return [4 /*yield*/, this.loadImg(imgInfo.src)];
+                            return [4 /*yield*/, this.loadImg(imgInfo.src, imgInfo)];
                         case 1:
                             // 加载 defaultImg 默认图片
                             _a[_b] = (_c.defaultImg = (_d.sent()),
                                 _c);
                             if (!imgInfo.hasOwnProperty('activeSrc')) return [3 /*break*/, 3];
-                            return [4 /*yield*/, this.loadImg(imgInfo.activeSrc)];
+                            return [4 /*yield*/, this.loadImg(imgInfo.activeSrc, imgInfo)];
                         case 2:
                             activeImg = _d.sent();
                             this.cellImgs[prizeIndex][imgIndex].activeImg = activeImg;
@@ -1620,7 +1620,7 @@
                     });
                 });
             });
-            if (ctx.draw)
+            if (this.config.flag.indexOf('UNI-') === 0)
                 ctx.draw();
         };
         /**

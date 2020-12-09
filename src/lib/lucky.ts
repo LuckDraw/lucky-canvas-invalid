@@ -48,7 +48,7 @@ export default class Lucky {
   protected readonly config: ConfigType
   protected readonly ctx: CanvasRenderingContext2D
   protected global = {}
-  protected htmlFontSize: number = 0
+  protected htmlFontSize: number = 16
   protected dpr: number = 1
   private subs: object = {}
   protected rAF: Function = function () {}
