@@ -7,6 +7,8 @@ export default class Lucky {
    * @param config 
    */
   constructor (config: string | HTMLDivElement | ConfigType) {
+    this.setDpr()
+    this.setHTMLFontSize()
     // 兼容代码开始: 为了处理 v1.0.6 版本在这里传入了一个 dom
     if (typeof config === 'string') config = { el: config } as ConfigType
     else if (config.nodeType === 1) config = { el: '', divElement: config } as ConfigType
@@ -39,9 +41,6 @@ export default class Lucky {
     this.config = config
     // 如果最后得不到 canvas 上下文那就无法进行绘制
     if (!config.ctx || !config.width || !config.height) return
-    // 初始化
-    this.setDpr()
-    this.setHTMLFontSize()
     this.resetArrayProto()
     this.initWindowFunction()
   }
