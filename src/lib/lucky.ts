@@ -1,5 +1,5 @@
 import { isExpectType } from '../utils/index'
-import { ConfigType, UniImageType } from '../types/index'
+import { ConfigType, ImgType, UniImageType } from '../types/index'
 
 export default class Lucky {
   /**
@@ -114,13 +114,23 @@ export default class Lucky {
     ctx.scale(dpr, dpr)
   }
 
-  protected loadImg (src: string) {
+  /**
+   * 异步加载图片并返回图片的几何信息
+   * @param src 图片路径
+   * @param info 图片信息
+   */
+  protected loadImg (src: string, info: ImgType) {
     return new Promise(resolve => {
       if (this.config.flag === 'WEB') {
         let imgObj = new Image()
         imgObj.src = src
         imgObj.onload = () => resolve(imgObj)
       } else if (['MINI-WX', 'UNI-H5', 'UNI-MINI-WX'].includes(this.config.flag)) {
+        // 修复 uni.getImageInfo 无法处理 base64 格式的图片的问题
+        if (/^data:image\/([a-z]+);base64,/.test(src)) {
+          info.$resolve = resolve
+          return
+        }
         this.global.getImageInfo({
           src: src,
           success: (imgObj: UniImageType) => resolve(imgObj),

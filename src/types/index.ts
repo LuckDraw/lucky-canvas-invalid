@@ -15,6 +15,7 @@ export interface ImgType {
   top?: string | number
   width?: string
   height?: string
+  $resolve?: Function
 }
 
 export interface ConfigType {
