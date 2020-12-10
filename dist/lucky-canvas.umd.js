@@ -539,6 +539,19 @@
     };
     // 绘制扇形
     var drawSector = function (ctx, minRadius, maxRadius, start, end, gutter, background) {
+        if (!gutter) {
+            ctx.beginPath();
+            ctx.fillStyle = background;
+            ctx.moveTo(0, 0);
+            ctx.arc(0, 0, maxRadius, start, end, false);
+            ctx.closePath();
+            ctx.fill();
+        }
+        else
+            drawSectorByArcTo(ctx, minRadius, maxRadius, start, end, gutter, background);
+    };
+    // 根据arcTo绘制扇形
+    var drawSectorByArcTo = function (ctx, minRadius, maxRadius, start, end, gutter, background) {
         if (!minRadius)
             minRadius = gutter;
         var maxGutter = getAngle(90 / Math.PI / maxRadius * gutter);
