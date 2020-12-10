@@ -79,6 +79,26 @@ export const drawSector = (
   gutter: number,
   background: string
 ) => {
+  if (!gutter) {
+    ctx.beginPath()
+    ctx.fillStyle = background
+    ctx.moveTo(0, 0)
+    ctx.arc(0, 0, maxRadius, start, end, false)
+    ctx.closePath()
+    ctx.fill()
+  } else drawSectorByArcTo(ctx, minRadius, maxRadius, start, end, gutter, background)
+}
+
+// 根据arcTo绘制扇形
+export const drawSectorByArcTo = (
+  ctx: CanvasRenderingContext2D,
+  minRadius: number,
+  maxRadius: number,
+  start: number,
+  end: number,
+  gutter: number,
+  background: string
+) => {
   if (!minRadius) minRadius = gutter
   let maxGutter = getAngle(90 / Math.PI / maxRadius * gutter)
   let minGutter = getAngle(90 / Math.PI / minRadius * gutter)
