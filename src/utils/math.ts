@@ -66,7 +66,8 @@ export const drawRadian = (
     y0 = k1 * x0 + b1
   }
   ctx.lineTo(x1, y1)
-  ctx.arcTo(x0, y0, x2, y2, r)
+  // ctx.arcTo(x0, y0, x2, y2, r)
+  ctx.quadraticCurveTo(x0, y0, x2, y2)
 }
 
 // 绘制扇形
@@ -140,13 +141,17 @@ export const drawRoundRect = (
   ctx.moveTo(x + r, y)
   ctx.lineTo(x + r, y)
   ctx.lineTo(x + w - r, y)
-  ctx.arcTo(x + w, y, x + w, y + r, r)
+  // ctx.arcTo(x + w, y, x + w, y + r, r)
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r)
   ctx.lineTo(x + w, y + h - r)
-  ctx.arcTo(x + w, y + h, x + w - r, y + h, r)
+  // ctx.arcTo(x + w, y + h, x + w - r, y + h, r)
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h)
   ctx.lineTo(x + r, y + h)
-  ctx.arcTo(x, y + h, x, y + h - r, r)
+  // ctx.arcTo(x, y + h, x, y + h - r, r)
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r)
   ctx.lineTo(x, y + r)
-  ctx.arcTo(x, y, x + r, y, r)
+  // ctx.arcTo(x, y, x + r, y, r)
+  ctx.quadraticCurveTo(x, y, x + r, y)
   ctx.closePath()
   ctx.fill()
 }
