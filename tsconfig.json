@@ -10,6 +10,7 @@
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "suppressImplicitAnyIndexErrors": true,
+    "resolveJsonModule": true,
     "sourceMap": true,
     "lib": [
       "es2015",

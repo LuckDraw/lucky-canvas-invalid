@@ -168,6 +168,9 @@ var computePadding = function (block) {
     return [paddingTop, paddingBottom, paddingLeft, paddingRight];
 };
 
+var name = "lucky-canvas";
+var version = "1.2.0";
+
 var Lucky = /** @class */ (function () {
     /**
      * 公共构造器
@@ -216,13 +219,18 @@ var Lucky = /** @class */ (function () {
             config.divElement.style.width = config.width + 'px';
             config.divElement.style.height = config.height + 'px';
         }
-        if (config.canvasElement)
+        if (config.canvasElement) {
+            // 添加版本信息到标签上, 方便定位版本问题
+            config.canvasElement.setAttribute('package', name + "@" + version);
             config.ctx = config.canvasElement.getContext('2d');
+        }
         this.ctx = config.ctx;
         this.config = config;
         // 如果最后得不到 canvas 上下文那就无法进行绘制
-        if (!config.ctx || !config.width || !config.height)
+        if (!config.ctx || !config.width || !config.height) {
+            console.error('无法获取到 CanvasContext2D 或宽高');
             return;
+        }
         this.resetArrayProto();
         this.initWindowFunction();
     }
