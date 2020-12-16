@@ -362,8 +362,8 @@ export default class LuckyGrid extends Lucky {
       // 绘制阴影
       if (shadow.length === 4) {
         ctx.shadowColor = shadow[3]
-        ctx.shadowOffsetX = shadow[0]
-        ctx.shadowOffsetY = shadow[1]
+        ctx.shadowOffsetX = shadow[0] * this.dpr
+        ctx.shadowOffsetY = shadow[1] * this.dpr
         ctx.shadowBlur = shadow[2]
         // 修正(格子+阴影)的位置, 这里使用逗号运算符
         shadow[0] > 0 ? (width -= shadow[0]) : (width += shadow[0], x -= shadow[0])
