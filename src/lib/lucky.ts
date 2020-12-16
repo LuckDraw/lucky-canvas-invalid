@@ -60,8 +60,11 @@ export default class Lucky {
    * 设备像素比
    */
   protected setDpr (): void {
-    if (!window) return
-    (window as any).dpr = this.dpr = (window.devicePixelRatio || 2 ) * 1.3
+    if (window) {
+      (window as any).dpr = this.dpr = (window.devicePixelRatio || 2 ) * 1.3
+    } else {
+      this.dpr = this.config.dpr!
+    }
   }
 
   /**

@@ -21,6 +21,7 @@ export interface ImgType {
 export interface ConfigType {
   nodeType: number
   el?: string
+  dpr?: number
   divElement?: HTMLDivElement
   canvasElement?: HTMLCanvasElement
   ctx: CanvasRenderingContext2D
