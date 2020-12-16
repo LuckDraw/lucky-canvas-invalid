@@ -230,9 +230,12 @@ var Lucky = /** @class */ (function () {
      * 设备像素比
      */
     Lucky.prototype.setDpr = function () {
-        if (!window)
-            return;
-        window.dpr = this.dpr = (window.devicePixelRatio || 2) * 1.3;
+        if (window) {
+            window.dpr = this.dpr = (window.devicePixelRatio || 2) * 1.3;
+        }
+        else {
+            this.dpr = this.config.dpr;
+        }
     };
     /**
      * 根标签的字体大小
@@ -954,9 +957,9 @@ var LuckyWheel = /** @class */ (function (_super) {
      */
     LuckyWheel.prototype.draw = function () {
         var _this = this;
-        var _a = this, ctx = _a.ctx, _defaultConfig = _a._defaultConfig, _defaultStyle = _a._defaultStyle;
+        var _a = this, config = _a.config, ctx = _a.ctx, _defaultConfig = _a._defaultConfig, _defaultStyle = _a._defaultStyle;
         // uniApp 的 draw 方法会初始化圆心
-        if (this.config.flag.indexOf('UNI-') === 0)
+        if (config.flag.indexOf('UNI-') === 0)
             ctx.translate(this.Radius, this.Radius);
         ctx.clearRect(-this.Radius, -this.Radius, this.Radius * 2, this.Radius * 2);
         // 绘制blocks边框
@@ -989,7 +992,7 @@ var LuckyWheel = /** @class */ (function (_super) {
             // 奖品区域可见高度
             var prizeHeight = _this.prizeRadius - _this.maxBtnRadius;
             // 绘制背景
-            drawSector(ctx, _this.maxBtnRadius, _this.prizeRadius, currMiddleDeg - _this.prizeRadian / 2, currMiddleDeg + _this.prizeRadian / 2, _this.getLength(_defaultConfig.gutter), prize.background || _defaultStyle.background || 'rgba(0, 0, 0, 0)');
+            drawSector(ctx, _this.maxBtnRadius, _this.prizeRadius, currMiddleDeg - _this.prizeRadian / 2, currMiddleDeg + _this.prizeRadian / 2, _this.getLength(_defaultConfig.gutter), prize.background || _defaultStyle.background);
             // 计算临时坐标并旋转文字
             var x = Math.cos(currMiddleDeg) * _this.prizeRadius;
             var y = Math.sin(currMiddleDeg) * _this.prizeRadius;
@@ -1058,13 +1061,13 @@ var LuckyWheel = /** @class */ (function (_super) {
             // 绘制背景颜色
             _this.maxBtnRadius = Math.max(_this.maxBtnRadius, radius);
             ctx.beginPath();
-            ctx.fillStyle = btn.background || 'rgba(0, 0, 0, 0)';
+            ctx.fillStyle = btn.background || '#fff';
             ctx.arc(0, 0, radius, 0, Math.PI * 2, false);
             ctx.fill();
             // 绘制指针
             if (btn.pointer) {
                 ctx.beginPath();
-                ctx.fillStyle = btn.background || 'rgba(0, 0, 0, 0)';
+                ctx.fillStyle = btn.background || '#fff';
                 ctx.moveTo(-radius, 0);
                 ctx.lineTo(radius, 0);
                 ctx.lineTo(0, -radius * 2);
@@ -1555,8 +1558,8 @@ var LuckyGrid = /** @class */ (function (_super) {
             // 绘制阴影
             if (shadow.length === 4) {
                 ctx.shadowColor = shadow[3];
-                ctx.shadowOffsetX = shadow[0];
-                ctx.shadowOffsetY = shadow[1];
+                ctx.shadowOffsetX = shadow[0] * _this.dpr;
+                ctx.shadowOffsetY = shadow[1] * _this.dpr;
                 ctx.shadowBlur = shadow[2];
                 // 修正(格子+阴影)的位置, 这里使用逗号运算符
                 shadow[0] > 0 ? (width -= shadow[0]) : (width += shadow[0], x -= shadow[0]);
@@ -1564,7 +1567,7 @@ var LuckyGrid = /** @class */ (function (_super) {
             }
             drawRoundRect(ctx, x, y, width, height, _this.getLength(prize.borderRadius ? prize.borderRadius : _defaultStyle.borderRadius), _this.handleBackground(x, y, width, height, prize.background, isActive));
             // 清空阴影
-            ctx.shadowColor = 'rgba(255, 255, 255, 0)';
+            ctx.shadowColor = 'rgba(0, 0, 0, 0)';
             ctx.shadowOffsetX = 0;
             ctx.shadowOffsetY = 0;
             ctx.shadowBlur = 0;
