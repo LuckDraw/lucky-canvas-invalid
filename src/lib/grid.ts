@@ -375,7 +375,7 @@ export default class LuckyGrid extends Lucky {
         this.handleBackground(x, y, width, height, prize.background, isActive)
       )
       // 清空阴影
-      ctx.shadowColor = 'rgba(255, 255, 255, 0)'
+      ctx.shadowColor = 'rgba(0, 0, 0, 0)'
       ctx.shadowOffsetX = 0
       ctx.shadowOffsetY = 0
       ctx.shadowBlur = 0

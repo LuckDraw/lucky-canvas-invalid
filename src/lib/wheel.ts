@@ -329,7 +329,7 @@ export default class LuckyWheel extends Lucky {
         currMiddleDeg - this.prizeRadian / 2,
         currMiddleDeg + this.prizeRadian / 2,
         this.getLength(_defaultConfig.gutter),
-        prize.background || _defaultStyle.background || 'rgba(0, 0, 0, 0)'
+        prize.background || _defaultStyle.background
       )
       // 计算临时坐标并旋转文字
       let x = Math.cos(currMiddleDeg) * this.prizeRadius
@@ -396,13 +396,13 @@ export default class LuckyWheel extends Lucky {
       // 绘制背景颜色
       this.maxBtnRadius = Math.max(this.maxBtnRadius, radius)
       ctx.beginPath()
-      ctx.fillStyle = btn.background || 'rgba(0, 0, 0, 0)'
+      ctx.fillStyle = btn.background || '#fff'
       ctx.arc(0, 0, radius, 0, Math.PI * 2, false)
       ctx.fill()
       // 绘制指针
       if (btn.pointer) {
         ctx.beginPath()
-        ctx.fillStyle = btn.background || 'rgba(0, 0, 0, 0)'
+        ctx.fillStyle = btn.background || '#fff'
         ctx.moveTo(-radius, 0)
         ctx.lineTo(radius, 0)
         ctx.lineTo(0, -radius * 2)
