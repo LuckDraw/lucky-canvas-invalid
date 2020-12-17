@@ -179,13 +179,12 @@ var Lucky = /** @class */ (function () {
     function Lucky(config) {
         this.global = {};
         this.htmlFontSize = 16;
-        this.dpr = 1;
         this.subs = {};
         this.rAF = function () { };
         this.setTimeout = function () { };
         this.setInterval = function () { };
         this.clearInterval = function () { };
-        this.setDpr();
+        // 先初始化 fontSize 以防后面计算 rem
         this.setHTMLFontSize();
         // 兼容代码开始: 为了处理 v1.0.6 版本在这里传入了一个 dom
         if (typeof config === 'string')
@@ -231,18 +230,24 @@ var Lucky = /** @class */ (function () {
             console.error('无法获取到 CanvasContext2D 或宽高');
             return;
         }
+        // 最后等待 config 来设置 dpr
+        this.setDpr();
+        // 重写数组原型方法
         this.resetArrayProto();
+        // 初始化 window 方法
         this.initWindowFunction();
     }
     /**
      * 设备像素比
+     * window 环境下自动获取, 其余环境手动传入
      */
     Lucky.prototype.setDpr = function () {
+        var config = this.config;
         if (window) {
-            window.dpr = this.dpr = (window.devicePixelRatio || 2) * 1.3;
+            window.dpr = config.dpr = (window.devicePixelRatio || 2) * 1.3;
         }
-        else {
-            this.dpr = this.config.dpr;
+        else if (!config.dpr) {
+            console.error(config, '未传入 dpr 可能会导致绘制异常');
         }
     };
     /**
@@ -281,8 +286,8 @@ var Lucky = /** @class */ (function () {
      * 根据 dpr 缩放 canvas 并处理位移
      */
     Lucky.prototype.zoomCanvas = function () {
-        var _a = this, config = _a.config, ctx = _a.ctx, dpr = _a.dpr;
-        var canvasElement = config.canvasElement;
+        var _a = this, config = _a.config, ctx = _a.ctx;
+        var canvasElement = config.canvasElement, dpr = config.dpr;
         var compute = function (len) { return (len * dpr - len) / (len * dpr) * (dpr / 2) * 100; };
         if (!canvasElement)
             return;
@@ -1402,8 +1407,8 @@ var LuckyGrid = /** @class */ (function (_super) {
     LuckyGrid.prototype.init = function (willUpdateImgs) {
         var _this = this;
         var _a = this, config = _a.config, ctx = _a.ctx, button = _a.button;
-        this.setDpr();
         this.setHTMLFontSize();
+        this.setDpr();
         this.zoomCanvas();
         var endCallBack = function () {
             // 开始首次渲染
@@ -1566,8 +1571,8 @@ var LuckyGrid = /** @class */ (function (_super) {
             // 绘制阴影
             if (shadow.length === 4) {
                 ctx.shadowColor = shadow[3];
-                ctx.shadowOffsetX = shadow[0] * _this.dpr;
-                ctx.shadowOffsetY = shadow[1] * _this.dpr;
+                ctx.shadowOffsetX = shadow[0] * config.dpr;
+                ctx.shadowOffsetY = shadow[1] * config.dpr;
                 ctx.shadowBlur = shadow[2];
                 // 修正(格子+阴影)的位置, 这里使用逗号运算符
                 shadow[0] > 0 ? (width -= shadow[0]) : (width += shadow[0], x -= shadow[0]);

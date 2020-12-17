@@ -8,7 +8,7 @@ export default class Lucky {
    * @param config 
    */
   constructor (config: string | HTMLDivElement | ConfigType) {
-    this.setDpr()
+    // 先初始化 fontSize 以防后面计算 rem
     this.setHTMLFontSize()
     // 兼容代码开始: 为了处理 v1.0.6 版本在这里传入了一个 dom
     if (typeof config === 'string') config = { el: config } as ConfigType
@@ -49,7 +49,11 @@ export default class Lucky {
       console.error('无法获取到 CanvasContext2D 或宽高')
       return
     }
+    // 最后等待 config 来设置 dpr
+    this.setDpr()
+    // 重写数组原型方法
     this.resetArrayProto()
+    // 初始化 window 方法
     this.initWindowFunction()
   }
 
@@ -57,7 +61,6 @@ export default class Lucky {
   protected readonly ctx: CanvasRenderingContext2D
   protected global = {}
   protected htmlFontSize: number = 16
-  protected dpr: number = 1
   private subs: object = {}
   protected rAF: Function = function () {}
   protected setTimeout: Function = function () {}
@@ -66,12 +69,14 @@ export default class Lucky {
 
   /**
    * 设备像素比
+   * window 环境下自动获取, 其余环境手动传入
    */
   protected setDpr (): void {
+    const { config } = this
     if (window) {
-      (window as any).dpr = this.dpr = (window.devicePixelRatio || 2 ) * 1.3
-    } else {
-      this.dpr = this.config.dpr!
+      (window as any).dpr = config.dpr = (window.devicePixelRatio || 2 ) * 1.3
+    } else if (!config.dpr) {
+      console.error(config, '未传入 dpr 可能会导致绘制异常')
     }
   }
 
@@ -110,8 +115,8 @@ export default class Lucky {
    * 根据 dpr 缩放 canvas 并处理位移
    */
   protected zoomCanvas (): void {
-    const { config, ctx, dpr } = this
-    const { canvasElement } = config
+    const { config, ctx } = this
+    const { canvasElement, dpr } = config
     const compute = (len: number) => (len * dpr - len) / (len * dpr) * (dpr / 2) * 100
     if (!canvasElement) return
     canvasElement.width = config.width * dpr
