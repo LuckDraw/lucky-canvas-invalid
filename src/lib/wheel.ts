@@ -292,7 +292,7 @@ export default class LuckyWheel extends Lucky {
   protected draw (): void {
     const { config, ctx, _defaultConfig, _defaultStyle } = this
     // 触发绘制前回调
-    config.beforeDraw?.bind(this, ctx)
+    config.beforeDraw?.call(this, ctx)
     // 清空画布
     ctx.clearRect(-this.Radius, -this.Radius, this.Radius * 2, this.Radius * 2)
     // 绘制blocks边框
@@ -442,7 +442,8 @@ export default class LuckyWheel extends Lucky {
         })
       })
     })
-    config.afterDraw?.bind(this, ctx)
+    // 触发绘制后回调
+    config.afterDraw?.call(this, ctx)
   }
 
   /**

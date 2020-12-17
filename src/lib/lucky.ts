@@ -176,37 +176,16 @@ export default class Lucky {
    */
   protected changeUnits (value: string, denominator = 1): number {
     return Number(value.replace(/^(\-*[0-9.]*)([a-z%]*)$/, (value, num, unit) => {
-      switch (unit) {
-        case '%':
-          num *= (denominator / 100)
-          break
-        case 'px':
-          num *= 1
-          break
-        case 'rem':
-          num *= this.htmlFontSize
-          break
-        case 'rpx':
-          num = this.rpx2px(num)
-          break
-        default:
-          num *= 1
-          break
-      }
-      return num
+      const unitFunc = {
+        '%': (n: number) => n * (denominator / 100),
+        'px': (n: number) => n * 1,
+        'rem': (n: number) => n * this.htmlFontSize,
+      }[unit]
+      if (unitFunc) return unitFunc(num)
+      // 如果找不到默认单位, 就交给外面处理
+      const otherUnitFunc = this.config.unitFunc
+      return otherUnitFunc ? otherUnitFunc(num, unit) : num
     }))
-  }
-
-  /**
-   * rpx 转 px 的方法
-   * @param value 输入rpx
-   * @return 返回px
-   */
-  rpx2px (value: string | number): number {
-    const { global } = this
-    if (typeof value === 'string') value = Number(value.replace(/[a-z]*/g, ''))
-    if (!global) return value
-    return global.getSystemInfoSync().windowWidth / 750 * value
   }
 
   /**
