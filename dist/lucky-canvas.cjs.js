@@ -169,7 +169,7 @@ var computePadding = function (block) {
 };
 
 var name = "lucky-canvas";
-var version = "1.2.0";
+var version = "1.2.2";
 
 var Lucky = /** @class */ (function () {
     /**
@@ -243,8 +243,9 @@ var Lucky = /** @class */ (function () {
      */
     Lucky.prototype.setDpr = function () {
         var config = this.config;
-        if (window) {
-            window.dpr = config.dpr = (window.devicePixelRatio || 2) * 1.3;
+        if (config.dpr) ;
+        else if (window) {
+            window.dpr = config.dpr = window.devicePixelRatio || 1;
         }
         else if (!config.dpr) {
             console.error(config, '未传入 dpr 可能会导致绘制异常');
@@ -347,51 +348,17 @@ var Lucky = /** @class */ (function () {
         var _this_1 = this;
         if (denominator === void 0) { denominator = 1; }
         return Number(value.replace(/^(\-*[0-9.]*)([a-z%]*)$/, function (value, num, unit) {
-            switch (unit) {
-                case '%':
-                    num *= (denominator / 100);
-                    break;
-                case 'px':
-                    num *= 1;
-                    break;
-                case 'rem':
-                    num *= _this_1.htmlFontSize;
-                    break;
-                case 'rpx':
-                    num = _this_1.rpx2px(num);
-                    break;
-                default:
-                    num *= 1;
-                    break;
-            }
-            return num;
+            var unitFunc = {
+                '%': function (n) { return n * (denominator / 100); },
+                'px': function (n) { return n * 1; },
+                'rem': function (n) { return n * _this_1.htmlFontSize; },
+            }[unit];
+            if (unitFunc)
+                return unitFunc(num);
+            // 如果找不到默认单位, 就交给外面处理
+            var otherUnitFunc = _this_1.config.unitFunc;
+            return otherUnitFunc ? otherUnitFunc(num, unit) : num;
         }));
-    };
-    /**
-     * px 转 rpx 的方法
-     * @param value 输入px
-     * @return 返回rpx
-     */
-    Lucky.prototype.px2rpx = function (value) {
-        var global = this.global;
-        if (typeof value === 'string')
-            value = Number(value.replace(/[a-z]*/g, ''));
-        if (!global)
-            return value;
-        return 750 / global.getSystemInfoSync().windowWidth * value;
-    };
-    /**
-     * rpx 转 px 的方法
-     * @param value 输入rpx
-     * @return 返回px
-     */
-    Lucky.prototype.rpx2px = function (value) {
-        var global = this.global;
-        if (typeof value === 'string')
-            value = Number(value.replace(/[a-z]*/g, ''));
-        if (!global)
-            return value;
-        return global.getSystemInfoSync().windowWidth / 750 * value;
     };
     /**
      * 更新数据并重新绘制 canvas 画布
@@ -970,10 +937,11 @@ var LuckyWheel = /** @class */ (function (_super) {
      */
     LuckyWheel.prototype.draw = function () {
         var _this = this;
-        var _a = this, config = _a.config, ctx = _a.ctx, _defaultConfig = _a._defaultConfig, _defaultStyle = _a._defaultStyle;
-        // uniApp 的 draw 方法会初始化圆心
-        if (config.flag.indexOf('UNI-') === 0)
-            ctx.translate(this.Radius, this.Radius);
+        var _a, _b;
+        var _c = this, config = _c.config, ctx = _c.ctx, _defaultConfig = _c._defaultConfig, _defaultStyle = _c._defaultStyle;
+        // 触发绘制前回调
+        (_a = config.beforeDraw) === null || _a === void 0 ? void 0 : _a.call(this, ctx);
+        // 清空画布
         ctx.clearRect(-this.Radius, -this.Radius, this.Radius * 2, this.Radius * 2);
         // 绘制blocks边框
         this.prizeRadius = this.blocks.reduce(function (radius, block) {
@@ -1119,8 +1087,8 @@ var LuckyWheel = /** @class */ (function (_super) {
                 });
             });
         });
-        if (this.config.flag.indexOf('UNI-') === 0)
-            ctx.draw();
+        // 触发绘制后回调
+        (_b = config.afterDraw) === null || _b === void 0 ? void 0 : _b.call(this, ctx);
     };
     /**
      * 对外暴露: 开始抽奖方法
@@ -1531,7 +1499,10 @@ var LuckyGrid = /** @class */ (function (_super) {
      */
     LuckyGrid.prototype.draw = function () {
         var _this = this;
-        var _a = this, config = _a.config, ctx = _a.ctx, _defaultConfig = _a._defaultConfig, _defaultStyle = _a._defaultStyle, _activeStyle = _a._activeStyle;
+        var _a, _b;
+        var _c = this, config = _c.config, ctx = _c.ctx, _defaultConfig = _c._defaultConfig, _defaultStyle = _c._defaultStyle, _activeStyle = _c._activeStyle;
+        // 触发绘制前回调
+        (_a = config.beforeDraw) === null || _a === void 0 ? void 0 : _a.call(this, ctx);
         // 清空画布
         ctx.clearRect(0, 0, config.width, config.height);
         // 合并奖品和按钮
@@ -1652,8 +1623,8 @@ var LuckyGrid = /** @class */ (function (_super) {
                 });
             });
         });
-        if (this.config.flag.indexOf('UNI-') === 0)
-            ctx.draw();
+        // 触发绘制后回调
+        (_b = config.afterDraw) === null || _b === void 0 ? void 0 : _b.call(this, ctx);
     };
     /**
      * 处理背景色
