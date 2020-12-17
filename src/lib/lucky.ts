@@ -76,7 +76,7 @@ export default class Lucky {
     if (config.dpr) {
       // 优先使用 config 传入的 dpr
     } else if (window) {
-      (window as any).dpr = config.dpr = (window.devicePixelRatio || 2 ) * 1.3
+      (window as any).dpr = config.dpr = window.devicePixelRatio || 1
     } else if (!config.dpr) {
       console.error(config, '未传入 dpr 可能会导致绘制异常')
     }
@@ -198,18 +198,6 @@ export default class Lucky {
   }
 
   /**
-   * px 转 rpx 的方法
-   * @param value 输入px
-   * @return 返回rpx
-   */
-  px2rpx (value: string | number): number {
-    const { global } = this
-    if (typeof value === 'string') value = Number(value.replace(/[a-z]*/g, ''))
-    if (!global) return value
-    return 750 / global.getSystemInfoSync().windowWidth * value
-  }
-
-  /**
    * rpx 转 px 的方法
    * @param value 输入rpx
    * @return 返回px
@@ -225,7 +213,7 @@ export default class Lucky {
    * 更新数据并重新绘制 canvas 画布
    */
   protected draw () {}
-  
+
   /**
    * 数据劫持
    * @param obj 将要处理的数据

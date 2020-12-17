@@ -323,6 +323,8 @@ export default class LuckyGrid extends Lucky {
    */
   protected draw (): void {
     const { config, ctx, _defaultConfig, _defaultStyle, _activeStyle } = this
+    // 触发绘制前回调
+    config.beforeDraw?.bind(this, ctx)
     // 清空画布
     ctx.clearRect(0, 0, config.width, config.height)
     // 合并奖品和按钮
@@ -445,7 +447,8 @@ export default class LuckyGrid extends Lucky {
         })
       })
     })
-    if (this.config.flag.indexOf('UNI-') === 0) ctx.draw()
+    // 触发绘制后回调
+    config.afterDraw?.bind(this, ctx)
   }
 
   /**

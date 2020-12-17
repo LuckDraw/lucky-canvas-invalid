@@ -291,8 +291,9 @@ export default class LuckyWheel extends Lucky {
    */
   protected draw (): void {
     const { config, ctx, _defaultConfig, _defaultStyle } = this
-    // uniApp 的 draw 方法会初始化圆心
-    if (config.flag.indexOf('UNI-') === 0) ctx.translate(this.Radius, this.Radius)
+    // 触发绘制前回调
+    config.beforeDraw?.bind(this, ctx)
+    // 清空画布
     ctx.clearRect(-this.Radius, -this.Radius, this.Radius * 2, this.Radius * 2)
     // 绘制blocks边框
     this.prizeRadius = this.blocks.reduce((radius, block) => {
@@ -441,7 +442,7 @@ export default class LuckyWheel extends Lucky {
         })
       })
     })
-    if (this.config.flag.indexOf('UNI-') === 0) ctx.draw()
+    config.afterDraw?.bind(this, ctx)
   }
 
   /**

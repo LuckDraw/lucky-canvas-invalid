@@ -32,6 +32,8 @@ export interface ConfigType {
   setInterval: Function
   clearInterval: Function
   flag: 'WEB' | 'MINI-WX' | 'UNI-H5' | 'UNI-MINI-WX'
+  beforeDraw?: Function
+  afterDraw?: Function
 }
 
 export interface UniImageType {
