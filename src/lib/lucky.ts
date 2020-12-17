@@ -73,7 +73,9 @@ export default class Lucky {
    */
   protected setDpr (): void {
     const { config } = this
-    if (window) {
+    if (config.dpr) {
+      // 优先使用 config 传入的 dpr
+    } else if (window) {
       (window as any).dpr = config.dpr = (window.devicePixelRatio || 2 ) * 1.3
     } else if (!config.dpr) {
       console.error(config, '未传入 dpr 可能会导致绘制异常')
