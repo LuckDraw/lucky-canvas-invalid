@@ -195,6 +195,7 @@
                 config = { el: '', divElement: config };
             config = config;
             // 兼容代码结束
+            this.config = config;
             if (!config.flag)
                 config.flag = 'WEB';
             if (config.flag.indexOf('UNI-') === 0) {
@@ -226,7 +227,6 @@
                 config.ctx = config.canvasElement.getContext('2d');
             }
             this.ctx = config.ctx;
-            this.config = config;
             // 如果最后得不到 canvas 上下文那就无法进行绘制
             if (!config.ctx || !config.width || !config.height) {
                 console.error('无法获取到 CanvasContext2D 或宽高');
