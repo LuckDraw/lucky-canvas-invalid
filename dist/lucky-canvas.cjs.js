@@ -169,7 +169,7 @@ var computePadding = function (block) {
 };
 
 var name = "lucky-canvas";
-var version = "1.2.2";
+var version = "1.2.3";
 
 var Lucky = /** @class */ (function () {
     /**
