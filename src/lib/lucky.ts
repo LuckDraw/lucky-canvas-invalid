@@ -35,6 +35,7 @@ export default class Lucky {
     config.height = this.getLength(config.height) || boxHeight
     // 重新把宽高赋给盒子
     if (config.divElement) {
+      config.divElement.style.overflow = 'hidden'
       config.divElement.style.width = config.width + 'px'
       config.divElement.style.height = config.height + 'px'
     }

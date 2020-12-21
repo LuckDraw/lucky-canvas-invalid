@@ -169,7 +169,7 @@ var computePadding = function (block) {
 };
 
 var name = "lucky-canvas";
-var version = "1.2.3";
+var version = "1.2.4";
 
 var Lucky = /** @class */ (function () {
     /**
@@ -216,6 +216,7 @@ var Lucky = /** @class */ (function () {
         config.height = this.getLength(config.height) || boxHeight;
         // 重新把宽高赋给盒子
         if (config.divElement) {
+            config.divElement.style.overflow = 'hidden';
             config.divElement.style.width = config.width + 'px';
             config.divElement.style.height = config.height + 'px';
         }
