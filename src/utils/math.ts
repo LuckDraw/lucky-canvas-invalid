@@ -31,6 +31,7 @@ export const getTangentByPointer = (x: number, y: number): Array<number> => {
 
 // 根据三点画圆弧
 export const drawRadian = (
+  flag: string,
   ctx: CanvasRenderingContext2D,
   r: number,
   start: number,
@@ -40,11 +41,11 @@ export const drawRadian = (
   if (Math.abs(end - start).toFixed(8) >= getAngle(180).toFixed(8)) {
     let middle = (end + start) / 2
     if (direction) {
-      drawRadian(ctx, r, start, middle, direction)
-      drawRadian(ctx, r, middle, end, direction)
+      drawRadian(flag, ctx, r, start, middle, direction)
+      drawRadian(flag, ctx, r, middle, end, direction)
     } else {
-      drawRadian(ctx, r, middle, end, direction)
-      drawRadian(ctx, r, start, middle, direction)
+      drawRadian(flag, ctx, r, middle, end, direction)
+      drawRadian(flag, ctx, r, start, middle, direction)
     }
     return false
   }
@@ -66,12 +67,16 @@ export const drawRadian = (
     y0 = k1 * x0 + b1
   }
   ctx.lineTo(x1, y1)
-  // ctx.arcTo(x0, y0, x2, y2, r)
-  ctx.quadraticCurveTo(x0, y0, x2, y2)
+  if (['WEB', 'UNI-H5'].includes(flag)) {
+    ctx.arcTo(x0, y0, x2, y2, r)
+  } else {
+    ctx.quadraticCurveTo(x0, y0, x2, y2)
+  }
 }
 
 // 绘制扇形
 export const drawSector = (
+  flag: string,
   ctx: CanvasRenderingContext2D,
   minRadius: number,
   maxRadius: number,
@@ -87,11 +92,12 @@ export const drawSector = (
     ctx.arc(0, 0, maxRadius, start, end, false)
     ctx.closePath()
     ctx.fill()
-  } else drawSectorByArcTo(ctx, minRadius, maxRadius, start, end, gutter, background)
+  } else drawSectorByArcTo(flag, ctx, minRadius, maxRadius, start, end, gutter, background)
 }
 
 // 根据arcTo绘制扇形
 export const drawSectorByArcTo = (
+  flag: string,
   ctx: CanvasRenderingContext2D,
   minRadius: number,
   maxRadius: number,
@@ -110,10 +116,10 @@ export const drawSectorByArcTo = (
   ctx.beginPath()
   ctx.fillStyle = background
   ctx.moveTo(...getArcPointerByDeg(maxStart, maxRadius))
-  drawRadian(ctx, maxRadius, maxStart, maxEnd, true)
+  drawRadian(flag, ctx, maxRadius, maxStart, maxEnd, true)
   // 如果 getter 比按钮短就绘制圆弧, 反之计算新的坐标点
   if (minEnd > minStart)
-    drawRadian(ctx, minRadius, minStart, minEnd, false)
+    drawRadian(flag, ctx, minRadius, minStart, minEnd, false)
   else ctx.lineTo(
     ...getArcPointerByDeg(
       (start + end) / 2,

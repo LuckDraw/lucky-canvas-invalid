@@ -326,7 +326,8 @@ export default class LuckyWheel extends Lucky {
       let prizeHeight = this.prizeRadius - this.maxBtnRadius
       // 绘制背景
       drawSector(
-        ctx, this.maxBtnRadius, this.prizeRadius,
+        config.flag, ctx,
+        this.maxBtnRadius, this.prizeRadius,
         currMiddleDeg - this.prizeRadian / 2,
         currMiddleDeg + this.prizeRadian / 2,
         this.getLength(_defaultConfig.gutter),
