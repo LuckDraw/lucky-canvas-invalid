@@ -70,8 +70,8 @@ export default class LuckyWheel extends Lucky {
   private prizeFlag: number | undefined // 中奖索引
   private animationId = 0               // 帧动画id
   private FPS = 16.6                    // 屏幕刷新率
-  private prizeImgs: Array<HTMLImageElement[] | UniImageType> = [[]]
-  private btnImgs: Array<HTMLImageElement[] | UniImageType> = [[]]
+  private prizeImgs: Array<HTMLImageElement[] | UniImageType[]> = [[]]
+  private btnImgs: Array<HTMLImageElement[] | UniImageType[]> = [[]]
 
   /**
    * 初始化数据
@@ -259,7 +259,7 @@ export default class LuckyWheel extends Lucky {
    * @return [渲染宽度, 渲染高度]
    */
   private computedWidthAndHeight (
-    imgObj: HTMLImageElement,
+    imgObj: HTMLImageElement | UniImageType,
     imgInfo: ImgType,
     computedWidth: number,
     computedHeight: number
@@ -348,12 +348,13 @@ export default class LuckyWheel extends Lucky {
         const [imgX, imgY] = [this.getOffsetX(trueWidth), this.getHeight(imgInfo.top, prizeHeight)]
         let drawImg
         // 兼容代码
-        if (this.config.flag === 'WEB')
+        if (this.config.flag === 'WEB') {
           drawImg = prizeImg
-        else if (['MINI-WX', 'UNI-H5', 'UNI-MINI-WX'].includes(this.config.flag))
-          drawImg = prizeImg.path
+        } else if (['MINI-WX', 'UNI-H5', 'UNI-MINI-WX'].includes(this.config.flag)) {
+          drawImg = (prizeImg as UniImageType).path
+        }
         // 绘制图片
-        ctx.drawImage(drawImg, imgX, imgY, trueWidth, trueHeight)
+        ctx.drawImage((drawImg as CanvasImageSource), imgX, imgY, trueWidth, trueHeight)
       })
       // 逐行绘制文字
       prize.fonts && prize.fonts.forEach(font => {
@@ -422,12 +423,13 @@ export default class LuckyWheel extends Lucky {
         const [imgX, imgY] = [this.getOffsetX(trueWidth), this.getHeight(imgInfo.top, radius)]
         // 兼容代码
         let drawImg
-        if (this.config.flag === 'WEB') 
+        if (this.config.flag === 'WEB') {
           drawImg = btnImg
-        else if (['MINI-WX', 'UNI-H5', 'UNI-MINI-WX'].includes(this.config.flag))
-          drawImg = btnImg.path
+        } else if (['MINI-WX', 'UNI-H5', 'UNI-MINI-WX'].includes(this.config.flag)) {
+          drawImg = (btnImg as UniImageType).path
+        }
         // 绘制图片
-        ctx.drawImage(drawImg, imgX, imgY, trueWidth, trueHeight)
+        ctx.drawImage((drawImg as CanvasImageSource), imgX, imgY, trueWidth, trueHeight)
       })
       // 绘制按钮文字
       btn.fonts && btn.fonts.forEach(font => {

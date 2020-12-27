@@ -17,11 +17,6 @@ export default class Lucky {
     // 兼容代码结束
     this.config = config
     if (!config.flag) config.flag = 'WEB'
-    if (config.flag.indexOf('UNI-') === 0) {
-      this.global = uni
-    } else if (config.flag === 'MINI-WX') {
-      this.global = wx
-    }
     if (config.el) config.divElement = document.querySelector(config.el) as HTMLDivElement
     let boxWidth = 0, boxHeight = 0
     if (config.divElement) {
@@ -60,7 +55,6 @@ export default class Lucky {
 
   protected readonly config: ConfigType
   protected readonly ctx: CanvasRenderingContext2D
-  protected global = {}
   protected htmlFontSize: number = 16
   private subs: object = {}
   protected rAF: Function = function () {}
@@ -137,24 +131,29 @@ export default class Lucky {
    * @param src 图片路径
    * @param info 图片信息
    */
-  protected loadImg (src: string, info: ImgType) {
+  protected loadImg (src: string, info: ImgType): Promise<HTMLImageElement | UniImageType> {
     return new Promise(resolve => {
       if (this.config.flag === 'WEB') {
         let imgObj = new Image()
         imgObj.src = src
         imgObj.onload = () => resolve(imgObj)
-      } else if (['MINI-WX', 'UNI-H5', 'UNI-MINI-WX'].includes(this.config.flag)) {
-        // 修复 uni.getImageInfo 无法处理 base64 格式的图片的问题
-        if (/^data:image\/([a-z]+);base64,/.test(src)) {
-          info.$resolve = resolve
-          return
-        }
-        this.global.getImageInfo({
-          src: src,
-          success: (imgObj: UniImageType) => resolve(imgObj),
-          fail: () => console.error('API `getImageInfo` 加载图片失败', src)
-        })
+      } else {
+        // 其余平台向外暴露, 交给外部自行处理
+        info.$resolve = resolve
+        return
       }
+      // else if (['MINI-WX', 'UNI-H5', 'UNI-MINI-WX'].includes(this.config.flag)) {
+      //   // 修复 uni.getImageInfo 无法处理 base64 格式的图片的问题
+      //   if (/^data:image\/([a-z]+);base64,/.test(src)) {
+      //     info.$resolve = resolve
+      //     return
+      //   }
+      //   this.global.getImageInfo({
+      //     src: src,
+      //     success: (imgObj: UniImageType) => resolve(imgObj),
+      //     fail: () => console.error('API `getImageInfo` 加载图片失败', src)
+      //   })
+      // }
     })
   }
 

@@ -397,7 +397,7 @@ export default class LuckyGrid extends Lucky {
           // 小程序中直接绘制一个路径
           drawImg = (renderImg as UniImageType).path
         }
-        ctx.drawImage(drawImg, imgX, imgY, trueWidth, trueHeight)
+        ctx.drawImage((drawImg as CanvasImageSource), imgX, imgY, trueWidth, trueHeight)
       })
       // 绘制文字
       prize.fonts && prize.fonts.forEach(font => {
