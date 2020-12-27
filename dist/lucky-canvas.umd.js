@@ -171,7 +171,7 @@
     };
 
     var name = "lucky-canvas";
-    var version = "1.2.4";
+    var version = "1.2.5";
 
     var Lucky = /** @class */ (function () {
         /**
@@ -179,7 +179,6 @@
          * @param config
          */
         function Lucky(config) {
-            this.global = {};
             this.htmlFontSize = 16;
             this.subs = {};
             this.rAF = function () { };
@@ -198,12 +197,6 @@
             this.config = config;
             if (!config.flag)
                 config.flag = 'WEB';
-            if (config.flag.indexOf('UNI-') === 0) {
-                this.global = uni;
-            }
-            else if (config.flag === 'MINI-WX') {
-                this.global = wx;
-            }
             if (config.el)
                 config.divElement = document.querySelector(config.el);
             var boxWidth = 0, boxHeight = 0;
@@ -315,18 +308,23 @@
                     imgObj_1.src = src;
                     imgObj_1.onload = function () { return resolve(imgObj_1); };
                 }
-                else if (['MINI-WX', 'UNI-H5', 'UNI-MINI-WX'].includes(_this_1.config.flag)) {
-                    // 修复 uni.getImageInfo 无法处理 base64 格式的图片的问题
-                    if (/^data:image\/([a-z]+);base64,/.test(src)) {
-                        info.$resolve = resolve;
-                        return;
-                    }
-                    _this_1.global.getImageInfo({
-                        src: src,
-                        success: function (imgObj) { return resolve(imgObj); },
-                        fail: function () { return console.error('API `getImageInfo` 加载图片失败', src); }
-                    });
+                else {
+                    // 其余平台向外暴露, 交给外部自行处理
+                    info.$resolve = resolve;
+                    return;
                 }
+                // else if (['MINI-WX', 'UNI-H5', 'UNI-MINI-WX'].includes(this.config.flag)) {
+                //   // 修复 uni.getImageInfo 无法处理 base64 格式的图片的问题
+                //   if (/^data:image\/([a-z]+);base64,/.test(src)) {
+                //     info.$resolve = resolve
+                //     return
+                //   }
+                //   this.global.getImageInfo({
+                //     src: src,
+                //     success: (imgObj: UniImageType) => resolve(imgObj),
+                //     fail: () => console.error('API `getImageInfo` 加载图片失败', src)
+                //   })
+                // }
             });
         };
         /**
@@ -485,18 +483,18 @@
         return [k, b];
     };
     // 根据三点画圆弧
-    var drawRadian = function (ctx, r, start, end, direction) {
+    var drawRadian = function (flag, ctx, r, start, end, direction) {
         var _a;
         if (direction === void 0) { direction = true; }
         if (Math.abs(end - start).toFixed(8) >= getAngle(180).toFixed(8)) {
             var middle = (end + start) / 2;
             if (direction) {
-                drawRadian(ctx, r, start, middle, direction);
-                drawRadian(ctx, r, middle, end, direction);
+                drawRadian(flag, ctx, r, start, middle, direction);
+                drawRadian(flag, ctx, r, middle, end, direction);
             }
             else {
-                drawRadian(ctx, r, middle, end, direction);
-                drawRadian(ctx, r, start, middle, direction);
+                drawRadian(flag, ctx, r, middle, end, direction);
+                drawRadian(flag, ctx, r, start, middle, direction);
             }
             return false;
         }
@@ -519,11 +517,15 @@
             y0 = k1 * x0 + b1;
         }
         ctx.lineTo(x1, y1);
-        // ctx.arcTo(x0, y0, x2, y2, r)
-        ctx.quadraticCurveTo(x0, y0, x2, y2);
+        if (['WEB', 'UNI-H5'].includes(flag)) {
+            ctx.arcTo(x0, y0, x2, y2, r);
+        }
+        else {
+            ctx.quadraticCurveTo(x0, y0, x2, y2);
+        }
     };
     // 绘制扇形
-    var drawSector = function (ctx, minRadius, maxRadius, start, end, gutter, background) {
+    var drawSector = function (flag, ctx, minRadius, maxRadius, start, end, gutter, background) {
         if (!gutter) {
             ctx.beginPath();
             ctx.fillStyle = background;
@@ -533,10 +535,10 @@
             ctx.fill();
         }
         else
-            drawSectorByArcTo(ctx, minRadius, maxRadius, start, end, gutter, background);
+            drawSectorByArcTo(flag, ctx, minRadius, maxRadius, start, end, gutter, background);
     };
     // 根据arcTo绘制扇形
-    var drawSectorByArcTo = function (ctx, minRadius, maxRadius, start, end, gutter, background) {
+    var drawSectorByArcTo = function (flag, ctx, minRadius, maxRadius, start, end, gutter, background) {
         if (!minRadius)
             minRadius = gutter;
         var maxGutter = getAngle(90 / Math.PI / maxRadius * gutter);
@@ -548,10 +550,10 @@
         ctx.beginPath();
         ctx.fillStyle = background;
         ctx.moveTo.apply(ctx, getArcPointerByDeg(maxStart, maxRadius));
-        drawRadian(ctx, maxRadius, maxStart, maxEnd, true);
+        drawRadian(flag, ctx, maxRadius, maxStart, maxEnd, true);
         // 如果 getter 比按钮短就绘制圆弧, 反之计算新的坐标点
         if (minEnd > minStart)
-            drawRadian(ctx, minRadius, minStart, minEnd, false);
+            drawRadian(flag, ctx, minRadius, minStart, minEnd, false);
         else
             ctx.lineTo.apply(ctx, getArcPointerByDeg((start + end) / 2, gutter / 2 / Math.abs(Math.sin((start - end) / 2))));
         ctx.closePath();
@@ -976,7 +978,7 @@
                 // 奖品区域可见高度
                 var prizeHeight = _this.prizeRadius - _this.maxBtnRadius;
                 // 绘制背景
-                drawSector(ctx, _this.maxBtnRadius, _this.prizeRadius, currMiddleDeg - _this.prizeRadian / 2, currMiddleDeg + _this.prizeRadian / 2, _this.getLength(_defaultConfig.gutter), prize.background || _defaultStyle.background);
+                drawSector(config.flag, ctx, _this.maxBtnRadius, _this.prizeRadius, currMiddleDeg - _this.prizeRadian / 2, currMiddleDeg + _this.prizeRadian / 2, _this.getLength(_defaultConfig.gutter), prize.background || _defaultStyle.background);
                 // 计算临时坐标并旋转文字
                 var x = Math.cos(currMiddleDeg) * _this.prizeRadius;
                 var y = Math.sin(currMiddleDeg) * _this.prizeRadius;
@@ -993,10 +995,12 @@
                     var _b = [_this.getOffsetX(trueWidth), _this.getHeight(imgInfo.top, prizeHeight)], imgX = _b[0], imgY = _b[1];
                     var drawImg;
                     // 兼容代码
-                    if (_this.config.flag === 'WEB')
+                    if (_this.config.flag === 'WEB') {
                         drawImg = prizeImg;
-                    else if (['MINI-WX', 'UNI-H5', 'UNI-MINI-WX'].includes(_this.config.flag))
+                    }
+                    else if (['MINI-WX', 'UNI-H5', 'UNI-MINI-WX'].includes(_this.config.flag)) {
                         drawImg = prizeImg.path;
+                    }
                     // 绘制图片
                     ctx.drawImage(drawImg, imgX, imgY, trueWidth, trueHeight);
                 });
@@ -1070,10 +1074,12 @@
                     var _b = [_this.getOffsetX(trueWidth), _this.getHeight(imgInfo.top, radius)], imgX = _b[0], imgY = _b[1];
                     // 兼容代码
                     var drawImg;
-                    if (_this.config.flag === 'WEB')
+                    if (_this.config.flag === 'WEB') {
                         drawImg = btnImg;
-                    else if (['MINI-WX', 'UNI-H5', 'UNI-MINI-WX'].includes(_this.config.flag))
+                    }
+                    else if (['MINI-WX', 'UNI-H5', 'UNI-MINI-WX'].includes(_this.config.flag)) {
                         drawImg = btnImg.path;
+                    }
                     // 绘制图片
                     ctx.drawImage(drawImg, imgX, imgY, trueWidth, trueHeight);
                 });
