@@ -37,6 +37,8 @@ export interface ConfigType {
   setInterval: Function
   clearInterval: Function
   // 组件生命周期
+  beforeInit?: Function
+  afterInit?: Function
   beforeDraw?: Function
   afterDraw?: Function
 }

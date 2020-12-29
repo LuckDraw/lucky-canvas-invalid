@@ -825,16 +825,16 @@
          */
         LuckyWheel.prototype.init = function (willUpdateImgs) {
             var _this = this;
-            var _a = this, config = _a.config, ctx = _a.ctx;
+            var _a, _b;
+            var _c = this, config = _c.config, ctx = _c.ctx;
             this.setDpr();
             this.setHTMLFontSize();
             this.zoomCanvas();
+            // 初始化前回调函数
+            (_a = config.beforeInit) === null || _a === void 0 ? void 0 : _a.call(this);
             this.Radius = Math.min(config.width, config.height) / 2;
-            if (config.flag === 'WEB')
-                ctx.translate(this.Radius, this.Radius);
+            ctx.translate(this.Radius, this.Radius);
             var endCallBack = function () {
-                // 由于 uni-app 的奇怪渲染 bug, 这里需要绘制两次修正圆心
-                _this.draw();
                 _this.draw();
                 // 防止多次绑定点击事件
                 if (config.canvasElement)
@@ -868,6 +868,8 @@
             }
             if (!sum)
                 endCallBack.call(this);
+            // 初始化后回调函数
+            (_b = config.afterInit) === null || _b === void 0 ? void 0 : _b.call(this);
         };
         /**
          * 单独加载某一张图片并计算其实际渲染宽高
@@ -1383,10 +1385,13 @@
          */
         LuckyGrid.prototype.init = function (willUpdateImgs) {
             var _this = this;
-            var _a = this, config = _a.config, ctx = _a.ctx, button = _a.button;
+            var _a, _b;
+            var _c = this, config = _c.config, ctx = _c.ctx, button = _c.button;
             this.setHTMLFontSize();
             this.setDpr();
             this.zoomCanvas();
+            // 初始化前回调函数
+            (_a = config.beforeInit) === null || _a === void 0 ? void 0 : _a.call(this);
             var endCallBack = function () {
                 // 开始首次渲染
                 _this.draw();
@@ -1430,6 +1435,8 @@
             }
             if (!sum)
                 endCallBack.call(this);
+            // 初始化后回调函数
+            (_b = config.afterInit) === null || _b === void 0 ? void 0 : _b.call(this);
         };
         /**
          * 单独加载某一张图片并计算其实际渲染宽高

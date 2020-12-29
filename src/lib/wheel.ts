@@ -190,11 +190,11 @@ export default class LuckyWheel extends Lucky {
     this.setDpr()
     this.setHTMLFontSize()
     this.zoomCanvas()
+    // 初始化前回调函数
+    config.beforeInit?.call(this)
     this.Radius = Math.min(config.width, config.height) / 2
-    if (config.flag === 'WEB') ctx.translate(this.Radius, this.Radius)
+    ctx.translate(this.Radius, this.Radius)
     const endCallBack = (): void => {
-      // 由于 uni-app 的奇怪渲染 bug, 这里需要绘制两次修正圆心
-      this.draw()
       this.draw()
       // 防止多次绑定点击事件
       if (config.canvasElement) config.canvasElement.onclick = e => {
@@ -221,6 +221,8 @@ export default class LuckyWheel extends Lucky {
       })
     }
     if (!sum) endCallBack.call(this)
+    // 初始化后回调函数
+    config.afterInit?.call(this)
   }
 
   /**

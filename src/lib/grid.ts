@@ -219,6 +219,8 @@ export default class LuckyGrid extends Lucky {
     this.setHTMLFontSize()
     this.setDpr()
     this.zoomCanvas()
+    // 初始化前回调函数
+    config.beforeInit?.call(this)
     const endCallBack = (): void => {
       // 开始首次渲染
       this.draw()
@@ -255,6 +257,8 @@ export default class LuckyGrid extends Lucky {
       })
     }
     if (!sum) endCallBack.call(this)
+    // 初始化后回调函数
+    config.afterInit?.call(this)
   }
 
   /**
