@@ -169,7 +169,7 @@ var computePadding = function (block) {
 };
 
 var name = "lucky-canvas";
-var version = "1.2.5";
+var version = "1.2.6";
 
 var Lucky = /** @class */ (function () {
     /**
@@ -995,10 +995,10 @@ var LuckyWheel = /** @class */ (function (_super) {
                 var _b = [_this.getOffsetX(trueWidth), _this.getHeight(imgInfo.top, prizeHeight)], imgX = _b[0], imgY = _b[1];
                 var drawImg;
                 // 兼容代码
-                if (_this.config.flag === 'WEB') {
+                if (['WEB', 'MINI-WX'].includes(_this.config.flag)) {
                     drawImg = prizeImg;
                 }
-                else if (['MINI-WX', 'UNI-H5', 'UNI-MINI-WX'].includes(_this.config.flag)) {
+                else if (['UNI-H5', 'UNI-MINI-WX'].includes(_this.config.flag)) {
                     drawImg = prizeImg.path;
                 }
                 // 绘制图片
@@ -1074,10 +1074,10 @@ var LuckyWheel = /** @class */ (function (_super) {
                 var _b = [_this.getOffsetX(trueWidth), _this.getHeight(imgInfo.top, radius)], imgX = _b[0], imgY = _b[1];
                 // 兼容代码
                 var drawImg;
-                if (_this.config.flag === 'WEB') {
+                if (['WEB', 'MINI-WX'].includes(_this.config.flag)) {
                     drawImg = btnImg;
                 }
-                else if (['MINI-WX', 'UNI-H5', 'UNI-MINI-WX'].includes(_this.config.flag)) {
+                else if (['UNI-H5', 'UNI-MINI-WX'].includes(_this.config.flag)) {
                     drawImg = btnImg.path;
                 }
                 // 绘制图片
@@ -1580,11 +1580,11 @@ var LuckyGrid = /** @class */ (function (_super) {
                 var _a = _this.computedWidthAndHeight(renderImg, imgInfo, prize), trueWidth = _a[0], trueHeight = _a[1];
                 var _b = [x + _this.getOffsetX(trueWidth, prize.col), y + _this.getHeight(imgInfo.top, prize.row)], imgX = _b[0], imgY = _b[1];
                 var drawImg;
-                if (_this.config.flag === 'WEB') {
+                if (['WEB', 'MINI-WX'].includes(_this.config.flag)) {
                     // 浏览器中直接绘制标签即可
                     drawImg = renderImg;
                 }
-                else if (['MINI-WX', 'UNI-H5', 'UNI-MINI-WX'].includes(_this.config.flag)) {
+                else if (['UNI-H5', 'UNI-MINI-WX'].includes(_this.config.flag)) {
                     // 小程序中直接绘制一个路径
                     drawImg = renderImg.path;
                 }

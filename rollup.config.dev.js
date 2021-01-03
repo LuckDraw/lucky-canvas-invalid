@@ -11,7 +11,7 @@ export default {
   input: 'src/index.ts',
   output: [
     {
-      file: `examples/test.js`,
+      file: `examples/dev.js`,
       format: 'umd',
       name: 'LuckyCanvas',
     },
