@@ -351,9 +351,9 @@ export default class LuckyWheel extends Lucky {
         const [imgX, imgY] = [this.getOffsetX(trueWidth), this.getHeight(imgInfo.top, prizeHeight)]
         let drawImg
         // 兼容代码
-        if (this.config.flag === 'WEB') {
+        if (['WEB', 'MINI-WX'].includes(this.config.flag)) {
           drawImg = prizeImg
-        } else if (['MINI-WX', 'UNI-H5', 'UNI-MINI-WX'].includes(this.config.flag)) {
+        } else if (['UNI-H5', 'UNI-MINI-WX'].includes(this.config.flag)) {
           drawImg = (prizeImg as UniImageType).path
         }
         // 绘制图片
@@ -426,9 +426,9 @@ export default class LuckyWheel extends Lucky {
         const [imgX, imgY] = [this.getOffsetX(trueWidth), this.getHeight(imgInfo.top, radius)]
         // 兼容代码
         let drawImg
-        if (this.config.flag === 'WEB') {
+        if (['WEB', 'MINI-WX'].includes(this.config.flag)) {
           drawImg = btnImg
-        } else if (['MINI-WX', 'UNI-H5', 'UNI-MINI-WX'].includes(this.config.flag)) {
+        } else if (['UNI-H5', 'UNI-MINI-WX'].includes(this.config.flag)) {
           drawImg = (btnImg as UniImageType).path
         }
         // 绘制图片

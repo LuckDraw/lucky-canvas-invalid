@@ -394,10 +394,10 @@ export default class LuckyGrid extends Lucky {
         const [trueWidth, trueHeight] = this.computedWidthAndHeight(renderImg, imgInfo, prize)
         const [imgX, imgY] = [x + this.getOffsetX(trueWidth, prize.col), y + this.getHeight(imgInfo.top, prize.row)]
         let drawImg
-        if (this.config.flag === 'WEB') {
+        if (['WEB', 'MINI-WX'].includes(this.config.flag)) {
           // 浏览器中直接绘制标签即可
           drawImg = renderImg
-        } else if (['MINI-WX', 'UNI-H5', 'UNI-MINI-WX'].includes(this.config.flag)) {
+        } else if (['UNI-H5', 'UNI-MINI-WX'].includes(this.config.flag)) {
           // 小程序中直接绘制一个路径
           drawImg = (renderImg as UniImageType).path
         }
