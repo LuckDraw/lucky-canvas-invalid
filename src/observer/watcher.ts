@@ -37,6 +37,12 @@ function traverse (value: any) {
   // seenObjects.clear()
 }
 
+export interface WatchOptType {
+  handler?: () => Function
+  immediate?: boolean
+  deep?: boolean
+}
+
 export default class Watcher {
   id: number
   vm: any // 先暂时any
@@ -51,7 +57,7 @@ export default class Watcher {
    * @param {*} expr 
    * @param {*} cb 
    */
-  constructor (vm: any, expr: string | Function, cb: Function, options = { deep: false }) {
+  constructor (vm: any, expr: string | Function, cb: Function, options: WatchOptType = {}) {
     this.id = uid++
     this.vm = vm
     this.expr = expr

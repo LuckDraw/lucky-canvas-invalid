@@ -2,7 +2,7 @@ import Watcher from './watcher'
 
 export default class Dep {
   static target: Watcher | null
-  subs: Array<Watcher>
+  private subs: Array<Watcher>
 
   /**
    * 订阅中心构造器
@@ -15,7 +15,8 @@ export default class Dep {
    * 收集依赖
    * @param {*} sub 
    */
-  addSub (sub: Watcher) {
+  public addSub (sub: Watcher) {
+    // 此处临时使用includes防重复添加
     if (!this.subs.includes(sub)) {
       this.subs.push(sub)
     }
@@ -24,7 +25,7 @@ export default class Dep {
   /**
    * 派发更新
    */
-  notify () {
+  public notify () {
     this.subs.forEach(sub => {
       sub.update()
     })
