@@ -171,7 +171,157 @@
     };
 
     var name = "lucky-canvas";
-    var version = "1.2.6";
+    var version = "1.2.7";
+
+    var Dep = /** @class */ (function () {
+        /**
+         * 订阅中心构造器
+         */
+        function Dep() {
+            this.subs = [];
+        }
+        /**
+         * 收集依赖
+         * @param {*} sub
+         */
+        Dep.prototype.addSub = function (sub) {
+            // 此处临时使用includes防重复添加
+            if (!this.subs.includes(sub)) {
+                this.subs.push(sub);
+            }
+        };
+        /**
+         * 派发更新
+         */
+        Dep.prototype.notify = function () {
+            this.subs.forEach(function (sub) {
+                sub.update();
+            });
+        };
+        return Dep;
+    }());
+
+    /**
+     * 处理响应式
+     * @param { Object | Array } data
+     */
+    var observe = function (data) {
+        if (typeof data !== 'object')
+            return;
+        Object.keys(data).forEach(function (key) {
+            defineReactive(data, key, data[key]);
+        });
+    };
+    /**
+     * 重写 setter / getter
+     * @param {*} data
+     * @param {*} key
+     * @param {*} val
+     */
+    var defineReactive = function (data, key, val) {
+        var dep = new Dep();
+        var childOb = observe(val);
+        Object.defineProperty(data, key, {
+            get: function () {
+                if (Dep.target) {
+                    dep.addSub(Dep.target);
+                }
+                return val;
+            },
+            set: function (newVal) {
+                if (newVal === val)
+                    return;
+                val = newVal;
+                childOb = observe(newVal);
+                dep.notify();
+            }
+        });
+    };
+
+    var uid = 0;
+    function parsePath(path) {
+        path += '.';
+        var segments = [], segment = '';
+        for (var i = 0; i < path.length; i++) {
+            var curr = path[i];
+            if (/\[|\./.test(curr)) {
+                segments.push(segment);
+                segment = '';
+            }
+            else if (/\W/.test(curr)) {
+                continue;
+            }
+            else {
+                segment += curr;
+            }
+        }
+        return function (data) {
+            return segments.reduce(function (data, key) {
+                return data[key];
+            }, data);
+        };
+    }
+    function traverse(value) {
+        // const seenObjects = new Set()
+        var dfs = function (data) {
+            if (!isExpectType(data, 'array', 'object'))
+                return;
+            Object.keys(data).forEach(function (key) {
+                var value = data[key];
+                dfs(value);
+            });
+        };
+        dfs(value);
+        // seenObjects.clear()
+    }
+    var Watcher = /** @class */ (function () {
+        /**
+         * 观察者构造器
+         * @param {*} vm
+         * @param {*} expr
+         * @param {*} cb
+         */
+        function Watcher(vm, expr, cb, options) {
+            if (options === void 0) { options = {}; }
+            this.id = uid++;
+            this.vm = vm;
+            this.expr = expr;
+            this.deep = !!options.deep;
+            if (typeof expr === 'function') {
+                this.getter = expr;
+            }
+            else {
+                this.getter = parsePath(expr);
+            }
+            this.cb = cb;
+            this.value = this.get();
+        }
+        /**
+         * 根据表达式获取新值
+         */
+        Watcher.prototype.get = function () {
+            Dep.target = this;
+            var value = this.getter.call(this.vm, this.vm);
+            // 处理深度监听
+            if (this.deep) {
+                traverse(value);
+            }
+            Dep.target = null;
+            return value;
+        };
+        /**
+         * 触发 watcher 更新
+         */
+        Watcher.prototype.update = function () {
+            // get获取新值
+            var newVal = this.get();
+            // 读取之前存储的旧值
+            var oldVal = this.value;
+            this.value = newVal;
+            this.cb.call(this.vm, newVal, oldVal);
+        };
+        return Watcher;
+    }());
 
     var Lucky = /** @class */ (function () {
         /**
@@ -180,7 +330,6 @@
          */
         function Lucky(config) {
             this.htmlFontSize = 16;
-            this.subs = {};
             this.rAF = function () { };
             this.setTimeout = function () { };
             this.setInterval = function () { };
@@ -228,8 +377,6 @@
             }
             // 最后等待 config 来设置 dpr
             this.setDpr();
-            // 重写数组原型方法
-            this.resetArrayProto();
             // 初始化 window 方法
             this.initWindowFunction();
         }
@@ -301,9 +448,9 @@
          * @param info 图片信息
          */
         Lucky.prototype.loadImg = function (src, info) {
-            var _this_1 = this;
+            var _this = this;
             return new Promise(function (resolve) {
-                if (_this_1.config.flag === 'WEB') {
+                if (_this.config.flag === 'WEB') {
                     var imgObj_1 = new Image();
                     imgObj_1.src = src;
                     imgObj_1.onload = function () { return resolve(imgObj_1); };
@@ -313,18 +460,6 @@
                     info.$resolve = resolve;
                     return;
                 }
-                // else if (['MINI-WX', 'UNI-H5', 'UNI-MINI-WX'].includes(this.config.flag)) {
-                //   // 修复 uni.getImageInfo 无法处理 base64 格式的图片的问题
-                //   if (/^data:image\/([a-z]+);base64,/.test(src)) {
-                //     info.$resolve = resolve
-                //     return
-                //   }
-                //   this.global.getImageInfo({
-                //     src: src,
-                //     success: (imgObj: UniImageType) => resolve(imgObj),
-                //     fail: () => console.error('API `getImageInfo` 加载图片失败', src)
-                //   })
-                // }
             });
         };
         /**
@@ -346,64 +481,23 @@
          * @return { number } 返回新的字符串
          */
         Lucky.prototype.changeUnits = function (value, denominator) {
-            var _this_1 = this;
+            var _this = this;
             if (denominator === void 0) { denominator = 1; }
             return Number(value.replace(/^(\-*[0-9.]*)([a-z%]*)$/, function (value, num, unit) {
                 var unitFunc = {
                     '%': function (n) { return n * (denominator / 100); },
                     'px': function (n) { return n * 1; },
-                    'rem': function (n) { return n * _this_1.htmlFontSize; },
+                    'rem': function (n) { return n * _this.htmlFontSize; },
                 }[unit];
                 if (unitFunc)
                     return unitFunc(num);
                 // 如果找不到默认单位, 就交给外面处理
-                var otherUnitFunc = _this_1.config.unitFunc;
+                var otherUnitFunc = _this.config.unitFunc;
                 return otherUnitFunc ? otherUnitFunc(num, unit) : num;
             }));
         };
         /**
-         * 更新数据并重新绘制 canvas 画布
-         */
-        Lucky.prototype.draw = function () { };
-        /**
-         * 数据劫持
-         * @param obj 将要处理的数据
-         */
-        Lucky.prototype.observer = function (data) {
-            var _this_1 = this;
-            if (!data || typeof data !== 'object')
-                return;
-            Object.keys(data).forEach(function (key) {
-                _this_1.defineReactive(data, key, data[key]);
-            });
-        };
-        /**
-         * 重写 setter 和 getter
-         * @param obj 数据
-         * @param key 属性
-         * @param val 值
-         */
-        Lucky.prototype.defineReactive = function (data, key, value) {
-            var _this_1 = this;
-            this.observer(value);
-            Object.defineProperty(data, key, {
-                get: function () {
-                    return value;
-                },
-                set: function (newVal) {
-                    var oldVal = value;
-                    if (newVal === value)
-                        return;
-                    value = newVal;
-                    _this_1.observer(value);
-                    if (_this_1.subs[key])
-                        _this_1.subs[key].call(_this_1, value, oldVal);
-                    _this_1.draw();
-                }
-            });
-        };
-        /**
-         * 添加一个新的响应式数据
+         * 添加一个新的响应式数据 (临时)
          * @param data 数据
          * @param key 属性
          * @param value 新值
@@ -411,45 +505,41 @@
         Lucky.prototype.$set = function (data, key, value) {
             if (!data || typeof data !== 'object')
                 return;
-            this.defineReactive(data, key, value);
+            defineReactive(data, key, value);
         };
         /**
-         * 添加一个属性计算
+         * 添加一个属性计算 (临时)
          * @param data 源数据
          * @param key 属性名
          * @param callback 回调函数
          */
         Lucky.prototype.$computed = function (data, key, callback) {
-            var _this_1 = this;
+            var _this = this;
             Object.defineProperty(data, key, {
                 get: function () {
-                    return callback.call(_this_1);
+                    return callback.call(_this);
                 }
             });
         };
         /**
-         * 添加一个观察者
+         * 添加一个观察者 create user watcher
          * @param key 属性名
          * @param callback 回调函数
          */
-        Lucky.prototype.$watch = function (key, callback) {
-            this.subs[key] = callback;
-        };
-        /**
-         * 重写数组的原型方法
-         */
-        Lucky.prototype.resetArrayProto = function () {
-            var _this = this;
-            var oldArrayProto = Array.prototype;
-            var newArrayProto = Object.create(oldArrayProto);
-            var methods = ['push', 'pop', 'shift', 'unshift', 'sort', 'splice', 'reverse'];
-            methods.forEach(function (name) {
-                newArrayProto[name] = function () {
-                    var _a;
-                    _this.draw();
-                    (_a = oldArrayProto[name]).call.apply(_a, __spreadArrays([this], Array.from(arguments)));
-                };
-            });
+        Lucky.prototype.$watch = function (expr, handler, watchOpt) {
+            if (watchOpt === void 0) { watchOpt = {}; }
+            if (typeof handler === 'object') {
+                watchOpt = handler;
+                handler = watchOpt.handler;
+            }
+            // 创建 user watcher
+            var watcher = new Watcher(this, expr, handler, watchOpt);
+            // 判断是否需要初始化时触发回调
+            if (watchOpt.immediate) {
+                handler.call(this, watcher.value);
+            }
+            // 返回一个卸载当前观察者的函数
+            return function unWatchFn() { };
         };
         return Lucky;
     }());
@@ -782,7 +872,7 @@
                         willUpdate[prizeIndex] = prizeImgs;
                     });
                 return _this.init(willUpdate);
-            });
+            }, { deep: true });
             // 观察按钮数据的变化
             this.$watch('buttons', function (newData, oldData) {
                 var willUpdate = [];
@@ -817,7 +907,12 @@
                         willUpdate[btnIndex] = btnImgs;
                     });
                 return _this.init(__spreadArrays(new Array(_this.prizes.length).fill(undefined), willUpdate));
-            });
+            }, { deep: true });
+            this.$watch('blocks', function () { return _this.draw(); }, { deep: true });
+            this.$watch('defaultConfig', function () { return _this.draw(); }, { deep: true });
+            this.$watch('defaultStyle', function () { return _this.draw(); }, { deep: true });
+            this.$watch('startCallback', function () { return _this.init([]); });
+            this.$watch('endCallback', function () { return _this.init([]); });
         };
         /**
          * 初始化 canvas 抽奖
@@ -1350,7 +1445,7 @@
                         willUpdate[prizeIndex] = prizeImgs;
                     });
                 return _this.init(willUpdate);
-            });
+            }, { deep: true });
             // 监听按钮数据的变化
             this.$watch('button', function (newData, oldData) {
                 var willUpdate = [], btnIndex = _this.cols * _this.rows - 1;
@@ -1377,7 +1472,15 @@
                     willUpdate[btnIndex] = btnImg_1;
                 }
                 return _this.init(willUpdate);
-            });
+            }, { deep: true });
+            this.$watch('rows', function () { return _this.draw(); });
+            this.$watch('cols', function () { return _this.draw(); });
+            this.$watch('blocks', function () { return _this.draw(); }, { deep: true });
+            this.$watch('defaultConfig', function () { return _this.draw(); }, { deep: true });
+            this.$watch('defaultStyle', function () { return _this.draw(); }, { deep: true });
+            this.$watch('activeStyle', function () { return _this.draw(); }, { deep: true });
+            this.$watch('startCallback', function () { return _this.init([]); });
+            this.$watch('endCallback', function () { return _this.init([]); });
         };
         /**
          * 初始化 canvas 抽奖
