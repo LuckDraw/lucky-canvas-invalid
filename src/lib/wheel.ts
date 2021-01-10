@@ -150,7 +150,7 @@ export default class LuckyWheel extends Lucky {
         willUpdate[prizeIndex] = prizeImgs
       })
       return this.init(willUpdate)
-    })
+    }, { deep: true })
     // 观察按钮数据的变化
     this.$watch('buttons', (newData: Array<ButtonType>, oldData: Array<ButtonType>) => {
       let willUpdate: Array<ImgType[] | undefined> = []
@@ -178,7 +178,12 @@ export default class LuckyWheel extends Lucky {
         willUpdate[btnIndex] = btnImgs
       })
       return this.init([...new Array(this.prizes.length).fill(undefined), ...willUpdate])
-    })
+    }, { deep: true })
+    this.$watch('blocks', () => this.draw(), { deep: true })
+    this.$watch('defaultConfig', () => this.draw(), { deep: true })
+    this.$watch('defaultStyle', () => this.draw(), { deep: true })
+    this.$watch('startCallback', () => this.init([]))
+    this.$watch('endCallback', () => this.init([]))
   }
 
   /**

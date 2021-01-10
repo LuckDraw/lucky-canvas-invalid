@@ -1,6 +1,8 @@
 import { isExpectType } from '../utils/index'
-import { ConfigType, ImgType, UniImageType } from '../types/index'
 import { name, version } from '../../package.json'
+import { ConfigType, ImgType, UniImageType } from '../types/index'
+import { defineReactive } from '../observer'
+import Watcher, { WatchOptType } from '../observer/watcher'
 
 export default class Lucky {
   /**
@@ -47,8 +49,6 @@ export default class Lucky {
     }
     // 最后等待 config 来设置 dpr
     this.setDpr()
-    // 重写数组原型方法
-    this.resetArrayProto()
     // 初始化 window 方法
     this.initWindowFunction()
   }
@@ -56,7 +56,6 @@ export default class Lucky {
   protected readonly config: ConfigType
   protected readonly ctx: CanvasRenderingContext2D
   protected htmlFontSize: number = 16
-  private subs: object = {}
   protected rAF: Function = function () {}
   protected setTimeout: Function = function () {}
   protected setInterval: Function = function () {}
@@ -142,18 +141,6 @@ export default class Lucky {
         info.$resolve = resolve
         return
       }
-      // else if (['MINI-WX', 'UNI-H5', 'UNI-MINI-WX'].includes(this.config.flag)) {
-      //   // 修复 uni.getImageInfo 无法处理 base64 格式的图片的问题
-      //   if (/^data:image\/([a-z]+);base64,/.test(src)) {
-      //     info.$resolve = resolve
-      //     return
-      //   }
-      //   this.global.getImageInfo({
-      //     src: src,
-      //     success: (imgObj: UniImageType) => resolve(imgObj),
-      //     fail: () => console.error('API `getImageInfo` 加载图片失败', src)
-      //   })
-      // }
     })
   }
 
@@ -189,57 +176,18 @@ export default class Lucky {
   }
 
   /**
-   * 更新数据并重新绘制 canvas 画布
-   */
-  protected draw () {}
-
-  /**
-   * 数据劫持
-   * @param obj 将要处理的数据
-   */
-  protected observer (data: object): void {
-    if (!data || typeof data !== 'object') return
-    Object.keys(data).forEach(key => {
-      this.defineReactive(data, key, data[key])
-    })
-  }
-
-  /**
-   * 重写 setter 和 getter
-   * @param obj 数据
-   * @param key 属性
-   * @param val 值
-   */
-  private defineReactive (data: object, key: string | number, value: any): void {
-    this.observer(value)
-    Object.defineProperty(data, key, {
-      get: () => {
-        return value
-      },
-      set: (newVal) => {
-        let oldVal = value
-        if (newVal === value) return
-        value = newVal
-        this.observer(value)
-        if (this.subs[key]) this.subs[key].call(this, value, oldVal)
-        this.draw()
-      }
-    })
-  }
-
-  /**
-   * 添加一个新的响应式数据
+   * 添加一个新的响应式数据 (临时)
    * @param data 数据
    * @param key 属性
    * @param value 新值
    */
   public $set (data: object, key: string | number, value: any) {
     if (!data || typeof data !== 'object') return
-    this.defineReactive(data, key, value)
+    defineReactive(data, key, value)
   }
 
   /**
-   * 添加一个属性计算
+   * 添加一个属性计算 (临时)
    * @param data 源数据
    * @param key 属性名
    * @param callback 回调函数
@@ -253,27 +201,41 @@ export default class Lucky {
   }
 
   /**
-   * 添加一个观察者
+   * 添加一个观察者 create user watcher
    * @param key 属性名
    * @param callback 回调函数
    */
-  protected $watch (key: string, callback: Function) {
-    this.subs[key] = callback
+  protected $watch (
+    expr: string | Function,
+    handler: Function | WatchOptType,
+    watchOpt: WatchOptType = {}
+  ): Function {
+    if (typeof handler === 'object') {
+      watchOpt = handler
+      handler = watchOpt.handler!
+    }
+    // 创建 user watcher
+    const watcher = new Watcher(this, expr, handler, watchOpt)
+    // 判断是否需要初始化时触发回调
+    if (watchOpt.immediate) {
+      handler.call(this, watcher.value)
+    }
+    // 返回一个卸载当前观察者的函数
+    return function unWatchFn () {}
   }
 
   /**
    * 重写数组的原型方法
    */
-  private resetArrayProto () {
-    const _this = this
-    const oldArrayProto = Array.prototype
-    const newArrayProto = Object.create(oldArrayProto)
-    const methods = ['push', 'pop', 'shift', 'unshift', 'sort', 'splice', 'reverse']
-    methods.forEach(name => {
-      newArrayProto[name] = function () {
-        _this.draw()
-        oldArrayProto[name].call(this, ...Array.from(arguments))
-      }
-    })
-  }
+  // private resetArrayProto () {
+  //   const _this = this
+  //   const oldArrayProto = Array.prototype
+  //   const newArrayProto = Object.create(oldArrayProto)
+  //   const methods = ['push', 'pop', 'shift', 'unshift', 'sort', 'splice', 'reverse']
+  //   methods.forEach(name => {
+  //     newArrayProto[name] = function () {
+  //       oldArrayProto[name].call(this, ...Array.from(arguments))
+  //     }
+  //   })
+  // }
 }
