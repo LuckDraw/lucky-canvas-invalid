@@ -185,7 +185,7 @@ export default class LuckyGrid extends Lucky {
         willUpdate[prizeIndex] = prizeImgs
       })
       return this.init(willUpdate)
-    })
+    }, { deep: true })
     // 监听按钮数据的变化
     this.$watch('button', (newData: ButtonType, oldData: ButtonType) => {
       let willUpdate = [], btnIndex = this.cols * this.rows - 1
@@ -207,7 +207,15 @@ export default class LuckyGrid extends Lucky {
         willUpdate[btnIndex] = btnImg
       }
       return this.init(willUpdate)
-    })
+    }, { deep: true })
+    this.$watch('rows', () => this.draw())
+    this.$watch('cols', () => this.draw())
+    this.$watch('blocks', () => this.draw(), { deep: true })
+    this.$watch('defaultConfig', () => this.draw(), { deep: true })
+    this.$watch('defaultStyle', () => this.draw(), { deep: true })
+    this.$watch('activeStyle', () => this.draw(), { deep: true })
+    this.$watch('startCallback', () => this.init([]))
+    this.$watch('endCallback', () => this.init([]))
   }
 
   /**
@@ -422,7 +430,7 @@ export default class LuckyGrid extends Lucky {
           ? _activeStyle.lineHeight
           : font.lineHeight || _defaultStyle.lineHeight || font.fontSize || _defaultStyle.fontSize
         ctx.font = `${fontWeight} ${size}px ${style}`
-        ctx.fillStyle = (isActive && _activeStyle.fontColor) ? _activeStyle.fontColor : (font.fontColor || _defaultStyle.fontColor!)
+        ctx.fillStyle = (isActive && _activeStyle.fontColor) ? _activeStyle.fontColor : (font.fontColor || _defaultStyle.fontColor)
         let lines = [], text = String(font.text)
         // 计算文字换行
         if (font.hasOwnProperty('wordWrap') ? font.wordWrap : _defaultStyle.wordWrap) {
@@ -473,7 +481,7 @@ export default class LuckyGrid extends Lucky {
     isActive = false
   ) {
     const { ctx, _defaultStyle, _activeStyle } = this
-    background = isActive ? _activeStyle.background! : (background || _defaultStyle.background!)
+    background = isActive ? _activeStyle.background : (background || _defaultStyle.background)
     // 处理线性渐变
     if (background.includes('linear-gradient')) {
       background = getLinearGradient(ctx, x, y, width, height, background)

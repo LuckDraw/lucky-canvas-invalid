@@ -1,4 +1,3 @@
-import { name } from './package.json'
 import ts from '@rollup/plugin-typescript'
 import json from '@rollup/plugin-json'
 import resolve from '@rollup/plugin-node-resolve'

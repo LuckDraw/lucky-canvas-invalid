@@ -10,27 +10,20 @@
     <div id="my-lucky"></div>
     <script src="../dev.js"></script>
     <script>
-      // 设置奖品
-      const prizes = []
-      let data = ['1元红包', '100元红包', '0.5元红包', '2元红包', '10元红包', '50元红包', '0.3元红包', '5元红包']
-      data.forEach((item, index) => {
-        prizes.push({
-          title: item,
-          background: index % 2 ? '#f9e3bb' : '#f8d384',
-          fonts: [{ text: item, top: '10%' }],
-          imgs:[{ src: `./img/${index}.png`, width: '30%', top: '35%' }],
-        })
-      })
       // 创建大转盘抽奖
       let luckyWheel = new LuckyCanvas.LuckyWheel({
         el: '#my-lucky',
         width: '300px',
         height: '300px',
       }, {
-        prizes: prizes,
+        prizes: [],
         defaultStyle: {
           fontColor: '#d64737',
           fontSize: '14px'
+        },
+        defaultConfig: {
+          gutter: 1,
+          // offsetDegree: 0
         },
         blocks: [
           { padding: '13px', background: '#d64737' }
@@ -54,6 +47,33 @@
           alert(`恭喜你获得${prize.title}`)
         },
       })
+      // 设置奖品
+      setTimeout(() => {
+        const prizes = []
+        let data = ['1元红包', '100元红包', '0.5元红包', '2元红包', '10元红包', '50元红包', '0.3元红包', '5元红包']
+        data.forEach((item, index) => {
+          prizes.push({
+            title: item,
+            background: index % 2 ? '#f9e3bb' : '#f8d384',
+            fonts: [{ text: item, top: '10%' }],
+            imgs:[{ src: `./img/${index}.png`, width: '30%', top: '35%' }],
+          })
+        })
+        luckyWheel.prizes = prizes
+      }, 500)
+      setTimeout(_ => {
+        // luckyWheel.prizes[0].fonts[0].text = 'xxx'
+        // luckyWheel.blocks[0].background = '#000'
+        luckyWheel.defaultStyle.fontColor = 'green'
+        // luckyWheel.defaultConfig.gutter = '3'
+        luckyWheel.$set(luckyWheel.defaultConfig, 'gutter', '3px')
+        // luckyWheel.defaultConfig.offsetDegree = 22.5
+        luckyWheel.$set(luckyWheel.defaultConfig, 'offsetDegree', '22.5')
+        // luckyWheel.initComputed()
+        // console.log('offsetDegree' in Object.prototype)
+        // luckyWheel.init()
+        console.log(luckyWheel.defaultConfig)
+      }, 1000)
     </script>
   </body>
 </body>

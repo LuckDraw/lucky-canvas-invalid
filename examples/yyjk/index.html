@@ -86,6 +86,10 @@
       }
       luckyGrid.prizes = prizes
     })
+    setTimeout(_ => {
+      luckyGrid.prizes[0].fonts[0].text = 'xxx'
+      luckyGrid.defaultStyle.fontColor = 'green'
+    }, 500)
   </script>
 </body>
 </html>
