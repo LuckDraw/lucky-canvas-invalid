@@ -173,7 +173,7 @@
     };
 
     var name = "lucky-canvas";
-    var version = "1.2.6";
+    var version = "1.2.7";
 
     var Dep = /** @class */ (function () {
         /**
@@ -1365,11 +1365,7 @@
             _this.initData(data);
             _this.initComputed();
             _this.initWatch();
-            // 收集首次渲染的图片
-            var willUpdate = [[]];
-            _this.prizes && (willUpdate = _this.prizes.map(function (prize) { return prize.imgs; }));
-            _this.button && (willUpdate[_this.cols * _this.rows - 1] = _this.button.imgs);
-            _this.init(willUpdate);
+            _this.init(_this.collectImg());
             return _this;
         }
         /**
@@ -1475,8 +1471,8 @@
                 }
                 return _this.init(willUpdate);
             }, { deep: true });
-            this.$watch('rows', function () { return _this.draw(); });
-            this.$watch('cols', function () { return _this.draw(); });
+            this.$watch('rows', function () { return _this.init(_this.collectImg()); });
+            this.$watch('cols', function () { return _this.init(_this.collectImg()); });
             this.$watch('blocks', function () { return _this.draw(); }, { deep: true });
             this.$watch('defaultConfig', function () { return _this.draw(); }, { deep: true });
             this.$watch('defaultStyle', function () { return _this.draw(); }, { deep: true });
@@ -1542,6 +1538,13 @@
                 endCallBack.call(this);
             // 初始化后回调函数
             (_b = config.afterInit) === null || _b === void 0 ? void 0 : _b.call(this);
+        };
+        LuckyGrid.prototype.collectImg = function () {
+            // 收集首次渲染的图片
+            var willUpdate = [[]];
+            this.prizes && (willUpdate = this.prizes.map(function (prize) { return prize.imgs; }));
+            this.button && (willUpdate[this.cols * this.rows - 1] = this.button.imgs);
+            return willUpdate;
         };
         /**
          * 单独加载某一张图片并计算其实际渲染宽高

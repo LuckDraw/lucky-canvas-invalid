@@ -16,23 +16,6 @@ import { getAngle, drawSector } from '../utils/math'
 import { quad } from '../utils/tween'
 
 export default class LuckyWheel extends Lucky {
-  /**
-   * 大转盘构造器
-   * @param config 元素标识
-   * @param data 抽奖配置项
-   */
-  constructor (config: string | HTMLDivElement | ConfigType, data: LuckyWheelConfig = {}) {
-    super(config)
-    this.initData(data)
-    this.initComputed()
-    this.initWatch()
-    // 收集首次渲染的图片
-    let willUpdate: Array<ImgType[] | undefined> = [[]]
-    this.prizes && ( willUpdate = this.prizes.map(prize => prize.imgs))
-    this.buttons && (willUpdate.push(...this.buttons.map(btn => btn.imgs)))
-    this.init(willUpdate)
-  }
-
   private blocks: Array<BlockType> = []
   private prizes: Array<PrizeType> = []
   private buttons: Array<ButtonType> = []
@@ -72,6 +55,23 @@ export default class LuckyWheel extends Lucky {
   private FPS = 16.6                    // 屏幕刷新率
   private prizeImgs: Array<HTMLImageElement[] | UniImageType[]> = [[]]
   private btnImgs: Array<HTMLImageElement[] | UniImageType[]> = [[]]
+
+  /**
+   * 大转盘构造器
+   * @param config 元素标识
+   * @param data 抽奖配置项
+   */
+  constructor (config: string | HTMLDivElement | ConfigType, data: LuckyWheelConfig = {}) {
+    super(config)
+    this.initData(data)
+    this.initComputed()
+    this.initWatch()
+    // 收集首次渲染的图片
+    let willUpdate: Array<ImgType[] | undefined> = [[]]
+    this.prizes && ( willUpdate = this.prizes.map(prize => prize.imgs))
+    this.buttons && (willUpdate.push(...this.buttons.map(btn => btn.imgs)))
+    this.init(willUpdate)
+  }
 
   /**
    * 初始化数据

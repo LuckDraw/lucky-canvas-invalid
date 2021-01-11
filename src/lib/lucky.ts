@@ -5,6 +5,14 @@ import { defineReactive } from '../observer'
 import Watcher, { WatchOptType } from '../observer/watcher'
 
 export default class Lucky {
+  protected readonly config: ConfigType
+  protected readonly ctx: CanvasRenderingContext2D
+  protected htmlFontSize: number = 16
+  protected rAF: Function = function () {}
+  protected setTimeout: Function = function () {}
+  protected setInterval: Function = function () {}
+  protected clearInterval: Function = function () {}
+
   /**
    * 公共构造器
    * @param config 
@@ -52,14 +60,6 @@ export default class Lucky {
     // 初始化 window 方法
     this.initWindowFunction()
   }
-
-  protected readonly config: ConfigType
-  protected readonly ctx: CanvasRenderingContext2D
-  protected htmlFontSize: number = 16
-  protected rAF: Function = function () {}
-  protected setTimeout: Function = function () {}
-  protected setInterval: Function = function () {}
-  protected clearInterval: Function = function () {}
 
   /**
    * 设备像素比

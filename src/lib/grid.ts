@@ -21,23 +21,6 @@ type PrizesType = CellType<PrizeFontType, PrizeImgType>[]
 type ButtonType = CellType<ButtonFontType, ButtonImgType>
 
 export default class LuckyGrid extends Lucky {
-  /**
-   * 九宫格构造器
-   * @param config 元素标识
-   * @param data 抽奖配置项
-   */
-  constructor (config: string | HTMLDivElement | ConfigType, data: LuckyGridConfig = {}) {
-    super(config)
-    this.initData(data)
-    this.initComputed()
-    this.initWatch()
-    // 收集首次渲染的图片
-    let willUpdate: Array<CellImgType[] | undefined> = [[]]
-    this.prizes && (willUpdate = this.prizes.map(prize => prize.imgs))
-    this.button && (willUpdate[this.cols * this.rows - 1] = this.button.imgs)
-    this.init(willUpdate)
-  }
-
   private rows: RowsType = 3
   private cols: ColsType = 3
   private blocks: Array<BlockType> = []
@@ -96,6 +79,19 @@ export default class LuckyGrid extends Lucky {
     defaultImg: HTMLImageElement | UniImageType,
     activeImg?: HTMLImageElement | UniImageType
   }[]> = []
+
+  /**
+   * 九宫格构造器
+   * @param config 元素标识
+   * @param data 抽奖配置项
+   */
+  constructor (config: string | HTMLDivElement | ConfigType, data: LuckyGridConfig = {}) {
+    super(config)
+    this.initData(data)
+    this.initComputed()
+    this.initWatch()
+    this.init(this.collectImg())
+  }
 
   /**
    * 初始化数据
@@ -208,8 +204,8 @@ export default class LuckyGrid extends Lucky {
       }
       return this.init(willUpdate)
     }, { deep: true })
-    this.$watch('rows', () => this.draw())
-    this.$watch('cols', () => this.draw())
+    this.$watch('rows', () => this.init(this.collectImg()))
+    this.$watch('cols', () => this.init(this.collectImg()))
     this.$watch('blocks', () => this.draw(), { deep: true })
     this.$watch('defaultConfig', () => this.draw(), { deep: true })
     this.$watch('defaultStyle', () => this.draw(), { deep: true })
@@ -267,6 +263,14 @@ export default class LuckyGrid extends Lucky {
     if (!sum) endCallBack.call(this)
     // 初始化后回调函数
     config.afterInit?.call(this)
+  }
+
+  private collectImg (): Array<CellImgType[] | undefined> {
+    // 收集首次渲染的图片
+    let willUpdate: Array<CellImgType[] | undefined> = [[]]
+    this.prizes && (willUpdate = this.prizes.map(prize => prize.imgs))
+    this.button && (willUpdate[this.cols * this.rows - 1] = this.button.imgs)
+    return willUpdate
   }
 
   /**
