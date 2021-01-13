@@ -1,3 +1,4 @@
+import '../utils/polyfill.js'
 import { isExpectType } from '../utils/index'
 import { name, version } from '../../package.json'
 import { ConfigType, ImgType, UniImageType } from '../types/index'
