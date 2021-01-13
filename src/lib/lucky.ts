@@ -10,7 +10,7 @@ export default class Lucky {
    * @param config 
    */
   constructor (config: string | HTMLDivElement | ConfigType) {
-    // 先初始化 fontSize 以防后面计算 rem
+    // 先初始化 fontSize 以防后面有 rem 单位
     this.setHTMLFontSize()
     // 兼容代码开始: 为了处理 v1.0.6 版本在这里传入了一个 dom
     if (typeof config === 'string') config = { el: config } as ConfigType
@@ -202,8 +202,10 @@ export default class Lucky {
 
   /**
    * 添加一个观察者 create user watcher
-   * @param key 属性名
-   * @param callback 回调函数
+   * @param expr 表达式
+   * @param handler 回调函数
+   * @param watchOpt 配置参数
+   * @return 卸载当前观察者的函数 (暂未返回)
    */
   protected $watch (
     expr: string | Function,
@@ -223,19 +225,4 @@ export default class Lucky {
     // 返回一个卸载当前观察者的函数
     return function unWatchFn () {}
   }
-
-  /**
-   * 重写数组的原型方法
-   */
-  // private resetArrayProto () {
-  //   const _this = this
-  //   const oldArrayProto = Array.prototype
-  //   const newArrayProto = Object.create(oldArrayProto)
-  //   const methods = ['push', 'pop', 'shift', 'unshift', 'sort', 'splice', 'reverse']
-  //   methods.forEach(name => {
-  //     newArrayProto[name] = function () {
-  //       oldArrayProto[name].call(this, ...Array.from(arguments))
-  //     }
-  //   })
-  // }
 }
