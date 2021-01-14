@@ -88,6 +88,65 @@ function __spreadArrays() {
     return r;
 }
 
+// includes 兼容补丁
+if (!String.prototype.includes) {
+  String.prototype.includes = function (search, start) {
+
+    if (typeof start !== 'number') {
+      start = 0;
+    }
+
+    if (start + search.length > this.length) {
+      return false;
+    } else {
+      return this.indexOf(search, start) !== -1;
+    }
+  };
+} // find()兼容补丁
+
+
+if (!Array.prototype.find) {
+  Object.defineProperty(Array.prototype, 'find', {
+    value: function value(predicate) {
+      // 1. Let O be ? ToObject(this value).
+      if (this == null) {
+        throw new TypeError('"this" is null or not defined');
+      }
+
+      var o = Object(this); // 2. Let len be ? ToLength(? Get(O, "length")).
+
+      var len = o.length >>> 0; // 3. If IsCallable(predicate) is false, throw a TypeError exception.
+
+      if (typeof predicate !== 'function') {
+        throw new TypeError('predicate must be a function');
+      } // 4. If thisArg was supplied, let T be thisArg; else let T be undefined.
+
+
+      var thisArg = arguments[1]; // 5. Let k be 0.
+
+      var k = 0; // 6. Repeat, while k < len
+
+      while (k < len) {
+        // a. Let Pk be ! ToString(k).
+        // b. Let kValue be ? Get(O, Pk).
+        // c. Let testResult be ToBoolean(? Call(predicate, T, « kValue, k, O »)).
+        // d. If testResult is true, return kValue.
+        var kValue = o[k];
+
+        if (predicate.call(thisArg, kValue, k, o)) {
+          return kValue;
+        } // e. Increase k by 1.
+
+
+        k++;
+      } // 7. Return undefined.
+
+
+      return undefined;
+    }
+  });
+}
+
 /**
  * 判断是否是期望的类型
  * @param { any } param 将要判断的变量
@@ -169,7 +228,7 @@ var computePadding = function (block) {
 };
 
 var name = "lucky-canvas";
-var version = "1.2.8";
+var version = "1.2.9";
 
 var Dep = /** @class */ (function () {
     /**
@@ -790,16 +849,18 @@ var LuckyWheel = /** @class */ (function (_super) {
         _this.endDeg = 0; // 停止角度
         _this.animationId = 0; // 帧动画id
         _this.FPS = 16.6; // 屏幕刷新率
+        _this.blockImgs = [[]];
         _this.prizeImgs = [[]];
         _this.btnImgs = [[]];
         _this.initData(data);
         _this.initComputed();
         _this.initWatch();
         // 收集首次渲染的图片
-        var willUpdate = [[]];
-        _this.prizes && (willUpdate = _this.prizes.map(function (prize) { return prize.imgs; }));
-        _this.buttons && (willUpdate.push.apply(willUpdate, _this.buttons.map(function (btn) { return btn.imgs; })));
-        _this.init(willUpdate);
+        _this.init({
+            blockImgs: _this.blocks.map(function (block) { return block.imgs; }),
+            prizeImgs: _this.prizes.map(function (prize) { return prize.imgs; }),
+            btnImgs: _this.buttons.map(function (btn) { return btn.imgs; }),
+        });
         return _this;
     }
     /**
@@ -836,7 +897,12 @@ var LuckyWheel = /** @class */ (function (_super) {
      */
     LuckyWheel.prototype.initWatch = function () {
         var _this = this;
-        // 观察奖品数据的变化
+        // 观察 blocks 变化收集图片
+        this.$watch('blocks', function (newData, oldData) {
+            var willUpdate = [];
+            _this.init({ blockImgs: willUpdate });
+        }, { deep: true });
+        // 观察 prizes 变化收集图片
         this.$watch('prizes', function (newData, oldData) {
             var willUpdate = [];
             // 首次渲染时oldData为undefined
@@ -869,9 +935,9 @@ var LuckyWheel = /** @class */ (function (_super) {
                         });
                     willUpdate[prizeIndex] = prizeImgs;
                 });
-            return _this.init(willUpdate);
+            return _this.init({ prizeImgs: willUpdate });
         }, { deep: true });
-        // 观察按钮数据的变化
+        // 观察 buttons 变化收集图片
         this.$watch('buttons', function (newData, oldData) {
             var willUpdate = [];
             // 首次渲染时oldData为undefined
@@ -904,17 +970,16 @@ var LuckyWheel = /** @class */ (function (_super) {
                         });
                     willUpdate[btnIndex] = btnImgs;
                 });
-            return _this.init(__spreadArrays(new Array(_this.prizes.length).fill(undefined), willUpdate));
+            return _this.init({ btnImgs: willUpdate });
         }, { deep: true });
-        this.$watch('blocks', function () { return _this.draw(); }, { deep: true });
         this.$watch('defaultConfig', function () { return _this.draw(); }, { deep: true });
         this.$watch('defaultStyle', function () { return _this.draw(); }, { deep: true });
-        this.$watch('startCallback', function () { return _this.init([]); });
-        this.$watch('endCallback', function () { return _this.init([]); });
+        this.$watch('startCallback', function () { return _this.init({}); });
+        this.$watch('endCallback', function () { return _this.init({}); });
     };
     /**
      * 初始化 canvas 抽奖
-     * @param { Array<ImgType[]> } willUpdateImgs 需要更新的图片
+     * @param { willUpdateImgs } willUpdateImgs 需要更新的图片
      */
     LuckyWheel.prototype.init = function (willUpdateImgs) {
         var _this = this;
@@ -944,21 +1009,29 @@ var LuckyWheel = /** @class */ (function (_super) {
         };
         // 同步加载图片
         var num = 0, sum = 0;
-        if (isExpectType(willUpdateImgs, 'array')) {
-            this.draw(); // 先画一次防止闪烁, 因为加载图片是异步的
-            willUpdateImgs.forEach(function (imgs, cellIndex) {
+        this.draw(); // 先画一次防止闪烁, 因为加载图片是异步的
+        Object.keys(willUpdateImgs).forEach(function (imgName) {
+            var willUpdate = willUpdateImgs[imgName];
+            var cellName = {
+                blockImgs: 'blocks',
+                prizeImgs: 'prizes',
+                btnImgs: 'buttons',
+            }[imgName];
+            if (!willUpdate)
+                return;
+            willUpdate.forEach(function (imgs, cellIndex) {
                 if (!imgs)
-                    return false;
+                    return;
                 imgs.forEach(function (imgInfo, imgIndex) {
                     sum++;
-                    _this.loadAndCacheImg(cellIndex, imgIndex, function () {
+                    _this.loadAndCacheImg(cellName, cellIndex, imgName, imgIndex, function () {
                         num++;
                         if (sum === num)
                             endCallBack.call(_this);
                     });
                 });
             });
-        }
+        });
         if (!sum)
             endCallBack.call(this);
         // 初始化后回调函数
@@ -970,16 +1043,14 @@ var LuckyWheel = /** @class */ (function (_super) {
      * @param { number } imgIndex 奖品图片索引
      * @param { Function } callBack 图片加载完毕回调
      */
-    LuckyWheel.prototype.loadAndCacheImg = function (cellIndex, imgIndex, callBack) {
+    LuckyWheel.prototype.loadAndCacheImg = function (cellName, // 'blocks' | 'prizes' | 'buttons'
+    cellIndex, imgName, // 'blockImgs' | 'prizeImgs' | 'btnImgs'
+    imgIndex, callBack) {
         return __awaiter(this, void 0, void 0, function () {
-            var isPrize, cellName, imgName, cell, imgInfo, _a, _b;
+            var cell, imgInfo, _a, _b;
             return __generator(this, function (_c) {
                 switch (_c.label) {
                     case 0:
-                        isPrize = cellIndex < this.prizes.length;
-                        cellName = isPrize ? 'prizes' : 'buttons';
-                        imgName = isPrize ? 'prizeImgs' : 'btnImgs';
-                        cellIndex = isPrize ? cellIndex : cellIndex - this.prizes.length;
                         cell = this[cellName][cellIndex];
                         if (!cell || !cell.imgs)
                             return [2 /*return*/];
@@ -1044,11 +1115,34 @@ var LuckyWheel = /** @class */ (function (_super) {
         // 清空画布
         ctx.clearRect(-this.Radius, -this.Radius, this.Radius * 2, this.Radius * 2);
         // 绘制blocks边框
-        this.prizeRadius = this.blocks.reduce(function (radius, block) {
+        this.prizeRadius = this.blocks.reduce(function (radius, block, blockIndex) {
             ctx.beginPath();
             ctx.fillStyle = block.background;
             ctx.arc(0, 0, radius, 0, Math.PI * 2, false);
             ctx.fill();
+            block.imgs && block.imgs.forEach(function (imgInfo, imgIndex) {
+                if (!_this.blockImgs[blockIndex])
+                    return;
+                var blockImg = _this.blockImgs[blockIndex][imgIndex];
+                if (!blockImg)
+                    return;
+                // 计算图片真实宽高
+                var _a = _this.computedWidthAndHeight(blockImg, imgInfo, radius * 2, radius * 2), trueWidth = _a[0], trueHeight = _a[1];
+                var _b = [_this.getOffsetX(trueWidth), _this.getHeight(imgInfo.top, radius * 2) - radius], imgX = _b[0], imgY = _b[1];
+                // 兼容代码
+                var drawImg;
+                if (['WEB', 'MINI-WX'].includes(_this.config.flag)) {
+                    drawImg = blockImg;
+                }
+                else if (['UNI-H5', 'UNI-MINI-WX'].includes(_this.config.flag)) {
+                    drawImg = blockImg.path;
+                }
+                // 绘制图片
+                ctx.save();
+                imgInfo.rotate && ctx.rotate(getAngle(_this.rotateDeg));
+                ctx.drawImage(drawImg, imgX, imgY, trueWidth, trueHeight);
+                ctx.restore();
+            });
             return radius - _this.getLength(block.padding.split(' ')[0]);
         }, this.Radius);
         // 计算起始弧度
