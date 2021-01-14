@@ -1,10 +1,9 @@
 import Lucky from './lucky'
 import { ConfigType } from '../types/index'
 import LuckyWheelConfig, {
-  PrizeFontType, PrizeImgType,
-  ButtonFontType, ButtonImgType,
-  PrizeType, ButtonType,
-  BlockType,
+  BlockType, BlockImgType,
+  PrizeType, PrizeImgType,
+  ButtonType, ButtonImgType,
   DefaultConfigType,
   DefaultStyleType,
   StartCallbackType,
@@ -53,6 +52,7 @@ export default class LuckyWheel extends Lucky {
   private prizeFlag: number | undefined // 中奖索引
   private animationId = 0               // 帧动画id
   private FPS = 16.6                    // 屏幕刷新率
+  private blockImgs: Array<HTMLImageElement[] | UniImageType[]> = [[]]
   private prizeImgs: Array<HTMLImageElement[] | UniImageType[]> = [[]]
   private btnImgs: Array<HTMLImageElement[] | UniImageType[]> = [[]]
 
@@ -67,10 +67,11 @@ export default class LuckyWheel extends Lucky {
     this.initComputed()
     this.initWatch()
     // 收集首次渲染的图片
-    let willUpdate: Array<ImgType[] | undefined> = [[]]
-    this.prizes && ( willUpdate = this.prizes.map(prize => prize.imgs))
-    this.buttons && (willUpdate.push(...this.buttons.map(btn => btn.imgs)))
-    this.init(willUpdate)
+    this.init({
+      blockImgs: this.blocks.map(block => block.imgs),
+      prizeImgs: this.prizes.map(prize => prize.imgs),
+      btnImgs: this.buttons.map(btn => btn.imgs),
+    })
   }
 
   /**
@@ -123,9 +124,14 @@ export default class LuckyWheel extends Lucky {
    * 初始化观察者
    */
   private initWatch () {
-    // 观察奖品数据的变化
+    // 观察 blocks 变化收集图片
+    this.$watch('blocks', (newData: Array<BlockType>, oldData: Array<BlockType>) => {
+      let willUpdate: Array<BlockImgType[] | undefined> = []
+      this.init({ blockImgs: willUpdate })
+    }, { deep: true })
+    // 观察 prizes 变化收集图片
     this.$watch('prizes', (newData: Array<PrizeType>, oldData: Array<PrizeType>) => {
-      let willUpdate: Array<ImgType[] | undefined> = []
+      let willUpdate: Array<PrizeImgType[] | undefined> = []
       // 首次渲染时oldData为undefined
       if (!oldData) willUpdate = newData.map(prize => prize.imgs)
       // 此时新值一定存在
@@ -149,11 +155,11 @@ export default class LuckyWheel extends Lucky {
         })
         willUpdate[prizeIndex] = prizeImgs
       })
-      return this.init(willUpdate)
+      return this.init({ prizeImgs: willUpdate })
     }, { deep: true })
-    // 观察按钮数据的变化
+    // 观察 buttons 变化收集图片
     this.$watch('buttons', (newData: Array<ButtonType>, oldData: Array<ButtonType>) => {
-      let willUpdate: Array<ImgType[] | undefined> = []
+      let willUpdate: Array<ButtonImgType[] | undefined> = []
       // 首次渲染时oldData为undefined
       if (!oldData) willUpdate = newData.map(btn => btn.imgs)
       // 此时新值一定存在
@@ -177,20 +183,23 @@ export default class LuckyWheel extends Lucky {
         })
         willUpdate[btnIndex] = btnImgs
       })
-      return this.init([...new Array(this.prizes.length).fill(undefined), ...willUpdate])
+      return this.init({ btnImgs: willUpdate })
     }, { deep: true })
-    this.$watch('blocks', () => this.draw(), { deep: true })
     this.$watch('defaultConfig', () => this.draw(), { deep: true })
     this.$watch('defaultStyle', () => this.draw(), { deep: true })
-    this.$watch('startCallback', () => this.init([]))
-    this.$watch('endCallback', () => this.init([]))
+    this.$watch('startCallback', () => this.init({}))
+    this.$watch('endCallback', () => this.init({}))
   }
 
   /**
    * 初始化 canvas 抽奖
-   * @param { Array<ImgType[]> } willUpdateImgs 需要更新的图片
+   * @param { willUpdateImgs } willUpdateImgs 需要更新的图片
    */
-  public init (willUpdateImgs: Array<ImgType[] | undefined>): void {
+  public init (willUpdateImgs: {
+    blockImgs?: Array<BlockImgType[] | undefined>
+    prizeImgs?: Array<PrizeImgType[] | undefined>
+    btnImgs?: Array<ButtonImgType[] | undefined>
+  }): void {
     const { config, ctx } = this
     this.setDpr()
     this.setHTMLFontSize()
@@ -212,19 +221,26 @@ export default class LuckyWheel extends Lucky {
     }
     // 同步加载图片
     let num = 0, sum = 0
-    if (isExpectType(willUpdateImgs, 'array')) {
-      this.draw() // 先画一次防止闪烁, 因为加载图片是异步的
-      willUpdateImgs.forEach((imgs, cellIndex) => {
-        if (!imgs) return false
+    this.draw() // 先画一次防止闪烁, 因为加载图片是异步的
+    Object.keys(willUpdateImgs).forEach((imgName) => {
+      const willUpdate = willUpdateImgs[imgName as 'blockImgs' | 'prizeImgs' | 'btnImgs']
+      const cellName = {
+        blockImgs: 'blocks',
+        prizeImgs: 'prizes',
+        btnImgs: 'buttons',
+      }[imgName]
+      if (!willUpdate) return
+      willUpdate.forEach((imgs, cellIndex) => {
+        if (!imgs) return
         imgs.forEach((imgInfo, imgIndex) => {
           sum++
-          this.loadAndCacheImg(cellIndex, imgIndex, () => {
+          this.loadAndCacheImg(cellName, cellIndex, imgName, imgIndex, () => {
             num++
             if (sum === num) endCallBack.call(this)
           })
         })
       })
-    }
+    })
     if (!sum) endCallBack.call(this)
     // 初始化后回调函数
     config.afterInit?.call(this)
@@ -237,15 +253,12 @@ export default class LuckyWheel extends Lucky {
    * @param { Function } callBack 图片加载完毕回调
    */
   private async loadAndCacheImg (
+    cellName: string, // 'blocks' | 'prizes' | 'buttons'
     cellIndex: number,
+    imgName: string, // 'blockImgs' | 'prizeImgs' | 'btnImgs'
     imgIndex: number,
     callBack: () => void
   ) {
-    // 先判断index是奖品图片还是按钮图片, 并修正index的值
-    const isPrize = cellIndex < this.prizes.length
-    const cellName = isPrize ? 'prizes' : 'buttons'
-    const imgName = isPrize ? 'prizeImgs' : 'btnImgs'
-    cellIndex = isPrize ? cellIndex : cellIndex - this.prizes.length
     // 获取图片信息
     const cell: PrizeType | ButtonType = this[cellName][cellIndex]
     if (!cell || !cell.imgs) return
@@ -303,11 +316,33 @@ export default class LuckyWheel extends Lucky {
     // 清空画布
     ctx.clearRect(-this.Radius, -this.Radius, this.Radius * 2, this.Radius * 2)
     // 绘制blocks边框
-    this.prizeRadius = this.blocks.reduce((radius, block) => {
+    this.prizeRadius = this.blocks.reduce((radius, block, blockIndex) => {
       ctx.beginPath()
       ctx.fillStyle = block.background
       ctx.arc(0, 0, radius, 0, Math.PI * 2, false)
       ctx.fill()
+      block.imgs && block.imgs.forEach((imgInfo, imgIndex) => {
+        if (!this.blockImgs[blockIndex]) return
+        const blockImg = this.blockImgs[blockIndex][imgIndex]
+        if (!blockImg) return
+        // 计算图片真实宽高
+        const [trueWidth, trueHeight] = this.computedWidthAndHeight(
+          blockImg, imgInfo, radius * 2, radius * 2
+        )
+        const [imgX, imgY] = [this.getOffsetX(trueWidth), this.getHeight(imgInfo.top, radius * 2) - radius]
+        // 兼容代码
+        let drawImg
+        if (['WEB', 'MINI-WX'].includes(this.config.flag)) {
+          drawImg = blockImg
+        } else if (['UNI-H5', 'UNI-MINI-WX'].includes(this.config.flag)) {
+          drawImg = (blockImg as UniImageType).path
+        }
+        // 绘制图片
+        ctx.save()
+        imgInfo.rotate && ctx.rotate(getAngle(this.rotateDeg))
+        ctx.drawImage((drawImg as CanvasImageSource), imgX, imgY, trueWidth, trueHeight)
+        ctx.restore()
+      })
       return radius - this.getLength(block.padding.split(' ')[0])
     }, this.Radius)
     // 计算起始弧度

@@ -7,6 +7,10 @@ export interface PrizeFontType extends FontType {
 
 export interface ButtonFontType extends FontType {}
 
+export interface BlockImgType extends ImgType {
+  rotate?: boolean
+}
+
 export interface PrizeImgType extends ImgType {}
 
 export interface ButtonImgType extends ImgType {}
@@ -14,6 +18,7 @@ export interface ButtonImgType extends ImgType {}
 export interface BlockType {
   background: string
   padding: string
+  imgs?: Array<BlockImgType>
 }
 
 export interface PrizeType {
