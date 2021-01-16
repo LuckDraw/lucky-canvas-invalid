@@ -4,9 +4,13 @@
 const oldArrayProto = Array.prototype
 const newArrayProto = Object.create(oldArrayProto)
 const methods = ['push', 'pop', 'shift', 'unshift', 'sort', 'splice', 'reverse']
-methods.forEach(name => {
-  newArrayProto[name] = function () {
-    oldArrayProto[name].call(this, ...Array.from(arguments))
+methods.forEach(method => {
+  newArrayProto[method] = function (...args: any[]) {
+    const res = oldArrayProto[method].apply(this, args)
+    const luckyOb = this['__luckyOb__']
+    if (['push', 'unshift', 'splice'].includes(method)) luckyOb.walk(this)
+    luckyOb.dep.notify()
+    return res
   }
 })
 
