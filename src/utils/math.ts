@@ -38,6 +38,7 @@ export const drawRadian = (
   end: number,
   direction: boolean = true
 ) => {
+  // 如果角度大于等于180度, 则分两次绘制, 因为 arcTo 无法绘制180度的圆弧
   if (Math.abs(end - start).toFixed(8) >= getAngle(180).toFixed(8)) {
     let middle = (end + start) / 2
     if (direction) {
@@ -49,13 +50,16 @@ export const drawRadian = (
     }
     return false
   }
+  // 如果方法相反, 则交换起点和终点
   if (!direction) [start, end] = [end, start]
   const [x1, y1] = getArcPointerByDeg(start, r)
   const [x2, y2] = getArcPointerByDeg(end, r)
   const [k1, b1] = getTangentByPointer(x1, y1)
   const [k2, b2] = getTangentByPointer(x2, y2)
+  // 计算两条切线的交点
   let x0 = (b2 - b1) / (k1 - k2)
   let y0 = (k2 * b1 - k1 * b2) / (k2 - k1)
+  // 如果有任何一条切线垂直于x轴, 则斜率不存在
   if (isNaN(x0)) {
     Math.abs(x1) === +r.toFixed(8) && (x0 = x1)
     Math.abs(x2) === +r.toFixed(8) && (x0 = x2)
@@ -67,6 +71,7 @@ export const drawRadian = (
     y0 = k1 * x0 + b1
   }
   ctx.lineTo(x1, y1)
+  // 微信小程序下 arcTo 在安卓真机下绘制有 bug
   if (['WEB', 'UNI-H5'].includes(flag)) {
     ctx.arcTo(x0, y0, x2, y2, r)
   } else {
@@ -85,6 +90,7 @@ export const drawSector = (
   gutter: number,
   background: string
 ) => {
+  // 如果不存在 getter, 则直接使用 arc 绘制扇形
   if (!gutter) {
     ctx.beginPath()
     ctx.fillStyle = background
@@ -92,7 +98,9 @@ export const drawSector = (
     ctx.arc(0, 0, maxRadius, start, end, false)
     ctx.closePath()
     ctx.fill()
-  } else drawSectorByArcTo(flag, ctx, minRadius, maxRadius, start, end, gutter, background)
+  } else {
+    drawSectorByArcTo(flag, ctx, minRadius, maxRadius, start, end, gutter, background)
+  }
 }
 
 // 根据arcTo绘制扇形
@@ -107,6 +115,7 @@ export const drawSectorByArcTo = (
   background: string
 ) => {
   if (!minRadius) minRadius = gutter
+  // 内外圆弧分别进行等边缩放
   let maxGutter = getAngle(90 / Math.PI / maxRadius * gutter)
   let minGutter = getAngle(90 / Math.PI / minRadius * gutter)
   let maxStart = start + maxGutter
@@ -118,19 +127,21 @@ export const drawSectorByArcTo = (
   ctx.moveTo(...getArcPointerByDeg(maxStart, maxRadius))
   drawRadian(flag, ctx, maxRadius, maxStart, maxEnd, true)
   // 如果 getter 比按钮短就绘制圆弧, 反之计算新的坐标点
-  if (minEnd > minStart)
+  if (minEnd > minStart) {
     drawRadian(flag, ctx, minRadius, minStart, minEnd, false)
-  else ctx.lineTo(
-    ...getArcPointerByDeg(
-      (start + end) / 2,
-      gutter / 2 / Math.abs(Math.sin((start - end) / 2))
+  } else {
+    ctx.lineTo(
+      ...getArcPointerByDeg(
+        (start + end) / 2,
+        gutter / 2 / Math.abs(Math.sin((start - end) / 2))
+      )
     )
-  )
+  }
   ctx.closePath()
   ctx.fill()
 }
 
-// 绘制圆角矩形
+// 绘制圆角矩形 (由于微信小程序的 arcTo 有 bug, 下面的圆弧使用二次贝塞尔曲线代替)
 export const drawRoundRect = (
   ctx: CanvasRenderingContext2D,
   x: number,
@@ -206,4 +217,3 @@ export const getLinearGradient = (
     return gradient
   }, gradient)
 }
-

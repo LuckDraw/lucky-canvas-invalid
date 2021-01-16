@@ -1,12 +1,14 @@
+/**
+ * 由于部分低版本下的某些 app 可能会缺少某些原型方法, 这里增加兼容
+ */
 
-// includes 兼容补丁
+// vivo x7 下网易云游戏 app 缺少 includes 方法
 if (!String.prototype.includes) {
   String.prototype.includes = function(search, start) {
     'use strict';
     if (typeof start !== 'number') {
       start = 0;
     }
-
     if (start + search.length > this.length) {
       return false;
     } else {
@@ -15,7 +17,7 @@ if (!String.prototype.includes) {
   };
 }
 
-// find()兼容补丁
+// vivo x7 下网易云游戏 app 缺少 find 方法
 if (!Array.prototype.find) {
   Object.defineProperty(Array.prototype, 'find', {
     value: function(predicate) {
@@ -23,23 +25,17 @@ if (!Array.prototype.find) {
       if (this == null) {
         throw new TypeError('"this" is null or not defined');
       }
-
       var o = Object(this);
-
       // 2. Let len be ? ToLength(? Get(O, "length")).
       var len = o.length >>> 0;
-
       // 3. If IsCallable(predicate) is false, throw a TypeError exception.
       if (typeof predicate !== 'function') {
         throw new TypeError('predicate must be a function');
       }
-
       // 4. If thisArg was supplied, let T be thisArg; else let T be undefined.
       var thisArg = arguments[1];
-
       // 5. Let k be 0.
       var k = 0;
-
       // 6. Repeat, while k < len
       while (k < len) {
         // a. Let Pk be ! ToString(k).
@@ -53,7 +49,6 @@ if (!Array.prototype.find) {
         // e. Increase k by 1.
         k++;
       }
-
       // 7. Return undefined.
       return undefined;
     }

@@ -90,7 +90,10 @@
         return r;
     }
 
-    // includes 兼容补丁
+    /**
+     * 由于部分低版本下的某些 app 可能会缺少某些原型方法, 这里增加兼容
+     */
+    // vivo x7 下网易云游戏 app 缺少 includes 方法
     if (!String.prototype.includes) {
       String.prototype.includes = function (search, start) {
 
@@ -104,7 +107,7 @@
           return this.indexOf(search, start) !== -1;
         }
       };
-    } // find()兼容补丁
+    } // vivo x7 下网易云游戏 app 缺少 find 方法
 
 
     if (!Array.prototype.find) {
@@ -230,7 +233,7 @@
     };
 
     var name = "lucky-canvas";
-    var version = "1.2.9";
+    var version = "1.3.0";
 
     var Dep = /** @class */ (function () {
         /**
@@ -260,44 +263,15 @@
         return Dep;
     }());
 
-    /**
-     * 处理响应式
-     * @param { Object | Array } data
-     */
-    var observe = function (data) {
-        if (typeof data !== 'object')
-            return;
-        Object.keys(data).forEach(function (key) {
-            defineReactive(data, key, data[key]);
+    var hasProto = '__proto__' in {};
+    function def(obj, key, val, enumerable) {
+        Object.defineProperty(obj, key, {
+            value: val,
+            enumerable: !!enumerable,
+            writable: true,
+            configurable: true
         });
-    };
-    /**
-     * 重写 setter / getter
-     * @param {*} data
-     * @param {*} key
-     * @param {*} val
-     */
-    var defineReactive = function (data, key, val) {
-        var dep = new Dep();
-        var childOb = observe(val);
-        Object.defineProperty(data, key, {
-            get: function () {
-                if (Dep.target) {
-                    dep.addSub(Dep.target);
-                }
-                return val;
-            },
-            set: function (newVal) {
-                if (newVal === val)
-                    return;
-                val = newVal;
-                childOb = observe(newVal);
-                dep.notify();
-            }
-        });
-    };
-
-    var uid = 0;
+    }
     function parsePath(path) {
         path += '.';
         var segments = [], segment = '';
@@ -333,17 +307,132 @@
         dfs(value);
         // seenObjects.clear()
     }
+
+    /**
+     * 重写数组的原型方法
+     */
+    var oldArrayProto = Array.prototype;
+    var newArrayProto = Object.create(oldArrayProto);
+    var methods = ['push', 'pop', 'shift', 'unshift', 'sort', 'splice', 'reverse'];
+    methods.forEach(function (method) {
+        newArrayProto[method] = function () {
+            var args = [];
+            for (var _i = 0; _i < arguments.length; _i++) {
+                args[_i] = arguments[_i];
+            }
+            var res = oldArrayProto[method].apply(this, args);
+            var luckyOb = this['__luckyOb__'];
+            if (['push', 'unshift', 'splice'].includes(method))
+                luckyOb.walk(this);
+            luckyOb.dep.notify();
+            return res;
+        };
+    });
+
+    var Observer = /** @class */ (function () {
+        /**
+         * 观察者构造器
+         * @param value
+         */
+        function Observer(value) {
+            // this.value = value
+            this.dep = new Dep();
+            // 将响应式对象代理到当前value上面, 并且将当前的enumerable设置为false
+            def(value, '__luckyOb__', this);
+            if (Array.isArray(value)) { // 如果是数组, 则重写原型方法
+                if (hasProto) {
+                    value['__proto__'] = newArrayProto;
+                }
+                else {
+                    Object.getOwnPropertyNames(newArrayProto).forEach(function (key) {
+                        def(value, key, newArrayProto[key]);
+                    });
+                }
+            }
+            this.walk(value);
+        }
+        Observer.prototype.walk = function (data) {
+            Object.keys(data).forEach(function (key) {
+                defineReactive(data, key, data[key]);
+            });
+        };
+        return Observer;
+    }());
+    /**
+     * 处理响应式
+     * @param { Object | Array } data
+     */
+    function observe(data) {
+        if (typeof data !== 'object')
+            return;
+        var luckyOb;
+        if ('__luckyOb__' in data) {
+            luckyOb = data['__luckyOb__'];
+        }
+        else {
+            luckyOb = new Observer(data);
+        }
+        return luckyOb;
+    }
+    /**
+     * 重写 setter / getter
+     * @param {*} data
+     * @param {*} key
+     * @param {*} val
+     */
+    function defineReactive(data, key, val) {
+        var dep = new Dep();
+        var property = Object.getOwnPropertyDescriptor(data, key);
+        if (property && property.configurable === false) {
+            return;
+        }
+        var getter = property && property.get;
+        var setter = property && property.set;
+        if ((!getter || setter) && arguments.length === 2) {
+            val = data[key];
+        }
+        var childOb = observe(val);
+        Object.defineProperty(data, key, {
+            get: function () {
+                var value = getter ? getter.call(data) : val;
+                if (Dep.target) {
+                    dep.addSub(Dep.target);
+                    if (childOb) {
+                        childOb.dep.addSub(Dep.target);
+                    }
+                }
+                return value;
+            },
+            set: function (newVal) {
+                if (newVal === val)
+                    return;
+                val = newVal;
+                if (getter && !setter)
+                    return;
+                if (setter) {
+                    setter.call(data, newVal);
+                }
+                else {
+                    val = newVal;
+                }
+                childOb = observe(newVal);
+                dep.notify();
+            }
+        });
+    }
+
+    var uid = 0;
     var Watcher = /** @class */ (function () {
         /**
          * 观察者构造器
-         * @param {*} vm
+         * @param {*} $lucky
          * @param {*} expr
          * @param {*} cb
          */
-        function Watcher(vm, expr, cb, options) {
+        function Watcher($lucky, expr, cb, options) {
             if (options === void 0) { options = {}; }
             this.id = uid++;
-            this.vm = vm;
+            this.$lucky = $lucky;
             this.expr = expr;
             this.deep = !!options.deep;
             if (typeof expr === 'function') {
@@ -360,7 +449,7 @@
          */
         Watcher.prototype.get = function () {
             Dep.target = this;
-            var value = this.getter.call(this.vm, this.vm);
+            var value = this.getter.call(this.$lucky, this.$lucky);
             // 处理深度监听
             if (this.deep) {
                 traverse(value);
@@ -377,7 +466,8 @@
             // 读取之前存储的旧值
             var oldVal = this.value;
             this.value = newVal;
-            this.cb.call(this.vm, newVal, oldVal);
+            // 触发 watch 回调
+            this.cb.call(this.$lucky, newVal, oldVal);
         };
         return Watcher;
     }());
@@ -393,7 +483,7 @@
             this.setTimeout = function () { };
             this.setInterval = function () { };
             this.clearInterval = function () { };
-            // 先初始化 fontSize 以防后面计算 rem
+            // 先初始化 fontSize 以防后面有 rem 单位
             this.setHTMLFontSize();
             // 兼容代码开始: 为了处理 v1.0.6 版本在这里传入了一个 dom
             if (typeof config === 'string')
@@ -582,8 +672,10 @@
         };
         /**
          * 添加一个观察者 create user watcher
-         * @param key 属性名
-         * @param callback 回调函数
+         * @param expr 表达式
+         * @param handler 回调函数
+         * @param watchOpt 配置参数
+         * @return 卸载当前观察者的函数 (暂未返回)
          */
         Lucky.prototype.$watch = function (expr, handler, watchOpt) {
             if (watchOpt === void 0) { watchOpt = {}; }
@@ -635,6 +727,7 @@
     var drawRadian = function (flag, ctx, r, start, end, direction) {
         var _a;
         if (direction === void 0) { direction = true; }
+        // 如果角度大于等于180度, 则分两次绘制, 因为 arcTo 无法绘制180度的圆弧
         if (Math.abs(end - start).toFixed(8) >= getAngle(180).toFixed(8)) {
             var middle = (end + start) / 2;
             if (direction) {
@@ -647,14 +740,17 @@
             }
             return false;
         }
+        // 如果方法相反, 则交换起点和终点
         if (!direction)
             _a = [end, start], start = _a[0], end = _a[1];
         var _b = getArcPointerByDeg(start, r), x1 = _b[0], y1 = _b[1];
         var _c = getArcPointerByDeg(end, r), x2 = _c[0], y2 = _c[1];
         var _d = getTangentByPointer(x1, y1), k1 = _d[0], b1 = _d[1];
         var _e = getTangentByPointer(x2, y2), k2 = _e[0], b2 = _e[1];
+        // 计算两条切线的交点
         var x0 = (b2 - b1) / (k1 - k2);
         var y0 = (k2 * b1 - k1 * b2) / (k2 - k1);
+        // 如果有任何一条切线垂直于x轴, 则斜率不存在
         if (isNaN(x0)) {
             Math.abs(x1) === +r.toFixed(8) && (x0 = x1);
             Math.abs(x2) === +r.toFixed(8) && (x0 = x2);
@@ -666,6 +762,7 @@
             y0 = k1 * x0 + b1;
         }
         ctx.lineTo(x1, y1);
+        // 微信小程序下 arcTo 在安卓真机下绘制有 bug
         if (['WEB', 'UNI-H5'].includes(flag)) {
             ctx.arcTo(x0, y0, x2, y2, r);
         }
@@ -675,6 +772,7 @@
     };
     // 绘制扇形
     var drawSector = function (flag, ctx, minRadius, maxRadius, start, end, gutter, background) {
+        // 如果不存在 getter, 则直接使用 arc 绘制扇形
         if (!gutter) {
             ctx.beginPath();
             ctx.fillStyle = background;
@@ -683,13 +781,15 @@
             ctx.closePath();
             ctx.fill();
         }
-        else
+        else {
             drawSectorByArcTo(flag, ctx, minRadius, maxRadius, start, end, gutter, background);
+        }
     };
     // 根据arcTo绘制扇形
     var drawSectorByArcTo = function (flag, ctx, minRadius, maxRadius, start, end, gutter, background) {
         if (!minRadius)
             minRadius = gutter;
+        // 内外圆弧分别进行等边缩放
         var maxGutter = getAngle(90 / Math.PI / maxRadius * gutter);
         var minGutter = getAngle(90 / Math.PI / minRadius * gutter);
         var maxStart = start + maxGutter;
@@ -701,14 +801,16 @@
         ctx.moveTo.apply(ctx, getArcPointerByDeg(maxStart, maxRadius));
         drawRadian(flag, ctx, maxRadius, maxStart, maxEnd, true);
         // 如果 getter 比按钮短就绘制圆弧, 反之计算新的坐标点
-        if (minEnd > minStart)
+        if (minEnd > minStart) {
             drawRadian(flag, ctx, minRadius, minStart, minEnd, false);
-        else
+        }
+        else {
             ctx.lineTo.apply(ctx, getArcPointerByDeg((start + end) / 2, gutter / 2 / Math.abs(Math.sin((start - end) / 2))));
+        }
         ctx.closePath();
         ctx.fill();
     };
-    // 绘制圆角矩形
+    // 绘制圆角矩形 (由于微信小程序的 arcTo 有 bug, 下面的圆弧使用二次贝塞尔曲线代替)
     var drawRoundRect = function (ctx, x, y, w, h, r, color) {
         var min = Math.min(w, h);
         if (r > min / 2)

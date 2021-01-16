@@ -23,7 +23,6 @@
         },
         defaultConfig: {
           gutter: 1,
-          // offsetDegree: 0
         },
         blocks: [
           { padding: '13px', background: '#d64737' }
@@ -64,16 +63,19 @@
       setTimeout(_ => {
         // luckyWheel.prizes[0].fonts[0].text = 'xxx'
         // luckyWheel.blocks[0].background = '#000'
-        luckyWheel.defaultStyle.fontColor = 'green'
-        // luckyWheel.defaultConfig.gutter = '3'
-        luckyWheel.$set(luckyWheel.defaultConfig, 'gutter', '3px')
-        // luckyWheel.defaultConfig.offsetDegree = 22.5
-        luckyWheel.$set(luckyWheel.defaultConfig, 'offsetDegree', '22.5')
+        // luckyWheel.defaultStyle.fontColor = 'green'
+        luckyWheel.defaultConfig.gutter = '3'
+        luckyWheel.defaultConfig.offsetDegree = 22.5
+        // luckyWheel.$set(luckyWheel.defaultConfig, 'offsetDegree', '22.5')
         // luckyWheel.initComputed()
         // console.log('offsetDegree' in Object.prototype)
         // luckyWheel.init()
         console.log(luckyWheel.defaultConfig)
       }, 1000)
+      setTimeout(() => {
+        // luckyWheel.blocks.push({ padding: '13px', background: '#000' })
+        // luckyWheel.blocks[0] = { padding: '13px', background: '#000' }
+      }, 1500);
     </script>
   </body>
 </body>

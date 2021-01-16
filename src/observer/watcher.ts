@@ -61,6 +61,7 @@ export default class Watcher {
     // 读取之前存储的旧值
     const oldVal = this.value
     this.value = newVal
+    // 触发 watch 回调
     this.cb.call(this.$lucky, newVal, oldVal)
   }
 }
