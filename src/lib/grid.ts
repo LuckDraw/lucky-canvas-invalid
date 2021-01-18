@@ -274,7 +274,7 @@ export default class LuckyGrid extends Lucky {
   }
 
   /**
-   * 单独加载某一张图片并计算其实际渲染宽高
+   * 根据索引单独加载指定图片并缓存
    * @param { number } prizeIndex 奖品索引
    * @param { number } imgIndex 奖品图片索引
    * @param { Function } callBack 图片加载完毕回调
@@ -288,16 +288,23 @@ export default class LuckyGrid extends Lucky {
     if (!prize || !prize.imgs) return
     const imgInfo = prize.imgs[imgIndex]
     if (!this.cellImgs[prizeIndex]) this.cellImgs[prizeIndex] = []
-    // 加载 defaultImg 默认图片
-    this.cellImgs[prizeIndex][imgIndex] = {
-      defaultImg: await this.loadImg(imgInfo.src, imgInfo) as HTMLImageElement
+    if (!this.cellImgs[prizeIndex][imgIndex]) {
+      this.cellImgs[prizeIndex][imgIndex] = {} as any
     }
+    // 加载 defaultImg 默认图片
+    let num = 1, sum = 0
+    this.loadImg(imgInfo.src, imgInfo).then(res => {
+      this.cellImgs[prizeIndex][imgIndex].defaultImg = res
+      num === ++sum && callBack.call(this)
+    })
     // 如果有 activeImg 则多加载一张
     if (imgInfo.hasOwnProperty('activeSrc')) {
-      const activeImg = await this.loadImg((imgInfo as PrizeImgType).activeSrc!, imgInfo) as HTMLImageElement
-      this.cellImgs[prizeIndex][imgIndex].activeImg = activeImg
+      num++
+      this.loadImg((imgInfo as PrizeImgType).activeSrc!, imgInfo, '$activeResolve').then(res => {
+        this.cellImgs[prizeIndex][imgIndex].activeImg = res
+        num === ++sum && callBack.call(this)
+      })
     }
-    callBack.call(this)
   }
 
   /**

@@ -233,7 +233,7 @@
     };
 
     var name = "lucky-canvas";
-    var version = "1.3.0";
+    var version = "1.3.1";
 
     var Dep = /** @class */ (function () {
         /**
@@ -596,8 +596,9 @@
          * @param src 图片路径
          * @param info 图片信息
          */
-        Lucky.prototype.loadImg = function (src, info) {
+        Lucky.prototype.loadImg = function (src, info, resolveName) {
             var _this = this;
+            if (resolveName === void 0) { resolveName = '$resolve'; }
             return new Promise(function (resolve) {
                 if (_this.config.flag === 'WEB') {
                     var imgObj_1 = new Image();
@@ -606,7 +607,7 @@
                 }
                 else {
                     // 其余平台向外暴露, 交给外部自行处理
-                    info.$resolve = resolve;
+                    info[resolveName] = resolve;
                     return;
                 }
             });
@@ -1741,43 +1742,39 @@
             return willUpdate;
         };
         /**
-         * 单独加载某一张图片并计算其实际渲染宽高
+         * 根据索引单独加载指定图片并缓存
          * @param { number } prizeIndex 奖品索引
          * @param { number } imgIndex 奖品图片索引
          * @param { Function } callBack 图片加载完毕回调
          */
         LuckyGrid.prototype.loadAndCacheImg = function (prizeIndex, imgIndex, callBack) {
             return __awaiter(this, void 0, void 0, function () {
-                var prize, imgInfo, _a, _b, activeImg;
-                var _c;
-                return __generator(this, function (_d) {
-                    switch (_d.label) {
-                        case 0:
-                            prize = this.cells[prizeIndex];
-                            if (!prize || !prize.imgs)
-                                return [2 /*return*/];
-                            imgInfo = prize.imgs[imgIndex];
-                            if (!this.cellImgs[prizeIndex])
-                                this.cellImgs[prizeIndex] = [];
-                            // 加载 defaultImg 默认图片
-                            _a = this.cellImgs[prizeIndex];
-                            _b = imgIndex;
-                            _c = {};
-                            return [4 /*yield*/, this.loadImg(imgInfo.src, imgInfo)];
-                        case 1:
-                            // 加载 defaultImg 默认图片
-                            _a[_b] = (_c.defaultImg = (_d.sent()),
-                                _c);
-                            if (!imgInfo.hasOwnProperty('activeSrc')) return [3 /*break*/, 3];
-                            return [4 /*yield*/, this.loadImg(imgInfo.activeSrc, imgInfo)];
-                        case 2:
-                            activeImg = _d.sent();
-                            this.cellImgs[prizeIndex][imgIndex].activeImg = activeImg;
-                            _d.label = 3;
-                        case 3:
-                            callBack.call(this);
-                            return [2 /*return*/];
+                var prize, imgInfo, num, sum;
+                var _this = this;
+                return __generator(this, function (_a) {
+                    prize = this.cells[prizeIndex];
+                    if (!prize || !prize.imgs)
+                        return [2 /*return*/];
+                    imgInfo = prize.imgs[imgIndex];
+                    if (!this.cellImgs[prizeIndex])
+                        this.cellImgs[prizeIndex] = [];
+                    if (!this.cellImgs[prizeIndex][imgIndex]) {
+                        this.cellImgs[prizeIndex][imgIndex] = {};
                     }
+                    num = 1, sum = 0;
+                    this.loadImg(imgInfo.src, imgInfo).then(function (res) {
+                        _this.cellImgs[prizeIndex][imgIndex].defaultImg = res;
+                        num === ++sum && callBack.call(_this);
+                    });
+                    // 如果有 activeImg 则多加载一张
+                    if (imgInfo.hasOwnProperty('activeSrc')) {
+                        num++;
+                        this.loadImg(imgInfo.activeSrc, imgInfo, '$activeResolve').then(function (res) {
+                            _this.cellImgs[prizeIndex][imgIndex].activeImg = res;
+                            num === ++sum && callBack.call(_this);
+                        });
+                    }
+                    return [2 /*return*/];
                 });
             });
         };

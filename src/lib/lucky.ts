@@ -131,7 +131,11 @@ export default class Lucky {
    * @param src 图片路径
    * @param info 图片信息
    */
-  protected loadImg (src: string, info: ImgType): Promise<HTMLImageElement | UniImageType> {
+  protected loadImg (
+    src: string,
+    info: ImgType,
+    resolveName = '$resolve'
+  ): Promise<HTMLImageElement | UniImageType> {
     return new Promise(resolve => {
       if (this.config.flag === 'WEB') {
         let imgObj = new Image()
@@ -139,7 +143,7 @@ export default class Lucky {
         imgObj.onload = () => resolve(imgObj)
       } else {
         // 其余平台向外暴露, 交给外部自行处理
-        info.$resolve = resolve
+        info[resolveName] = resolve
         return
       }
     })
