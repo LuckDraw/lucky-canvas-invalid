@@ -18,28 +18,36 @@ export const removeEnter = (str: string): string => {
 }
 
 /**
- * 参数校验器
- * @param data 将要校验的参数
- * @param params 校验规则
- * @param msg 警告信息
- * @return { boolean } 校验成功返回true, 反之false
+ * 把任何数据类型转成数字
+ * @param num 
  */
-// export const paramsValidator = (data: any, params = {}, msg = '') => {
-//   if (isExpectType(data, 'object')) data = [data]
-//   return data.every((item, index) => {
-//     for (let key in params) {
-//       if (params[key] === 1 && !item.hasOwnProperty(key)) {
-//         return !!console.error(`参数 ${msg}[${index}] 缺少 ${key} 属性`)
-//       }
-//       else if (isExpectType(params[key], 'object') && item[key]) {
-//         if (!paramsValidator(
-//           item[key], params[key], msg ? `${msg}[${index}].${key}` : key
-//         )) return false
-//       }
-//     }
-//     return true
-//   })
-// }
+export const getNumber = (num: any): number => {
+  if (num === null) return 0
+  if (typeof num === 'object') return NaN
+  if (typeof num === 'number') return num
+  if (typeof num === 'string') {
+    if (num[num.length - 1] === '%') {
+      return Number(num.slice(0, -1)) / 100
+    }
+    return Number(num)
+  }
+  return NaN
+}
+
+/**
+ * 判断颜色是否有效 (透明色 === 无效)
+ * @param color 颜色
+ */
+export const hasBackground = (color: string | undefined | null): boolean => {
+  if (typeof color !== 'string') return false
+  color = color.toLocaleLowerCase().trim()
+  if (color === 'transparent') return false
+  if (/^rgba/.test(color)) {
+    const alpha = /([^\s,]+)\)$/.exec(color)
+    if (getNumber(alpha) === 0) return false
+  }
+  return true
+}
 
 /**
  * 通过padding计算

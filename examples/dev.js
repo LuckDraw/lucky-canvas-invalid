@@ -176,28 +176,41 @@
         return [].filter.call(str, function (s) { return s !== '\n'; }).join('');
     };
     /**
-     * 参数校验器
-     * @param data 将要校验的参数
-     * @param params 校验规则
-     * @param msg 警告信息
-     * @return { boolean } 校验成功返回true, 反之false
+     * 把任何数据类型转成数字
+     * @param num
      */
-    // export const paramsValidator = (data: any, params = {}, msg = '') => {
-    //   if (isExpectType(data, 'object')) data = [data]
-    //   return data.every((item, index) => {
-    //     for (let key in params) {
-    //       if (params[key] === 1 && !item.hasOwnProperty(key)) {
-    //         return !!console.error(`参数 ${msg}[${index}] 缺少 ${key} 属性`)
-    //       }
-    //       else if (isExpectType(params[key], 'object') && item[key]) {
-    //         if (!paramsValidator(
-    //           item[key], params[key], msg ? `${msg}[${index}].${key}` : key
-    //         )) return false
-    //       }
-    //     }
-    //     return true
-    //   })
-    // }
+    var getNumber = function (num) {
+        if (num === null)
+            return 0;
+        if (typeof num === 'object')
+            return NaN;
+        if (typeof num === 'number')
+            return num;
+        if (typeof num === 'string') {
+            if (num[num.length - 1] === '%') {
+                return Number(num.slice(0, -1)) / 100;
+            }
+            return Number(num);
+        }
+        return NaN;
+    };
+    /**
+     * 判断颜色是否有效 (透明色 === 无效)
+     * @param color 颜色
+     */
+    var hasBackground = function (color) {
+        if (typeof color !== 'string')
+            return false;
+        color = color.toLocaleLowerCase().trim();
+        if (color === 'transparent')
+            return false;
+        if (/^rgba/.test(color)) {
+            var alpha = /([^\s,]+)\)$/.exec(color);
+            if (getNumber(alpha) === 0)
+                return false;
+        }
+        return true;
+    };
     /**
      * 通过padding计算
      * @return { object } block 边框信息
@@ -235,7 +248,7 @@
     };
 
     var name = "lucky-canvas";
-    var version = "1.3.1";
+    var version = "1.3.2";
 
     var Dep = /** @class */ (function () {
         /**
@@ -940,7 +953,7 @@
                 fontStyle: 'microsoft yahei ui,microsoft yahei,simsun,sans-serif',
                 fontWeight: '400',
                 lineHeight: '',
-                background: '#fff',
+                background: 'transparent',
                 wordWrap: true,
                 lengthLimit: '90%',
             };
@@ -954,7 +967,6 @@
             _this.endTime = 0; // 停止时间戳
             _this.stopDeg = 0; // 刻舟求剑
             _this.endDeg = 0; // 停止角度
-            _this.animationId = 0; // 帧动画id
             _this.FPS = 16.6; // 屏幕刷新率
             _this.blockImgs = [[]];
             _this.prizeImgs = [[]];
@@ -995,7 +1007,7 @@
             });
             // 默认样式
             this.$computed(this, '_defaultStyle', function () {
-                var style = __assign({ fontSize: '18px', fontColor: '#000', fontStyle: 'microsoft yahei ui,microsoft yahei,simsun,sans-serif', fontWeight: '400', background: '#fff', wordWrap: true, lengthLimit: '90%' }, _this.defaultStyle);
+                var style = __assign({ fontSize: '18px', fontColor: '#000', fontStyle: 'microsoft yahei ui,microsoft yahei,simsun,sans-serif', fontWeight: '400', background: 'transparent', wordWrap: true, lengthLimit: '90%' }, _this.defaultStyle);
                 return style;
             });
         };
@@ -1223,10 +1235,12 @@
             ctx.clearRect(-this.Radius, -this.Radius, this.Radius * 2, this.Radius * 2);
             // 绘制blocks边框
             this.prizeRadius = this.blocks.reduce(function (radius, block, blockIndex) {
-                ctx.beginPath();
-                ctx.fillStyle = block.background;
-                ctx.arc(0, 0, radius, 0, Math.PI * 2, false);
-                ctx.fill();
+                if (hasBackground(block.background)) {
+                    ctx.beginPath();
+                    ctx.fillStyle = block.background;
+                    ctx.arc(0, 0, radius, 0, Math.PI * 2, false);
+                    ctx.fill();
+                }
                 block.imgs && block.imgs.forEach(function (imgInfo, imgIndex) {
                     if (!_this.blockImgs[blockIndex])
                         return;
@@ -1250,7 +1264,7 @@
                     ctx.drawImage(drawImg, imgX, imgY, trueWidth, trueHeight);
                     ctx.restore();
                 });
-                return radius - _this.getLength(block.padding.split(' ')[0]);
+                return radius - _this.getLength(block.padding && block.padding.split(' ')[0]);
             }, this.Radius);
             // 计算起始弧度
             this.prizeDeg = 360 / this.prizes.length;
@@ -1274,7 +1288,8 @@
                 // 奖品区域可见高度
                 var prizeHeight = _this.prizeRadius - _this.maxBtnRadius;
                 // 绘制背景
-                drawSector(config.flag, ctx, _this.maxBtnRadius, _this.prizeRadius, currMiddleDeg - _this.prizeRadian / 2, currMiddleDeg + _this.prizeRadian / 2, _this.getLength(_defaultConfig.gutter), prize.background || _defaultStyle.background);
+                var background = prize.background || _defaultStyle.background;
+                hasBackground(background) && drawSector(config.flag, ctx, _this.maxBtnRadius, _this.prizeRadius, currMiddleDeg - _this.prizeRadian / 2, currMiddleDeg + _this.prizeRadian / 2, _this.getLength(_defaultConfig.gutter), background);
                 // 计算临时坐标并旋转文字
                 var x = Math.cos(currMiddleDeg) * _this.prizeRadius;
                 var y = Math.sin(currMiddleDeg) * _this.prizeRadius;
@@ -1344,14 +1359,16 @@
                 var radius = _this.getHeight(btn.radius);
                 // 绘制背景颜色
                 _this.maxBtnRadius = Math.max(_this.maxBtnRadius, radius);
-                ctx.beginPath();
-                ctx.fillStyle = btn.background || '#fff';
-                ctx.arc(0, 0, radius, 0, Math.PI * 2, false);
-                ctx.fill();
-                // 绘制指针
-                if (btn.pointer) {
+                if (hasBackground(btn.background)) {
                     ctx.beginPath();
-                    ctx.fillStyle = btn.background || '#fff';
+                    ctx.fillStyle = btn.background;
+                    ctx.arc(0, 0, radius, 0, Math.PI * 2, false);
+                    ctx.fill();
+                }
+                // 绘制指针
+                if (btn.pointer && hasBackground(btn.background)) {
+                    ctx.beginPath();
+                    ctx.fillStyle = btn.background;
                     ctx.moveTo(-radius, 0);
                     ctx.lineTo(radius, 0);
                     ctx.lineTo(0, -radius * 2);
@@ -1529,7 +1546,7 @@
                 fontStyle: 'microsoft yahei ui,microsoft yahei,simsun,sans-serif',
                 fontWeight: '400',
                 lineHeight: '',
-                background: '#fff',
+                background: 'transparent',
                 shadow: '',
                 wordWrap: true,
                 lengthLimit: '90%',
@@ -1553,7 +1570,6 @@
             _this.endIndex = 0; // 停止索引
             _this.demo = false; // 是否自动游走
             _this.timer = 0; // 游走定时器
-            _this.animationId = 0; // 帧动画id
             _this.FPS = 16.6; // 屏幕刷新率
             // 所有格子
             _this.cells = [];
@@ -1595,7 +1611,7 @@
             });
             // 默认样式
             this.$computed(this, '_defaultStyle', function () {
-                return __assign({ borderRadius: 20, fontColor: '#000', fontSize: '18px', fontStyle: 'microsoft yahei ui,microsoft yahei,simsun,sans-serif', fontWeight: '400', background: '#fff', shadow: '', wordWrap: true, lengthLimit: '90%' }, _this.defaultStyle);
+                return __assign({ borderRadius: 20, fontColor: '#000', fontSize: '18px', fontStyle: 'microsoft yahei ui,microsoft yahei,simsun,sans-serif', fontWeight: '400', background: 'transparent', shadow: '', wordWrap: true, lengthLimit: '90%' }, _this.defaultStyle);
             });
             // 中奖样式
             this.$computed(this, '_activeStyle', function () {
@@ -1836,7 +1852,10 @@
                 var _b = computePadding(block).map(function (n) { return ~~n; }), paddingTop = _b[0], paddingBottom = _b[1], paddingLeft = _b[2], paddingRight = _b[3];
                 var r = block.borderRadius ? _this.getLength(block.borderRadius) : 0;
                 // 绘制边框
-                drawRoundRect(ctx, x, y, w, h, r, _this.handleBackground(x, y, w, h, block.background));
+                var background = block.background || _defaultStyle.background;
+                if (hasBackground(background)) {
+                    drawRoundRect(ctx, x, y, w, h, r, _this.handleBackground(x, y, w, h, background));
+                }
                 return {
                     x: x + paddingLeft,
                     y: y + paddingTop,
@@ -1851,27 +1870,31 @@
             this.cells.forEach(function (prize, cellIndex) {
                 var _a = _this.getGeometricProperty([prize.x, prize.y, prize.col, prize.row]), x = _a[0], y = _a[1], width = _a[2], height = _a[3];
                 var isActive = cellIndex === _this.currIndex % _this.prizes.length >> 0;
-                // 处理阴影 (暂时先用any, 这里后续要优化)
-                var shadow = (isActive ? _activeStyle.shadow : (prize.shadow || _defaultStyle.shadow))
-                    .replace(/px/g, '') // 清空px字符串
-                    .split(',')[0].split(' ') // 防止有人声明多个阴影, 截取第一个阴影
-                    .map(function (n, i) { return i < 3 ? Number(n) : n; }); // 把数组的前三个值*像素比
-                // 绘制阴影
-                if (shadow.length === 4) {
-                    ctx.shadowColor = shadow[3];
-                    ctx.shadowOffsetX = shadow[0] * config.dpr;
-                    ctx.shadowOffsetY = shadow[1] * config.dpr;
-                    ctx.shadowBlur = shadow[2];
-                    // 修正(格子+阴影)的位置, 这里使用逗号运算符
-                    shadow[0] > 0 ? (width -= shadow[0]) : (width += shadow[0], x -= shadow[0]);
-                    shadow[1] > 0 ? (height -= shadow[1]) : (height += shadow[1], y -= shadow[1]);
+                // 绘制背景色
+                var background = isActive ? _activeStyle.background : (prize.background || _defaultStyle.background);
+                if (hasBackground(background)) {
+                    // 处理阴影 (暂时先用any, 这里后续要优化)
+                    var shadow = (isActive ? _activeStyle.shadow : (prize.shadow || _defaultStyle.shadow))
+                        .replace(/px/g, '') // 清空px字符串
+                        .split(',')[0].split(' ') // 防止有人声明多个阴影, 截取第一个阴影
+                        .map(function (n, i) { return i < 3 ? Number(n) : n; }); // 把数组的前三个值*像素比
+                    // 绘制阴影
+                    if (shadow.length === 4) {
+                        ctx.shadowColor = shadow[3];
+                        ctx.shadowOffsetX = shadow[0] * config.dpr;
+                        ctx.shadowOffsetY = shadow[1] * config.dpr;
+                        ctx.shadowBlur = shadow[2];
+                        // 修正(格子+阴影)的位置, 这里使用逗号运算符
+                        shadow[0] > 0 ? (width -= shadow[0]) : (width += shadow[0], x -= shadow[0]);
+                        shadow[1] > 0 ? (height -= shadow[1]) : (height += shadow[1], y -= shadow[1]);
+                    }
+                    drawRoundRect(ctx, x, y, width, height, _this.getLength(prize.borderRadius ? prize.borderRadius : _defaultStyle.borderRadius), _this.handleBackground(x, y, width, height, background));
+                    // 清空阴影
+                    ctx.shadowColor = 'rgba(0, 0, 0, 0)';
+                    ctx.shadowOffsetX = 0;
+                    ctx.shadowOffsetY = 0;
+                    ctx.shadowBlur = 0;
                 }
-                drawRoundRect(ctx, x, y, width, height, _this.getLength(prize.borderRadius ? prize.borderRadius : _defaultStyle.borderRadius), _this.handleBackground(x, y, width, height, prize.background, isActive));
-                // 清空阴影
-                ctx.shadowColor = 'rgba(0, 0, 0, 0)';
-                ctx.shadowOffsetX = 0;
-                ctx.shadowOffsetY = 0;
-                ctx.shadowBlur = 0;
                 // 绘制图片
                 prize.imgs && prize.imgs.forEach(function (imgInfo, imgIndex) {
                     if (!_this.cellImgs[cellIndex])
@@ -1880,6 +1903,8 @@
                     if (!cellImg)
                         return false;
                     var renderImg = (isActive && cellImg.activeImg) || cellImg.defaultImg;
+                    if (!renderImg)
+                        return;
                     var _a = _this.computedWidthAndHeight(renderImg, imgInfo, prize), trueWidth = _a[0], trueHeight = _a[1];
                     var _b = [x + _this.getOffsetX(trueWidth, prize.col), y + _this.getHeight(imgInfo.top, prize.row)], imgX = _b[0], imgY = _b[1];
                     var drawImg;
@@ -1952,10 +1977,8 @@
          * @param background
          * @param isActive
          */
-        LuckyGrid.prototype.handleBackground = function (x, y, width, height, background, isActive) {
-            if (isActive === void 0) { isActive = false; }
-            var _a = this, ctx = _a.ctx, _defaultStyle = _a._defaultStyle, _activeStyle = _a._activeStyle;
-            background = isActive ? _activeStyle.background : (background || _defaultStyle.background);
+        LuckyGrid.prototype.handleBackground = function (x, y, width, height, background) {
+            var ctx = this.ctx;
             // 处理线性渐变
             if (background.includes('linear-gradient')) {
                 background = getLinearGradient(ctx, x, y, width, height, background);

@@ -10,7 +10,7 @@ import LuckyWheelConfig, {
   EndCallbackType
 } from '../types/wheel'
 import { FontType, ImgType, UniImageType } from '../types/index'
-import { isExpectType, removeEnter } from '../utils/index'
+import { isExpectType, removeEnter, hasBackground } from '../utils/index'
 import { getAngle, drawSector } from '../utils/math'
 import { quad } from '../utils/tween'
 
@@ -33,7 +33,7 @@ export default class LuckyWheel extends Lucky {
     fontStyle: 'microsoft yahei ui,microsoft yahei,simsun,sans-serif',
     fontWeight: '400',
     lineHeight: '',
-    background: '#fff',
+    background: 'transparent',
     wordWrap: true,
     lengthLimit: '90%',
   }
@@ -50,7 +50,6 @@ export default class LuckyWheel extends Lucky {
   private stopDeg = 0                   // 刻舟求剑
   private endDeg = 0                    // 停止角度
   private prizeFlag: number | undefined // 中奖索引
-  private animationId = 0               // 帧动画id
   private FPS = 16.6                    // 屏幕刷新率
   private blockImgs: Array<HTMLImageElement[] | UniImageType[]> = [[]]
   private prizeImgs: Array<HTMLImageElement[] | UniImageType[]> = [[]]
@@ -111,7 +110,7 @@ export default class LuckyWheel extends Lucky {
         fontColor: '#000',
         fontStyle: 'microsoft yahei ui,microsoft yahei,simsun,sans-serif',
         fontWeight: '400',
-        background: '#fff',
+        background: 'transparent',
         wordWrap: true,
         lengthLimit: '90%',
         ...this.defaultStyle
@@ -317,10 +316,12 @@ export default class LuckyWheel extends Lucky {
     ctx.clearRect(-this.Radius, -this.Radius, this.Radius * 2, this.Radius * 2)
     // 绘制blocks边框
     this.prizeRadius = this.blocks.reduce((radius, block, blockIndex) => {
-      ctx.beginPath()
-      ctx.fillStyle = block.background
-      ctx.arc(0, 0, radius, 0, Math.PI * 2, false)
-      ctx.fill()
+      if (hasBackground(block.background)) {
+        ctx.beginPath()
+        ctx.fillStyle = block.background
+        ctx.arc(0, 0, radius, 0, Math.PI * 2, false)
+        ctx.fill()
+      }
       block.imgs && block.imgs.forEach((imgInfo, imgIndex) => {
         if (!this.blockImgs[blockIndex]) return
         const blockImg = this.blockImgs[blockIndex][imgIndex]
@@ -343,7 +344,7 @@ export default class LuckyWheel extends Lucky {
         ctx.drawImage((drawImg as CanvasImageSource), imgX, imgY, trueWidth, trueHeight)
         ctx.restore()
       })
-      return radius - this.getLength(block.padding.split(' ')[0])
+      return radius - this.getLength(block.padding && block.padding.split(' ')[0])
     }, this.Radius)
     // 计算起始弧度
     this.prizeDeg = 360 / this.prizes.length
@@ -367,13 +368,14 @@ export default class LuckyWheel extends Lucky {
       // 奖品区域可见高度
       let prizeHeight = this.prizeRadius - this.maxBtnRadius
       // 绘制背景
-      drawSector(
+      const background = prize.background || _defaultStyle.background
+      hasBackground(background) && drawSector(
         config.flag, ctx,
         this.maxBtnRadius, this.prizeRadius,
         currMiddleDeg - this.prizeRadian / 2,
         currMiddleDeg + this.prizeRadian / 2,
         this.getLength(_defaultConfig.gutter),
-        prize.background || _defaultStyle.background
+        background
       )
       // 计算临时坐标并旋转文字
       let x = Math.cos(currMiddleDeg) * this.prizeRadius
@@ -440,14 +442,16 @@ export default class LuckyWheel extends Lucky {
       let radius = this.getHeight(btn.radius)
       // 绘制背景颜色
       this.maxBtnRadius = Math.max(this.maxBtnRadius, radius)
-      ctx.beginPath()
-      ctx.fillStyle = btn.background || '#fff'
-      ctx.arc(0, 0, radius, 0, Math.PI * 2, false)
-      ctx.fill()
-      // 绘制指针
-      if (btn.pointer) {
+      if (hasBackground(btn.background)) {
         ctx.beginPath()
-        ctx.fillStyle = btn.background || '#fff'
+        ctx.fillStyle = btn.background as string
+        ctx.arc(0, 0, radius, 0, Math.PI * 2, false)
+        ctx.fill()
+      }
+      // 绘制指针
+      if (btn.pointer && hasBackground(btn.background)) {
+        ctx.beginPath()
+        ctx.fillStyle = btn.background as string
         ctx.moveTo(-radius, 0)
         ctx.lineTo(radius, 0)
         ctx.lineTo(0, -radius * 2)

@@ -13,8 +13,8 @@ import LuckyGridConfig, {
   StartCallbackType,
   EndCallbackType,
 } from '../types/grid'
-import { isExpectType, removeEnter, computePadding } from '../utils/index'
-import { drawRoundRect, getLinearGradient, } from '../utils/math'
+import { isExpectType, removeEnter, computePadding, hasBackground } from '../utils/index'
+import { drawRoundRect, getLinearGradient } from '../utils/math'
 import { quad } from '../utils/tween'
 
 type PrizesType = CellType<PrizeFontType, PrizeImgType>[]
@@ -41,7 +41,7 @@ export default class LuckyGrid extends Lucky {
     fontStyle: 'microsoft yahei ui,microsoft yahei,simsun,sans-serif',
     fontWeight: '400',
     lineHeight: '',
-    background: '#fff',
+    background: 'transparent',
     shadow: '',
     wordWrap: true,
     lengthLimit: '90%',
@@ -67,7 +67,6 @@ export default class LuckyGrid extends Lucky {
   private endIndex = 0                  // 停止索引
   private demo = false                  // 是否自动游走
   private timer = 0                     // 游走定时器
-  private animationId = 0               // 帧动画id
   private FPS = 16.6                    // 屏幕刷新率
   private prizeFlag: number | undefined // 中奖索引
   // 所有格子
@@ -135,7 +134,7 @@ export default class LuckyGrid extends Lucky {
         fontSize: '18px',
         fontStyle: 'microsoft yahei ui,microsoft yahei,simsun,sans-serif',
         fontWeight: '400',
-        background: '#fff',
+        background: 'transparent',
         shadow: '',
         wordWrap: true,
         lengthLimit: '90%',
@@ -362,7 +361,10 @@ export default class LuckyGrid extends Lucky {
       const [paddingTop, paddingBottom, paddingLeft, paddingRight] = computePadding(block).map(n => ~~n)
       const r = block.borderRadius ? this.getLength(block.borderRadius) : 0
       // 绘制边框
-      drawRoundRect(ctx, x, y, w, h, r, this.handleBackground(x, y, w, h, block.background))
+      const background = block.background || _defaultStyle.background
+      if (hasBackground(background)) {
+        drawRoundRect(ctx, x, y, w, h, r, this.handleBackground(x, y, w, h, background))
+      }
       return {
         x: x + paddingLeft,
         y: y + paddingTop,
@@ -377,39 +379,44 @@ export default class LuckyGrid extends Lucky {
     this.cells.forEach((prize, cellIndex) => {
       let [x, y, width, height] = this.getGeometricProperty([prize.x, prize.y, prize.col, prize.row])
       const isActive = cellIndex === this.currIndex % this.prizes.length >> 0
-      // 处理阴影 (暂时先用any, 这里后续要优化)
-      const shadow: any = (
-        isActive ? _activeStyle.shadow! : (prize.shadow || _defaultStyle.shadow!)
-      )
-        .replace(/px/g, '') // 清空px字符串
-        .split(',')[0].split(' ') // 防止有人声明多个阴影, 截取第一个阴影
-        .map((n, i) => i < 3 ? Number(n) : n) // 把数组的前三个值*像素比
-      // 绘制阴影
-      if (shadow.length === 4) {
-        ctx.shadowColor = shadow[3]
-        ctx.shadowOffsetX = shadow[0] * config.dpr
-        ctx.shadowOffsetY = shadow[1] * config.dpr
-        ctx.shadowBlur = shadow[2]
-        // 修正(格子+阴影)的位置, 这里使用逗号运算符
-        shadow[0] > 0 ? (width -= shadow[0]) : (width += shadow[0], x -= shadow[0])
-        shadow[1] > 0 ? (height -= shadow[1]) : (height += shadow[1], y -= shadow[1])
+      // 绘制背景色
+      const background = isActive ? _activeStyle.background : (prize.background || _defaultStyle.background)
+      if (hasBackground(background)) {
+        // 处理阴影 (暂时先用any, 这里后续要优化)
+        const shadow: any = (
+          isActive ? _activeStyle.shadow! : (prize.shadow || _defaultStyle.shadow!)
+        )
+          .replace(/px/g, '') // 清空px字符串
+          .split(',')[0].split(' ') // 防止有人声明多个阴影, 截取第一个阴影
+          .map((n, i) => i < 3 ? Number(n) : n) // 把数组的前三个值*像素比
+        // 绘制阴影
+        if (shadow.length === 4) {
+          ctx.shadowColor = shadow[3]
+          ctx.shadowOffsetX = shadow[0] * config.dpr
+          ctx.shadowOffsetY = shadow[1] * config.dpr
+          ctx.shadowBlur = shadow[2]
+          // 修正(格子+阴影)的位置, 这里使用逗号运算符
+          shadow[0] > 0 ? (width -= shadow[0]) : (width += shadow[0], x -= shadow[0])
+          shadow[1] > 0 ? (height -= shadow[1]) : (height += shadow[1], y -= shadow[1])
+        }
+        drawRoundRect(
+          ctx, x, y, width, height,
+          this.getLength(prize.borderRadius ? prize.borderRadius : _defaultStyle.borderRadius),
+          this.handleBackground(x, y, width, height, background)
+        )
+        // 清空阴影
+        ctx.shadowColor = 'rgba(0, 0, 0, 0)'
+        ctx.shadowOffsetX = 0
+        ctx.shadowOffsetY = 0
+        ctx.shadowBlur = 0
       }
-      drawRoundRect(
-        ctx, x, y, width, height,
-        this.getLength(prize.borderRadius ? prize.borderRadius : _defaultStyle.borderRadius),
-        this.handleBackground(x, y, width, height, prize.background, isActive)
-      )
-      // 清空阴影
-      ctx.shadowColor = 'rgba(0, 0, 0, 0)'
-      ctx.shadowOffsetX = 0
-      ctx.shadowOffsetY = 0
-      ctx.shadowBlur = 0
       // 绘制图片
       prize.imgs && prize.imgs.forEach((imgInfo, imgIndex) => {
         if (!this.cellImgs[cellIndex]) return false
         const cellImg = this.cellImgs[cellIndex][imgIndex]
         if (!cellImg) return false
         const renderImg = (isActive && cellImg.activeImg) || cellImg.defaultImg
+        if (!renderImg) return
         const [trueWidth, trueHeight] = this.computedWidthAndHeight(renderImg, imgInfo, prize)
         const [imgX, imgY] = [x + this.getOffsetX(trueWidth, prize.col), y + this.getHeight(imgInfo.top, prize.row)]
         let drawImg
@@ -489,10 +496,8 @@ export default class LuckyGrid extends Lucky {
     width: number,
     height: number,
     background: string,
-    isActive = false
   ) {
-    const { ctx, _defaultStyle, _activeStyle } = this
-    background = isActive ? _activeStyle.background : (background || _defaultStyle.background)
+    const { ctx } = this
     // 处理线性渐变
     if (background.includes('linear-gradient')) {
       background = getLinearGradient(ctx, x, y, width, height, background)
