@@ -157,50 +157,12 @@ export default class LuckyGrid extends Lucky {
   private initWatch (): void {
     // 监听奖品数据的变化
     this.$watch('prizes', (newData: PrizesType, oldData: PrizesType) => {
-      let willUpdate: Array<PrizeImgType[] | undefined> = []
-      // 首次渲染时oldData为undefined
-      if (!oldData) willUpdate = newData.map(prize => prize.imgs)
-      // 此时新值一定存在
-      else if (newData) newData.forEach((newPrize, prizeIndex) => {
-        let prizeImgs: PrizeImgType[] = []
-        const oldPrize = oldData[prizeIndex]
-        // 如果旧奖品不存在
-        if (!oldPrize) prizeImgs = newPrize.imgs || []
-        // 新奖品有图片才能进行对比
-        else if (newPrize.imgs) newPrize.imgs.forEach((newImg, imgIndex) => {
-          if (!oldPrize.imgs) return prizeImgs[imgIndex] = newImg
-          const oldImg = oldPrize.imgs[imgIndex]
-          // 如果旧值不存在
-          if (!oldImg) prizeImgs[imgIndex] = newImg
-          // 如果缓存中没有图片
-          else if (!this.cellImgs[prizeIndex][imgIndex]) prizeImgs[imgIndex] = newImg
-          // 如果新值和旧值的src不相等
-          else if (newImg.src !== oldImg.src) prizeImgs[imgIndex] = newImg
-        })
-        willUpdate[prizeIndex] = prizeImgs
-      })
-      return this.init(willUpdate)
+      return this.init(newData.map(prize => prize.imgs))
     }, { deep: true })
     // 监听按钮数据的变化
     this.$watch('button', (newData: ButtonType, oldData: ButtonType) => {
-      let willUpdate = [], btnIndex = this.cols * this.rows - 1
-      // 首次渲染时, oldData不存在
-      if (!oldData || !oldData.imgs) willUpdate[btnIndex] = newData.imgs
-      // 如果新值存在img, 才能进行对比
-      else if (newData.imgs) {
-        const btnImg: ButtonImgType[] = []
-        newData.imgs.forEach((newImg, imgIndex) => {
-          if (!oldData.imgs) return btnImg[imgIndex] = newImg
-          const oldImg = oldData.imgs[imgIndex]
-          // 如果旧值不存在
-          if (!oldImg) btnImg[imgIndex] = newImg
-          // 如果缓存中没有图片
-          else if (!this.cellImgs[btnIndex][imgIndex]) btnImg[imgIndex] = newImg
-          // 如果新值和旧值的src不相等
-          else if (newImg.src !== oldImg.src) btnImg[imgIndex] = newImg
-        })
-        willUpdate[btnIndex] = btnImg
-      }
+      let willUpdate = []
+      willUpdate[this.cols * this.rows - 1] = newData.imgs
       return this.init(willUpdate)
     }, { deep: true })
     this.$watch('rows', () => this.init(this.collectImg()))

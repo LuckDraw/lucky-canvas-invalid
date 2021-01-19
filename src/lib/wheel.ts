@@ -124,65 +124,16 @@ export default class LuckyWheel extends Lucky {
    */
   private initWatch () {
     // 观察 blocks 变化收集图片
-    this.$watch('blocks', (newData: Array<BlockType>, oldData: Array<BlockType>) => {
-      let willUpdate: Array<BlockImgType[] | undefined> = []
-      this.init({ blockImgs: willUpdate })
+    this.$watch('blocks', (newData: Array<BlockType>) => {
+      return this.init({ blockImgs: newData.map(cell => cell.imgs) })
     }, { deep: true })
     // 观察 prizes 变化收集图片
-    this.$watch('prizes', (newData: Array<PrizeType>, oldData: Array<PrizeType>) => {
-      let willUpdate: Array<PrizeImgType[] | undefined> = []
-      // 首次渲染时oldData为undefined
-      if (!oldData) willUpdate = newData.map(prize => prize.imgs)
-      // 此时新值一定存在
-      else if (newData) newData.forEach((newPrize, prizeIndex) => {
-        let prizeImgs: PrizeImgType[] = []
-        const oldPrize = oldData[prizeIndex]
-        // 如果旧奖品不存在
-        if (!oldPrize) prizeImgs = newPrize.imgs || []
-        // 新奖品有图片才能进行对比
-        else if (newPrize.imgs) newPrize.imgs.forEach((newImg, imgIndex) => {
-          if (!oldPrize.imgs) return prizeImgs[imgIndex] = newImg
-          const oldImg = oldPrize.imgs[imgIndex]
-          // 如果旧值不存在
-          if (!oldImg) prizeImgs[imgIndex] = newImg
-          // 如果缓存中没有奖品或图片
-          else if (!this.prizeImgs[prizeIndex] || !this.prizeImgs[prizeIndex][imgIndex]) {
-            prizeImgs[imgIndex] = newImg
-          }
-          // 如果新值和旧值的src不相等
-          else if (newImg.src !== oldImg.src) prizeImgs[imgIndex] = newImg
-        })
-        willUpdate[prizeIndex] = prizeImgs
-      })
-      return this.init({ prizeImgs: willUpdate })
+    this.$watch('prizes', (newData: Array<PrizeType>) => {
+      return this.init({ prizeImgs: newData.map(cell => cell.imgs) })
     }, { deep: true })
     // 观察 buttons 变化收集图片
-    this.$watch('buttons', (newData: Array<ButtonType>, oldData: Array<ButtonType>) => {
-      let willUpdate: Array<ButtonImgType[] | undefined> = []
-      // 首次渲染时oldData为undefined
-      if (!oldData) willUpdate = newData.map(btn => btn.imgs)
-      // 此时新值一定存在
-      else if (newData) newData.forEach((newBtn, btnIndex) => {
-        let btnImgs: ButtonImgType[] = []
-        const oldBtn = oldData[btnIndex]
-        // 如果旧奖品不存在或旧奖品的图片不存在
-        if (!oldBtn || !oldBtn.imgs) btnImgs = newBtn.imgs || []
-        // 新奖品有图片才能进行对比
-        else if (newBtn.imgs) newBtn.imgs.forEach((newImg, imgIndex) => {
-          if (!oldBtn.imgs) return btnImgs[imgIndex] = newImg
-          const oldImg = oldBtn.imgs[imgIndex]
-          // 如果旧值不存在
-          if (!oldImg) btnImgs[imgIndex] = newImg
-          // 如果缓存中没有按钮或图片
-          else if (!this.btnImgs[btnIndex] || !this.btnImgs[btnIndex][imgIndex]) {
-            btnImgs[imgIndex] = newImg
-          }
-          // 如果新值和旧值的src不相等
-          else if (newImg.src !== oldImg.src) btnImgs[imgIndex] = newImg
-        })
-        willUpdate[btnIndex] = btnImgs
-      })
-      return this.init({ btnImgs: willUpdate })
+    this.$watch('buttons', (newData: Array<ButtonType>) => {
+      return this.init({ btnImgs: newData.map(cell => cell.imgs) })
     }, { deep: true })
     this.$watch('defaultConfig', () => this.draw(), { deep: true })
     this.$watch('defaultStyle', () => this.draw(), { deep: true })
@@ -273,15 +224,15 @@ export default class LuckyWheel extends Lucky {
    * 计算图片的渲染宽高
    * @param imgObj 图片标签元素
    * @param imgInfo 图片信息
-   * @param computedWidth 宽度百分比
-   * @param computedHeight 高度百分比
+   * @param maxWidth 最大宽度
+   * @param maxHeight 最大高度
    * @return [渲染宽度, 渲染高度]
    */
   private computedWidthAndHeight (
     imgObj: HTMLImageElement | UniImageType,
     imgInfo: ImgType,
-    computedWidth: number,
-    computedHeight: number
+    maxWidth: number,
+    maxHeight: number
   ): [number, number] {
     // 根据配置的样式计算图片的真实宽高
     if (!imgInfo.width && !imgInfo.height) {
@@ -289,26 +240,54 @@ export default class LuckyWheel extends Lucky {
       return [imgObj.width, imgObj.height]
     } else if (imgInfo.width && !imgInfo.height) {
       // 如果只填写了宽度, 没填写高度
-      let trueWidth = this.getWidth(imgInfo.width, computedWidth)
+      let trueWidth = this.getWidth(imgInfo.width, maxWidth)
       // 那高度就随着宽度进行等比缩放
       return [trueWidth, imgObj.height * (trueWidth / imgObj.width)]
     } else if (!imgInfo.width && imgInfo.height) {
       // 如果只填写了宽度, 没填写高度
-      let trueHeight = this.getHeight(imgInfo.height, computedHeight)
+      let trueHeight = this.getHeight(imgInfo.height, maxHeight)
       // 那宽度就随着高度进行等比缩放
       return [imgObj.width * (trueHeight / imgObj.height), trueHeight]
     }
     // 如果宽度和高度都填写了, 就如实计算
     return [
-      this.getWidth(imgInfo.width, computedWidth),
-      this.getHeight(imgInfo.height, computedHeight)
+      this.getWidth(imgInfo.width, maxWidth),
+      this.getHeight(imgInfo.height, maxHeight)
     ]
+  }
+
+  /**
+   * 绘制图片
+   * @param imgObj 图片对象
+   * @param imgInfo 图片详情
+   * @param maxWidth 最大宽度
+   * @param maxHeight 最大高度
+   * @param yAxis y轴位置
+   */
+  private drawImage (
+    imgObj: HTMLImageElement | UniImageType,
+    imgInfo: ImgType,
+    maxWidth: number,
+    maxHeight: number,
+    yAxis: number
+  ): void {
+    const { ctx, config } = this
+    const [trueWidth, trueHeight] = this.computedWidthAndHeight(imgObj, imgInfo, maxWidth, maxHeight)
+    // 兼容代码
+    let drawImg
+    if (['WEB', 'MINI-WX'].includes(config.flag)) {
+      drawImg = imgObj
+    } else if (['UNI-H5', 'UNI-MINI-WX'].includes(config.flag)) {
+      drawImg = (imgObj as UniImageType).path
+    }
+    // 绘制图片
+    ctx.drawImage((drawImg as CanvasImageSource), this.getOffsetX(trueWidth), yAxis, trueWidth, trueHeight)
   }
 
   /**
    * 开始绘制
    */
-  protected draw (): void {
+  private draw (): void {
     const { config, ctx, _defaultConfig, _defaultStyle } = this
     // 触发绘制前回调
     config.beforeDraw?.call(this, ctx)
@@ -326,22 +305,10 @@ export default class LuckyWheel extends Lucky {
         if (!this.blockImgs[blockIndex]) return
         const blockImg = this.blockImgs[blockIndex][imgIndex]
         if (!blockImg) return
-        // 计算图片真实宽高
-        const [trueWidth, trueHeight] = this.computedWidthAndHeight(
-          blockImg, imgInfo, radius * 2, radius * 2
-        )
-        const [imgX, imgY] = [this.getOffsetX(trueWidth), this.getHeight(imgInfo.top, radius * 2) - radius]
-        // 兼容代码
-        let drawImg
-        if (['WEB', 'MINI-WX'].includes(this.config.flag)) {
-          drawImg = blockImg
-        } else if (['UNI-H5', 'UNI-MINI-WX'].includes(this.config.flag)) {
-          drawImg = (blockImg as UniImageType).path
-        }
         // 绘制图片
         ctx.save()
         imgInfo.rotate && ctx.rotate(getAngle(this.rotateDeg))
-        ctx.drawImage((drawImg as CanvasImageSource), imgX, imgY, trueWidth, trueHeight)
+        this.drawImage(blockImg, imgInfo, radius * 2, radius * 2, this.getHeight(imgInfo.top, radius * 2) - radius)
         ctx.restore()
       })
       return radius - this.getLength(block.padding && block.padding.split(' ')[0])
@@ -387,19 +354,13 @@ export default class LuckyWheel extends Lucky {
         if (!this.prizeImgs[prizeIndex]) return
         const prizeImg = this.prizeImgs[prizeIndex][imgIndex]
         if (!prizeImg) return
-        const [trueWidth, trueHeight] = this.computedWidthAndHeight(
-          prizeImg, imgInfo, this.prizeRadian * this.prizeRadius, prizeHeight
+        this.drawImage(
+          prizeImg,
+          imgInfo,
+          this.prizeRadian * this.prizeRadius,
+          prizeHeight,
+          this.getHeight(imgInfo.top, prizeHeight)
         )
-        const [imgX, imgY] = [this.getOffsetX(trueWidth), this.getHeight(imgInfo.top, prizeHeight)]
-        let drawImg
-        // 兼容代码
-        if (['WEB', 'MINI-WX'].includes(this.config.flag)) {
-          drawImg = prizeImg
-        } else if (['UNI-H5', 'UNI-MINI-WX'].includes(this.config.flag)) {
-          drawImg = (prizeImg as UniImageType).path
-        }
-        // 绘制图片
-        ctx.drawImage((drawImg as CanvasImageSource), imgX, imgY, trueWidth, trueHeight)
       })
       // 逐行绘制文字
       prize.fonts && prize.fonts.forEach(font => {
@@ -463,20 +424,7 @@ export default class LuckyWheel extends Lucky {
         if (!this.btnImgs[btnIndex]) return
         const btnImg = this.btnImgs[btnIndex][imgIndex]
         if (!btnImg) return
-        // 计算图片真实宽高
-        const [trueWidth, trueHeight] = this.computedWidthAndHeight(
-          btnImg, imgInfo, this.getHeight(btn.radius) * 2, this.getHeight(btn.radius) * 2
-        )
-        const [imgX, imgY] = [this.getOffsetX(trueWidth), this.getHeight(imgInfo.top, radius)]
-        // 兼容代码
-        let drawImg
-        if (['WEB', 'MINI-WX'].includes(this.config.flag)) {
-          drawImg = btnImg
-        } else if (['UNI-H5', 'UNI-MINI-WX'].includes(this.config.flag)) {
-          drawImg = (btnImg as UniImageType).path
-        }
-        // 绘制图片
-        ctx.drawImage((drawImg as CanvasImageSource), imgX, imgY, trueWidth, trueHeight)
+        this.drawImage( btnImg, imgInfo, radius * 2, radius * 2, this.getHeight(imgInfo.top, radius))
       })
       // 绘制按钮文字
       btn.fonts && btn.fonts.forEach(font => {
@@ -585,7 +533,7 @@ export default class LuckyWheel extends Lucky {
    */
   private getHeight (
     length: string | number | undefined,
-    height = this.prizeRadius
+    height: number = this.prizeRadius
   ): number {
     if (isExpectType(length, 'number')) return (length as number)
     if (isExpectType(length, 'string')) return this.changeUnits(length as string, height)
