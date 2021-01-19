@@ -21,6 +21,9 @@
     <a href="https://www.npmjs.com/package/lucky-canvas" target="_black">
       <img src="https://img.shields.io/npm/dm/lucky-canvas?color=%23ffca28&logo=npm&style=flat-square" alt="downloads" />
     </a>
+    <a href="https://www.jsdelivr.com/package/npm/lucky-canvas" target="_black">
+      <img src="https://data.jsdelivr.com/v1/package/npm/lucky-canvas/badge" alt="downloads" />
+    </a>
   </p>
   <p>
     <a href="https://github.com/buuing" target="_black">
