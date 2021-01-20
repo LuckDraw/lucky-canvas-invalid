@@ -38,7 +38,7 @@ export default class LuckyGrid extends Lucky {
     borderRadius: 20,
     fontColor: '#000',
     fontSize: '18px',
-    fontStyle: 'microsoft yahei ui,microsoft yahei,simsun,sans-serif',
+    fontStyle: 'sans-serif',
     fontWeight: '400',
     lineHeight: '',
     background: 'transparent',
@@ -132,7 +132,7 @@ export default class LuckyGrid extends Lucky {
         borderRadius: 20,
         fontColor: '#000',
         fontSize: '18px',
-        fontStyle: 'microsoft yahei ui,microsoft yahei,simsun,sans-serif',
+        fontStyle: 'sans-serif',
         fontWeight: '400',
         background: 'transparent',
         shadow: '',
@@ -409,7 +409,7 @@ export default class LuckyGrid extends Lucky {
         const lineHeight = isActive && _activeStyle.lineHeight
           ? _activeStyle.lineHeight
           : font.lineHeight || _defaultStyle.lineHeight || font.fontSize || _defaultStyle.fontSize
-        ctx.font = `${fontWeight} ${size}px ${style}`
+        ctx.font = `${fontWeight} ${size >> 0}px ${style}`
         ctx.fillStyle = (isActive && _activeStyle.fontColor) ? _activeStyle.fontColor : (font.fontColor || _defaultStyle.fontColor)
         let lines = [], text = String(font.text)
         // 计算文字换行

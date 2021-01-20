@@ -244,7 +244,7 @@ var computePadding = function (block) {
 };
 
 var name = "lucky-canvas";
-var version = "1.3.3";
+var version = "1.3.4";
 
 var Dep = /** @class */ (function () {
     /**
@@ -946,7 +946,7 @@ var LuckyWheel = /** @class */ (function (_super) {
         _this._defaultStyle = {
             fontSize: '18px',
             fontColor: '#000',
-            fontStyle: 'microsoft yahei ui,microsoft yahei,simsun,sans-serif',
+            fontStyle: 'sans-serif',
             fontWeight: '400',
             lineHeight: '',
             background: 'transparent',
@@ -1003,7 +1003,7 @@ var LuckyWheel = /** @class */ (function (_super) {
         });
         // 默认样式
         this.$computed(this, '_defaultStyle', function () {
-            var style = __assign({ fontSize: '18px', fontColor: '#000', fontStyle: 'microsoft yahei ui,microsoft yahei,simsun,sans-serif', fontWeight: '400', background: 'transparent', wordWrap: true, lengthLimit: '90%' }, _this.defaultStyle);
+            var style = __assign({ fontSize: '18px', fontColor: '#000', fontStyle: 'sans-serif', fontWeight: '400', background: 'transparent', wordWrap: true, lengthLimit: '90%' }, _this.defaultStyle);
             return style;
         });
     };
@@ -1255,7 +1255,7 @@ var LuckyWheel = /** @class */ (function (_super) {
                 var fontSize = _this.getLength(font.fontSize || _defaultStyle.fontSize);
                 var fontStyle = font.fontStyle || _defaultStyle.fontStyle;
                 ctx.fillStyle = fontColor;
-                ctx.font = fontWeight + " " + fontSize + "px " + fontStyle;
+                ctx.font = fontWeight + " " + (fontSize >> 0) + "px " + fontStyle;
                 var lines = [], text = String(font.text);
                 if (font.hasOwnProperty('wordWrap') ? font.wordWrap : _defaultStyle.wordWrap) {
                     text = removeEnter(text);
@@ -1324,7 +1324,7 @@ var LuckyWheel = /** @class */ (function (_super) {
                 var fontSize = _this.getLength(font.fontSize || _defaultStyle.fontSize);
                 var fontStyle = font.fontStyle || _defaultStyle.fontStyle;
                 ctx.fillStyle = fontColor;
-                ctx.font = fontWeight + " " + fontSize + "px " + fontStyle;
+                ctx.font = fontWeight + " " + (fontSize >> 0) + "px " + fontStyle;
                 String(font.text).split('\n').forEach(function (line, lineIndex) {
                     ctx.fillText(line, getFontX(line), getFontY(font, radius, lineIndex));
                 });
@@ -1464,7 +1464,7 @@ var LuckyGrid = /** @class */ (function (_super) {
             borderRadius: 20,
             fontColor: '#000',
             fontSize: '18px',
-            fontStyle: 'microsoft yahei ui,microsoft yahei,simsun,sans-serif',
+            fontStyle: 'sans-serif',
             fontWeight: '400',
             lineHeight: '',
             background: 'transparent',
@@ -1532,7 +1532,7 @@ var LuckyGrid = /** @class */ (function (_super) {
         });
         // 默认样式
         this.$computed(this, '_defaultStyle', function () {
-            return __assign({ borderRadius: 20, fontColor: '#000', fontSize: '18px', fontStyle: 'microsoft yahei ui,microsoft yahei,simsun,sans-serif', fontWeight: '400', background: 'transparent', shadow: '', wordWrap: true, lengthLimit: '90%' }, _this.defaultStyle);
+            return __assign({ borderRadius: 20, fontColor: '#000', fontSize: '18px', fontStyle: 'sans-serif', fontWeight: '400', background: 'transparent', shadow: '', wordWrap: true, lengthLimit: '90%' }, _this.defaultStyle);
         });
         // 中奖样式
         this.$computed(this, '_activeStyle', function () {
@@ -1806,7 +1806,7 @@ var LuckyGrid = /** @class */ (function (_super) {
                 var lineHeight = isActive && _activeStyle.lineHeight
                     ? _activeStyle.lineHeight
                     : font.lineHeight || _defaultStyle.lineHeight || font.fontSize || _defaultStyle.fontSize;
-                ctx.font = fontWeight + " " + size + "px " + style;
+                ctx.font = fontWeight + " " + (size >> 0) + "px " + style;
                 ctx.fillStyle = (isActive && _activeStyle.fontColor) ? _activeStyle.fontColor : (font.fontColor || _defaultStyle.fontColor);
                 var lines = [], text = String(font.text);
                 // 计算文字换行
