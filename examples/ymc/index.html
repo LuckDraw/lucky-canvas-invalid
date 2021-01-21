@@ -16,7 +16,7 @@
         width: '300px',
         height: '300px',
       }, {
-        prizes: [],
+        // prizes: [],
         defaultStyle: {
           fontColor: '#d64737',
           fontSize: '14px'
@@ -49,33 +49,45 @@
       // 设置奖品
       setTimeout(() => {
         const prizes = []
-        let data = ['1元红包', '100元红包', '0.5元红包', '2元红包', '10元红包', '50元红包', '0.3元红包', '5元红包']
+        luckyWheel.prizes = []
+        let data = [
+          '1元红包',
+          '100元红包',
+          '0.5元红包',
+          '2元红包',
+          '10元红包',
+          '50元红包',
+          '0.3元红包',
+          '5元红包',
+        ]
         data.forEach((item, index) => {
-          prizes.push({
+          luckyWheel.prizes.push({
             title: item,
             background: index % 2 ? '#f9e3bb' : '#f8d384',
-            fonts: [{ text: item, top: '10%' }],
+            fonts: [{ text: item, top: '10%', fontWeight: 300 }],
             imgs:[{ src: `./img/${index}.png`, width: '30%', top: '35%' }],
           })
         })
-        luckyWheel.prizes = prizes
+        // luckyWheel.prizes = prizes
       }, 500)
       setTimeout(_ => {
         // luckyWheel.prizes[0].fonts[0].text = 'xxx'
         // luckyWheel.blocks[0].background = '#000'
-        // luckyWheel.defaultStyle.fontColor = 'green'
+        luckyWheel.defaultStyle.fontColor = 'green'
         luckyWheel.defaultConfig.gutter = '3'
-        luckyWheel.defaultConfig.offsetDegree = 22.5
+        // luckyWheel.defaultConfig.offsetDegree = 22.5
         // luckyWheel.$set(luckyWheel.defaultConfig, 'offsetDegree', '22.5')
         // luckyWheel.initComputed()
         // console.log('offsetDegree' in Object.prototype)
         // luckyWheel.init()
-        console.log(luckyWheel.defaultConfig)
+        // console.log(luckyWheel.defaultConfig)
       }, 1000)
       setTimeout(() => {
+        // console.log(luckyWheel.prizes)
+        luckyWheel.prizes.pop()
         // luckyWheel.blocks.push({ padding: '13px', background: '#000' })
         // luckyWheel.blocks[0] = { padding: '13px', background: '#000' }
-      }, 1500);
+      }, 2000);
     </script>
   </body>
 </body>

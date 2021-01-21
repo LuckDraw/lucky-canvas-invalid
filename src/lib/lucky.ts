@@ -150,6 +150,32 @@ export default class Lucky {
   }
 
   /**
+   * 公共绘制图片的方法
+   * @param imgObj 图片对象
+   * @param xAxis x轴位置
+   * @param yAxis y轴位置
+   * @param width 渲染宽度
+   * @param height 渲染高度
+   */
+  protected drawImage (
+    imgObj: HTMLImageElement | UniImageType,
+    xAxis: number,
+    yAxis: number,
+    width: number,
+    height: number
+  ): void {
+    let drawImg, { config, ctx } = this
+    if (['WEB', 'MINI-WX'].includes(config.flag)) {
+      // 浏览器中直接绘制标签即可
+      drawImg = imgObj
+    } else if (['UNI-H5', 'UNI-MINI-WX'].includes(config.flag)) {
+      // 小程序中直接绘制一个路径
+      drawImg = (imgObj as UniImageType).path
+    }
+    return ctx.drawImage((drawImg as CanvasImageSource), xAxis, yAxis, width, height)
+  }
+
+  /**
    * 获取长度
    * @param length 将要转换的长度
    * @return 返回长度

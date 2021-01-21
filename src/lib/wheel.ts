@@ -172,13 +172,14 @@ export default class LuckyWheel extends Lucky {
     // 同步加载图片
     let num = 0, sum = 0
     this.draw() // 先画一次防止闪烁, 因为加载图片是异步的
-    Object.keys(willUpdateImgs).forEach((imgName) => {
-      const willUpdate = willUpdateImgs[imgName as 'blockImgs' | 'prizeImgs' | 'btnImgs']
+    Object.keys(willUpdateImgs).forEach(key => {
+      const imgName = key as 'blockImgs' | 'prizeImgs' | 'btnImgs'
       const cellName = {
         blockImgs: 'blocks',
         prizeImgs: 'prizes',
         btnImgs: 'buttons',
-      }[imgName]
+      }[imgName] as 'blocks' | 'prizes' | 'buttons'
+      const willUpdate = willUpdateImgs[imgName]
       if (!willUpdate) return
       willUpdate.forEach((imgs, cellIndex) => {
         if (!imgs) return
@@ -203,14 +204,14 @@ export default class LuckyWheel extends Lucky {
    * @param { Function } callBack 图片加载完毕回调
    */
   private async loadAndCacheImg (
-    cellName: string, // 'blocks' | 'prizes' | 'buttons'
+    cellName: 'blocks' | 'prizes' | 'buttons',
     cellIndex: number,
-    imgName: string, // 'blockImgs' | 'prizeImgs' | 'btnImgs'
+    imgName: 'blockImgs' | 'prizeImgs' | 'btnImgs',
     imgIndex: number,
     callBack: () => void
   ) {
     // 获取图片信息
-    const cell: PrizeType | ButtonType = this[cellName][cellIndex]
+    const cell: BlockType | PrizeType | ButtonType = this[cellName][cellIndex]
     if (!cell || !cell.imgs) return
     const imgInfo = cell.imgs[imgIndex]
     if (!imgInfo) return
@@ -257,34 +258,6 @@ export default class LuckyWheel extends Lucky {
   }
 
   /**
-   * 绘制图片
-   * @param imgObj 图片对象
-   * @param imgInfo 图片详情
-   * @param maxWidth 最大宽度
-   * @param maxHeight 最大高度
-   * @param yAxis y轴位置
-   */
-  private drawImage (
-    imgObj: HTMLImageElement | UniImageType,
-    imgInfo: ImgType,
-    maxWidth: number,
-    maxHeight: number,
-    yAxis: number
-  ): void {
-    const { ctx, config } = this
-    const [trueWidth, trueHeight] = this.computedWidthAndHeight(imgObj, imgInfo, maxWidth, maxHeight)
-    // 兼容代码
-    let drawImg
-    if (['WEB', 'MINI-WX'].includes(config.flag)) {
-      drawImg = imgObj
-    } else if (['UNI-H5', 'UNI-MINI-WX'].includes(config.flag)) {
-      drawImg = (imgObj as UniImageType).path
-    }
-    // 绘制图片
-    ctx.drawImage((drawImg as CanvasImageSource), this.getOffsetX(trueWidth), yAxis, trueWidth, trueHeight)
-  }
-
-  /**
    * 开始绘制
    */
   private draw (): void {
@@ -306,9 +279,11 @@ export default class LuckyWheel extends Lucky {
         const blockImg = this.blockImgs[blockIndex][imgIndex]
         if (!blockImg) return
         // 绘制图片
+        const [trueWidth, trueHeight] = this.computedWidthAndHeight(blockImg, imgInfo, radius * 2, radius * 2)
+        const [xAxis, yAxis] = [this.getOffsetX(trueWidth), this.getHeight(imgInfo.top, radius * 2) - radius]
         ctx.save()
         imgInfo.rotate && ctx.rotate(getAngle(this.rotateDeg))
-        this.drawImage(blockImg, imgInfo, radius * 2, radius * 2, this.getHeight(imgInfo.top, radius * 2) - radius)
+        this.drawImage(blockImg, xAxis, yAxis, trueWidth, trueHeight)
         ctx.restore()
       })
       return radius - this.getLength(block.padding && block.padding.split(' ')[0])
@@ -354,13 +329,14 @@ export default class LuckyWheel extends Lucky {
         if (!this.prizeImgs[prizeIndex]) return
         const prizeImg = this.prizeImgs[prizeIndex][imgIndex]
         if (!prizeImg) return
-        this.drawImage(
+        const [trueWidth, trueHeight] = this.computedWidthAndHeight(
           prizeImg,
           imgInfo,
           this.prizeRadian * this.prizeRadius,
-          prizeHeight,
-          this.getHeight(imgInfo.top, prizeHeight)
+          prizeHeight
         )
+        const [xAxis, yAxis] = [this.getOffsetX(trueWidth), this.getHeight(imgInfo.top, prizeHeight)]
+        this.drawImage(prizeImg, xAxis, yAxis, trueWidth, trueHeight)
       })
       // 逐行绘制文字
       prize.fonts && prize.fonts.forEach(font => {
@@ -424,7 +400,9 @@ export default class LuckyWheel extends Lucky {
         if (!this.btnImgs[btnIndex]) return
         const btnImg = this.btnImgs[btnIndex][imgIndex]
         if (!btnImg) return
-        this.drawImage( btnImg, imgInfo, radius * 2, radius * 2, this.getHeight(imgInfo.top, radius))
+        const [trueWidth, trueHeight] = this.computedWidthAndHeight(btnImg, imgInfo, radius * 2, radius * 2)
+        const [xAxis, yAxis] = [this.getOffsetX(trueWidth), this.getHeight(imgInfo.top, radius)]
+        this.drawImage(btnImg, xAxis, yAxis, trueWidth, trueHeight)
       })
       // 绘制按钮文字
       btn.fonts && btn.fonts.forEach(font => {

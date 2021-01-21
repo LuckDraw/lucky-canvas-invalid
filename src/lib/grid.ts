@@ -1,11 +1,11 @@
 import Lucky from './lucky'
 import { ConfigType, UniImageType } from '../types/index'
 import LuckyGridConfig, {
-  PrizeFontType, PrizeImgType,
-  ButtonFontType, ButtonImgType,
+  BlockType, BlockImgType,
+  PrizeType, PrizeImgType,
+  ButtonType, ButtonImgType,
   CellFontType, CellImgType,
   RowsType, ColsType,
-  BlockType,
   CellType,
   DefaultConfigType,
   DefaultStyleType,
@@ -17,14 +17,12 @@ import { isExpectType, removeEnter, computePadding, hasBackground } from '../uti
 import { drawRoundRect, getLinearGradient } from '../utils/math'
 import { quad } from '../utils/tween'
 
-type PrizesType = CellType<PrizeFontType, PrizeImgType>[]
-type ButtonType = CellType<ButtonFontType, ButtonImgType>
-
 export default class LuckyGrid extends Lucky {
   private rows: RowsType = 3
   private cols: ColsType = 3
   private blocks: Array<BlockType> = []
-  private prizes: PrizesType = []
+  private prizes: Array<PrizeType> = []
+  private buttons: Array<ButtonType> = []
   private button?: ButtonType
   private defaultConfig: DefaultConfigType = {}
   private _defaultConfig = { // 此处初始化无用, 是为了方便类型推导才加的
@@ -74,10 +72,16 @@ export default class LuckyGrid extends Lucky {
   // 奖品区域几何信息
   private prizeArea: { x: number, y: number, w: number, h: number } | undefined
   // 图片缓存
-  private cellImgs: Array<{
+  private blockImgs: Array<{
+    defaultImg: HTMLImageElement | UniImageType
+  }[]> = [[]]
+  private prizeImgs: Array<{
     defaultImg: HTMLImageElement | UniImageType,
     activeImg?: HTMLImageElement | UniImageType
   }[]> = []
+  private btnImgs: Array<{
+    defaultImg: HTMLImageElement | UniImageType
+  }[]> = [[]]
 
   /**
    * 九宫格构造器
@@ -89,7 +93,13 @@ export default class LuckyGrid extends Lucky {
     this.initData(data)
     this.initComputed()
     this.initWatch()
-    this.init(this.collectImg())
+    const btnImgs = this.buttons.map(btn => btn.imgs)
+    if (this.button) btnImgs.push(this.button.imgs)
+    this.init({
+      blockImgs: this.blocks.map(block => block.imgs),
+      prizeImgs: this.prizes.map(prize => prize.imgs),
+      btnImgs,
+    })
   }
 
   /**
@@ -101,6 +111,8 @@ export default class LuckyGrid extends Lucky {
     this.$set(this, 'cols', Number(data.cols) || 3)
     this.$set(this, 'blocks', data.blocks || [])
     this.$set(this, 'prizes', data.prizes || [])
+    this.$set(this, 'buttons', data.buttons || [])
+    // 临时过渡代码, 升级到2.x即可删除
     this.$set(this, 'button', data.button)
     this.$set(this, 'defaultConfig', data.defaultConfig || {})
     this.$set(this, 'defaultStyle', data.defaultStyle || {})
@@ -155,31 +167,44 @@ export default class LuckyGrid extends Lucky {
    * 初始化观察者
    */
   private initWatch (): void {
-    // 监听奖品数据的变化
-    this.$watch('prizes', (newData: PrizesType, oldData: PrizesType) => {
-      return this.init(newData.map(prize => prize.imgs))
+    // 监听 blocks 数据的变化
+    this.$watch('blocks', (newData: Array<BlockType>) => {
+      return this.init({ blockImgs: newData.map(block => block.imgs) })
     }, { deep: true })
-    // 监听按钮数据的变化
-    this.$watch('button', (newData: ButtonType, oldData: ButtonType) => {
-      let willUpdate = []
-      willUpdate[this.cols * this.rows - 1] = newData.imgs
-      return this.init(willUpdate)
+    // 监听 prizes 数据的变化
+    this.$watch('prizes', (newData: Array<PrizeType>) => {
+      return this.init({ prizeImgs: newData.map(prize => prize.imgs) })
     }, { deep: true })
-    this.$watch('rows', () => this.init(this.collectImg()))
-    this.$watch('cols', () => this.init(this.collectImg()))
-    this.$watch('blocks', () => this.draw(), { deep: true })
+    // 监听 button 数据的变化
+    this.$watch('buttons', (newData: Array<ButtonType>) => {
+      const btnImgs = this.buttons.map(btn => btn.imgs)
+      if (this.button) btnImgs.push(this.button.imgs)
+      return this.init({ btnImgs })
+    }, { deep: true })
+    // 临时过渡代码, 升级到2.x即可删除
+    this.$watch('button', () => {
+      const btnImgs = this.buttons.map(btn => btn.imgs)
+      if (this.button) btnImgs.push(this.button.imgs)
+      return this.init({ btnImgs })
+    }, { deep: true })
+    this.$watch('rows', () => this.init({}))
+    this.$watch('cols', () => this.init({}))
     this.$watch('defaultConfig', () => this.draw(), { deep: true })
     this.$watch('defaultStyle', () => this.draw(), { deep: true })
     this.$watch('activeStyle', () => this.draw(), { deep: true })
-    this.$watch('startCallback', () => this.init([]))
-    this.$watch('endCallback', () => this.init([]))
+    this.$watch('startCallback', () => this.init({}))
+    this.$watch('endCallback', () => this.init({}))
   }
 
   /**
    * 初始化 canvas 抽奖
    * @param willUpdateImgs 需要更新的图片
    */
-  public init (willUpdateImgs: Array<CellImgType[] | undefined>): void {
+  public init (willUpdateImgs: {
+    blockImgs?: Array<BlockImgType[] | undefined>,
+    prizeImgs?: Array<PrizeImgType[] | undefined>,
+    btnImgs?: Array<ButtonImgType[] | undefined>
+  }): void {
     const { config, ctx, button } = this
     this.setHTMLFontSize()
     this.setDpr()
@@ -192,6 +217,19 @@ export default class LuckyGrid extends Lucky {
       // 中奖标识开始游走
       this.demo && this.walk()
       // 点击按钮开始, 这里不能使用 addEventListener
+      if (this.buttons.length && config.canvasElement) config.canvasElement.onclick = e => {
+        this.buttons.forEach(btn => {
+          const [x, y, width, height] = this.getGeometricProperty([
+            btn.x, btn.y, btn.col || 1, btn.row || 1
+          ])
+          ctx.beginPath()
+          ctx.rect(x, y, width, height)
+          if (!ctx.isPointInPath(e.offsetX, e.offsetY)) return
+          if (this.startTime) return
+          this.startCallback?.(e)
+        })
+      }
+      // 临时过渡代码, 升级到2.x即可删除
       if (button && config.canvasElement) config.canvasElement.onclick = e => {
         const [x, y, width, height] = this.getGeometricProperty([
           button.x,
@@ -208,30 +246,30 @@ export default class LuckyGrid extends Lucky {
     }
     // 同步加载图片
     let num = 0, sum = 0
-    if (isExpectType(willUpdateImgs, 'array')) {
-      this.draw() // 先画一次防止闪烁, 因为加载图片是异步的
-      willUpdateImgs.forEach((imgs, cellIndex) => {
-        if (!imgs) return false
+    this.draw()
+    Object.keys(willUpdateImgs).forEach(key => {
+      const imgName = key as 'blockImgs' | 'prizeImgs' | 'btnImgs'
+      const willUpdate = willUpdateImgs[imgName]
+      const cellName = {
+        blockImgs: 'blocks',
+        prizeImgs: 'prizes',
+        btnImgs: 'buttons',
+      }[imgName] as 'blocks' | 'prizes' | 'buttons'
+      if (!willUpdate) return
+      willUpdate.forEach((imgs, cellIndex) => {
+        if (!imgs) return
         imgs.forEach((imgInfo, imgIndex) => {
           sum++
-          this.loadAndCacheImg(cellIndex, imgIndex, () => {
+          this.loadAndCacheImg(cellName, cellIndex, imgName, imgIndex, () => {
             num++
             if (sum === num) endCallBack.call(this)
           })
         })
       })
-    }
+    })
     if (!sum) endCallBack.call(this)
     // 初始化后回调函数
     config.afterInit?.call(this)
-  }
-
-  private collectImg (): Array<CellImgType[] | undefined> {
-    // 收集首次渲染的图片
-    let willUpdate: Array<CellImgType[] | undefined> = [[]]
-    this.prizes && (willUpdate = this.prizes.map(prize => prize.imgs))
-    this.button && (willUpdate[this.cols * this.rows - 1] = this.button.imgs)
-    return willUpdate
   }
 
   /**
@@ -241,28 +279,43 @@ export default class LuckyGrid extends Lucky {
    * @param { Function } callBack 图片加载完毕回调
    */
   private async loadAndCacheImg (
-    prizeIndex: number,
+    cellName: 'blocks' | 'prizes' | 'buttons',
+    cellIndex: number,
+    imgName: 'blockImgs' | 'prizeImgs' | 'btnImgs',
     imgIndex: number,
     callBack: () => void
   ) {
-    const prize = this.cells[prizeIndex]
-    if (!prize || !prize.imgs) return
-    const imgInfo = prize.imgs[imgIndex]
-    if (!this.cellImgs[prizeIndex]) this.cellImgs[prizeIndex] = []
-    if (!this.cellImgs[prizeIndex][imgIndex]) {
-      this.cellImgs[prizeIndex][imgIndex] = {} as any
+    let cell: BlockType | PrizeType | ButtonType = this[cellName][cellIndex]
+    // 临时过渡代码, 升级到2.x即可删除
+    if (cellName === 'buttons' && !this.buttons.length && this.button) {
+      cell = this.button
+    }
+    if (!cell || !cell.imgs) return
+    const imgInfo = cell.imgs[imgIndex]
+    if (!imgInfo) return
+    if (!this[imgName][cellIndex]) this[imgName][cellIndex] = []
+    // 如果是背景图或按钮图片, 直接加载即可
+    if (imgName === 'blockImgs' || imgName === 'btnImgs') {
+      this[imgName][cellIndex][imgIndex] = {
+        defaultImg: await this.loadImg(imgInfo.src, imgInfo)
+      }
+      return callBack.call(this)
+    }
+    // 能走到这里就是奖品图片了
+    if (!this.prizeImgs[cellIndex][imgIndex]) {
+      this.prizeImgs[cellIndex][imgIndex] = {} as any
     }
     // 加载 defaultImg 默认图片
     let num = 1, sum = 0
     this.loadImg(imgInfo.src, imgInfo).then(res => {
-      this.cellImgs[prizeIndex][imgIndex].defaultImg = res
+      this.prizeImgs[cellIndex][imgIndex].defaultImg = res
       num === ++sum && callBack.call(this)
     })
     // 如果有 activeImg 则多加载一张
     if (imgInfo.hasOwnProperty('activeSrc')) {
       num++
       this.loadImg((imgInfo as PrizeImgType).activeSrc!, imgInfo, '$activeResolve').then(res => {
-        this.cellImgs[prizeIndex][imgIndex].activeImg = res
+        this.prizeImgs[cellIndex][imgIndex].activeImg = res
         num === ++sum && callBack.call(this)
       })
     }
@@ -312,8 +365,11 @@ export default class LuckyGrid extends Lucky {
     // 清空画布
     ctx.clearRect(0, 0, config.width, config.height)
     // 合并奖品和按钮
-    this.cells = [...this.prizes]
-    if (this.button) this.cells[this.cols * this.rows - 1] = this.button
+    this.cells = [
+      ...this.prizes,
+      ...this.buttons
+    ]
+    if (this.button) this.cells.push(this.button)
     this.cells.forEach(cell => {
       cell.col = cell.col || 1
       cell.row = cell.row || 1
@@ -338,15 +394,15 @@ export default class LuckyGrid extends Lucky {
     this.cellWidth = (this.prizeArea.w - _defaultConfig.gutter * (this.cols - 1)) / this.cols
     this.cellHeight = (this.prizeArea.h - _defaultConfig.gutter * (this.rows - 1)) / this.rows
     // 绘制所有格子
-    this.cells.forEach((prize, cellIndex) => {
-      let [x, y, width, height] = this.getGeometricProperty([prize.x, prize.y, prize.col, prize.row])
+    this.cells.forEach((cell, cellIndex) => {
+      let [x, y, width, height] = this.getGeometricProperty([cell.x, cell.y, cell.col, cell.row])
       const isActive = cellIndex === this.currIndex % this.prizes.length >> 0
       // 绘制背景色
-      const background = isActive ? _activeStyle.background : (prize.background || _defaultStyle.background)
+      const background = isActive ? _activeStyle.background : (cell.background || _defaultStyle.background)
       if (hasBackground(background)) {
         // 处理阴影 (暂时先用any, 这里后续要优化)
         const shadow: any = (
-          isActive ? _activeStyle.shadow! : (prize.shadow || _defaultStyle.shadow!)
+          isActive ? _activeStyle.shadow! : (cell.shadow || _defaultStyle.shadow!)
         )
           .replace(/px/g, '') // 清空px字符串
           .split(',')[0].split(' ') // 防止有人声明多个阴影, 截取第一个阴影
@@ -363,7 +419,7 @@ export default class LuckyGrid extends Lucky {
         }
         drawRoundRect(
           ctx, x, y, width, height,
-          this.getLength(prize.borderRadius ? prize.borderRadius : _defaultStyle.borderRadius),
+          this.getLength(cell.borderRadius ? cell.borderRadius : _defaultStyle.borderRadius),
           this.handleBackground(x, y, width, height, background)
         )
         // 清空阴影
@@ -372,27 +428,28 @@ export default class LuckyGrid extends Lucky {
         ctx.shadowOffsetY = 0
         ctx.shadowBlur = 0
       }
+      // 修正图片缓存
+      let cellName = 'prizeImgs'
+      if (cellIndex >= this.prizes.length) {
+        cellName = 'btnImgs'
+        cellIndex -= this.prizes.length
+      }
       // 绘制图片
-      prize.imgs && prize.imgs.forEach((imgInfo, imgIndex) => {
-        if (!this.cellImgs[cellIndex]) return false
-        const cellImg = this.cellImgs[cellIndex][imgIndex]
-        if (!cellImg) return false
-        const renderImg = (isActive && cellImg.activeImg) || cellImg.defaultImg
+      cell.imgs && cell.imgs.forEach((imgInfo, imgIndex) => {
+        if (!this[cellName][cellIndex]) return
+        const cellImg = this[cellName][cellIndex][imgIndex]
+        if (!cellImg) return
+        const renderImg = (isActive && cellImg['activeImg']) || cellImg.defaultImg
         if (!renderImg) return
-        const [trueWidth, trueHeight] = this.computedWidthAndHeight(renderImg, imgInfo, prize)
-        const [imgX, imgY] = [x + this.getOffsetX(trueWidth, prize.col), y + this.getHeight(imgInfo.top, prize.row)]
-        let drawImg
-        if (['WEB', 'MINI-WX'].includes(this.config.flag)) {
-          // 浏览器中直接绘制标签即可
-          drawImg = renderImg
-        } else if (['UNI-H5', 'UNI-MINI-WX'].includes(this.config.flag)) {
-          // 小程序中直接绘制一个路径
-          drawImg = (renderImg as UniImageType).path
-        }
-        ctx.drawImage((drawImg as CanvasImageSource), imgX, imgY, trueWidth, trueHeight)
+        const [trueWidth, trueHeight] = this.computedWidthAndHeight(renderImg, imgInfo, cell)
+        const [xAxis, yAxis] = [
+          x + this.getOffsetX(trueWidth, cell.col),
+          y + this.getHeight(imgInfo.top, cell.row)
+        ]
+        this.drawImage(renderImg, xAxis, yAxis, trueWidth, trueHeight)
       })
       // 绘制文字
-      prize.fonts && prize.fonts.forEach(font => {
+      cell.fonts && cell.fonts.forEach(font => {
         // 字体样式
         let style = isActive && _activeStyle.fontStyle
           ? _activeStyle.fontStyle
@@ -419,7 +476,7 @@ export default class LuckyGrid extends Lucky {
           for (let i = 0; i < text.length; i++) {
             str += text[i]
             let currWidth = ctx.measureText(str).width
-            let maxWidth = this.getWidth(font.lengthLimit || _defaultStyle.lengthLimit, prize.col)
+            let maxWidth = this.getWidth(font.lengthLimit || _defaultStyle.lengthLimit, cell.col)
             if (currWidth > maxWidth) {
               lines.push(str.slice(0, -1))
               str = text[i]
@@ -433,8 +490,8 @@ export default class LuckyGrid extends Lucky {
         lines.forEach((line, lineIndex) => {
           ctx.fillText(
             line,
-            x + this.getOffsetX(ctx.measureText(line).width, prize.col),
-            y + this.getHeight(font.top, prize.row) + (lineIndex + 1) * this.getLength(lineHeight)
+            x + this.getOffsetX(ctx.measureText(line).width, cell.col),
+            y + this.getHeight(font.top, cell.row) + (lineIndex + 1) * this.getLength(lineHeight)
           )
         })
       })

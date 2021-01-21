@@ -12,6 +12,8 @@ export interface ButtonFontType extends FontType {
 
 export type CellFontType = PrizeFontType | ButtonFontType
 
+export interface BlockImgType extends ImgType {}
+
 export interface PrizeImgType extends ImgType {
   activeSrc?: string
 }
@@ -32,6 +34,7 @@ export interface BlockType {
   paddingRight?: string | number
   paddingBottom?: string | number
   paddingLeft?: string | number
+  imgs?: Array<BlockImgType>
 }
 
 export interface CellType<T, U> {
@@ -45,6 +48,10 @@ export interface CellType<T, U> {
   fonts?: Array<T>
   imgs?: Array<U>
 }
+
+export type PrizeType = CellType<PrizeFontType, PrizeImgType>
+
+export type ButtonType = CellType<ButtonFontType, ButtonImgType>
 
 export interface DefaultConfigType {
   gutter?: number
@@ -85,8 +92,9 @@ export default interface LuckyGridConfig {
   rows?: RowsType
   cols?: ColsType
   blocks?: Array<BlockType>
-  prizes?: CellType<PrizeFontType, PrizeImgType>[]
-  button?: CellType<ButtonFontType, ButtonImgType>
+  prizes?: Array<PrizeType>
+  buttons?: Array<ButtonType>
+  button?: ButtonType
   defaultConfig?: DefaultConfigType
   defaultStyle?: DefaultStyleType
   activeStyle?: ActiveStyleType

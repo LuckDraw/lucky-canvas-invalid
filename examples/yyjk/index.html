@@ -21,7 +21,7 @@
         { padding: '4px', background: '#ff4a4c', borderRadius: 23 },
         { padding: '4px', background: '#ff625b', borderRadius: 20 },
       ],
-      button: {
+      buttons: [{
         x: 1, y: 1,
         background: 'linear-gradient(270deg, #FFDCB8, #FDC689)',
         shadow: '0 5 1 #e89b4f',
@@ -32,7 +32,7 @@
           { src: './img/button.png', width: '65%', top: '12%' },
           { src: './img/btn.png', width: '50%', top: '73%' }
         ]
-      },
+      }],
       activeStyle: {
         background: 'linear-gradient(270deg, #FFDCB8, #FDC689)',
         shadow: ''
@@ -58,12 +58,12 @@
       end (prize) {
         alert(`恭喜你获得大奖: ${prize.name}`)
         luckyNum--
-        luckyGrid.button.fonts[0].text = `${luckyNum} 次`
+        luckyGrid.buttons[0].fonts[0].text = `${luckyNum} 次`
       }
     })
     // 模拟接口异步请求奖品列表
     setTimeout(() => {
-      const prizes = []
+      luckyGrid.prizes = []
       const data = [
         { name: '1元红包', img: './img/0.png' },
         { name: '100元红包', img: './img/1.png' },
@@ -77,14 +77,13 @@
       let axis = [[0, 0], [1, 0], [2, 0], [2, 1], [2, 2], [1, 2], [0, 2], [0, 1]]
       for (let i = 0; i < 8; i++) {
         let item = data[i]
-        prizes.push({
+        luckyGrid.prizes.push({
           name: item.name,
           index: i, x: axis[i][0], y: axis[i][1],
           fonts: [{ text: item.name, top: '70%' }],
-          imgs: [{ src: item.img, width: '53%', top: '8%' }]
+          imgs: [{ src: item.img, activeSrc: './img/btn.png', width: '53%', top: '8%' }]
         })
       }
-      luckyGrid.prizes = prizes
     })
     setTimeout(_ => {
       luckyGrid.prizes[0].fonts[0].text = 'xxx'
