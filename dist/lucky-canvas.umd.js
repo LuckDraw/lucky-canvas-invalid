@@ -246,7 +246,7 @@
     };
 
     var name = "lucky-canvas";
-    var version = "1.3.4";
+    var version = "1.4.0";
 
     var Dep = /** @class */ (function () {
         /**
@@ -624,6 +624,26 @@
                     return;
                 }
             });
+        };
+        /**
+         * 公共绘制图片的方法
+         * @param imgObj 图片对象
+         * @param xAxis x轴位置
+         * @param yAxis y轴位置
+         * @param width 渲染宽度
+         * @param height 渲染高度
+         */
+        Lucky.prototype.drawImage = function (imgObj, xAxis, yAxis, width, height) {
+            var drawImg, _a = this, config = _a.config, ctx = _a.ctx;
+            if (['WEB', 'MINI-WX'].includes(config.flag)) {
+                // 浏览器中直接绘制标签即可
+                drawImg = imgObj;
+            }
+            else if (['UNI-H5', 'UNI-MINI-WX'].includes(config.flag)) {
+                // 小程序中直接绘制一个路径
+                drawImg = imgObj.path;
+            }
+            return ctx.drawImage(drawImg, xAxis, yAxis, width, height);
         };
         /**
          * 获取长度
@@ -1064,13 +1084,14 @@
             // 同步加载图片
             var num = 0, sum = 0;
             this.draw(); // 先画一次防止闪烁, 因为加载图片是异步的
-            Object.keys(willUpdateImgs).forEach(function (imgName) {
-                var willUpdate = willUpdateImgs[imgName];
+            Object.keys(willUpdateImgs).forEach(function (key) {
+                var imgName = key;
                 var cellName = {
                     blockImgs: 'blocks',
                     prizeImgs: 'prizes',
                     btnImgs: 'buttons',
                 }[imgName];
+                var willUpdate = willUpdateImgs[imgName];
                 if (!willUpdate)
                     return;
                 willUpdate.forEach(function (imgs, cellIndex) {
@@ -1097,9 +1118,7 @@
          * @param { number } imgIndex 奖品图片索引
          * @param { Function } callBack 图片加载完毕回调
          */
-        LuckyWheel.prototype.loadAndCacheImg = function (cellName, // 'blocks' | 'prizes' | 'buttons'
-        cellIndex, imgName, // 'blockImgs' | 'prizeImgs' | 'btnImgs'
-        imgIndex, callBack) {
+        LuckyWheel.prototype.loadAndCacheImg = function (cellName, cellIndex, imgName, imgIndex, callBack) {
             return __awaiter(this, void 0, void 0, function () {
                 var cell, imgInfo, _a, _b;
                 return __generator(this, function (_c) {
@@ -1158,28 +1177,6 @@
             ];
         };
         /**
-         * 绘制图片
-         * @param imgObj 图片对象
-         * @param imgInfo 图片详情
-         * @param maxWidth 最大宽度
-         * @param maxHeight 最大高度
-         * @param yAxis y轴位置
-         */
-        LuckyWheel.prototype.drawImage = function (imgObj, imgInfo, maxWidth, maxHeight, yAxis) {
-            var _a = this, ctx = _a.ctx, config = _a.config;
-            var _b = this.computedWidthAndHeight(imgObj, imgInfo, maxWidth, maxHeight), trueWidth = _b[0], trueHeight = _b[1];
-            // 兼容代码
-            var drawImg;
-            if (['WEB', 'MINI-WX'].includes(config.flag)) {
-                drawImg = imgObj;
-            }
-            else if (['UNI-H5', 'UNI-MINI-WX'].includes(config.flag)) {
-                drawImg = imgObj.path;
-            }
-            // 绘制图片
-            ctx.drawImage(drawImg, this.getOffsetX(trueWidth), yAxis, trueWidth, trueHeight);
-        };
-        /**
          * 开始绘制
          */
         LuckyWheel.prototype.draw = function () {
@@ -1205,9 +1202,11 @@
                     if (!blockImg)
                         return;
                     // 绘制图片
+                    var _a = _this.computedWidthAndHeight(blockImg, imgInfo, radius * 2, radius * 2), trueWidth = _a[0], trueHeight = _a[1];
+                    var _b = [_this.getOffsetX(trueWidth), _this.getHeight(imgInfo.top, radius * 2) - radius], xAxis = _b[0], yAxis = _b[1];
                     ctx.save();
                     imgInfo.rotate && ctx.rotate(getAngle(_this.rotateDeg));
-                    _this.drawImage(blockImg, imgInfo, radius * 2, radius * 2, _this.getHeight(imgInfo.top, radius * 2) - radius);
+                    _this.drawImage(blockImg, xAxis, yAxis, trueWidth, trueHeight);
                     ctx.restore();
                 });
                 return radius - _this.getLength(block.padding && block.padding.split(' ')[0]);
@@ -1248,7 +1247,9 @@
                     var prizeImg = _this.prizeImgs[prizeIndex][imgIndex];
                     if (!prizeImg)
                         return;
-                    _this.drawImage(prizeImg, imgInfo, _this.prizeRadian * _this.prizeRadius, prizeHeight, _this.getHeight(imgInfo.top, prizeHeight));
+                    var _a = _this.computedWidthAndHeight(prizeImg, imgInfo, _this.prizeRadian * _this.prizeRadius, prizeHeight), trueWidth = _a[0], trueHeight = _a[1];
+                    var _b = [_this.getOffsetX(trueWidth), _this.getHeight(imgInfo.top, prizeHeight)], xAxis = _b[0], yAxis = _b[1];
+                    _this.drawImage(prizeImg, xAxis, yAxis, trueWidth, trueHeight);
                 });
                 // 逐行绘制文字
                 prize.fonts && prize.fonts.forEach(function (font) {
@@ -1317,7 +1318,9 @@
                     var btnImg = _this.btnImgs[btnIndex][imgIndex];
                     if (!btnImg)
                         return;
-                    _this.drawImage(btnImg, imgInfo, radius * 2, radius * 2, _this.getHeight(imgInfo.top, radius));
+                    var _a = _this.computedWidthAndHeight(btnImg, imgInfo, radius * 2, radius * 2), trueWidth = _a[0], trueHeight = _a[1];
+                    var _b = [_this.getOffsetX(trueWidth), _this.getHeight(imgInfo.top, radius)], xAxis = _b[0], yAxis = _b[1];
+                    _this.drawImage(btnImg, xAxis, yAxis, trueWidth, trueHeight);
                 });
                 // 绘制按钮文字
                 btn.fonts && btn.fonts.forEach(function (font) {
@@ -1454,6 +1457,7 @@
             _this.cols = 3;
             _this.blocks = [];
             _this.prizes = [];
+            _this.buttons = [];
             _this.defaultConfig = {};
             _this._defaultConfig = {
                 gutter: 5,
@@ -1497,11 +1501,20 @@
             // 所有格子
             _this.cells = [];
             // 图片缓存
-            _this.cellImgs = [];
+            _this.blockImgs = [[]];
+            _this.prizeImgs = [];
+            _this.btnImgs = [[]];
             _this.initData(data);
             _this.initComputed();
             _this.initWatch();
-            _this.init(_this.collectImg());
+            var btnImgs = _this.buttons.map(function (btn) { return btn.imgs; });
+            if (_this.button)
+                btnImgs.push(_this.button.imgs);
+            _this.init({
+                blockImgs: _this.blocks.map(function (block) { return block.imgs; }),
+                prizeImgs: _this.prizes.map(function (prize) { return prize.imgs; }),
+                btnImgs: btnImgs,
+            });
             return _this;
         }
         /**
@@ -1513,6 +1526,8 @@
             this.$set(this, 'cols', Number(data.cols) || 3);
             this.$set(this, 'blocks', data.blocks || []);
             this.$set(this, 'prizes', data.prizes || []);
+            this.$set(this, 'buttons', data.buttons || []);
+            // 临时过渡代码, 升级到2.x即可删除
             this.$set(this, 'button', data.button);
             this.$set(this, 'defaultConfig', data.defaultConfig || {});
             this.$set(this, 'defaultStyle', data.defaultStyle || {});
@@ -1546,24 +1561,35 @@
          */
         LuckyGrid.prototype.initWatch = function () {
             var _this = this;
-            // 监听奖品数据的变化
-            this.$watch('prizes', function (newData, oldData) {
-                return _this.init(newData.map(function (prize) { return prize.imgs; }));
+            // 监听 blocks 数据的变化
+            this.$watch('blocks', function (newData) {
+                return _this.init({ blockImgs: newData.map(function (block) { return block.imgs; }) });
             }, { deep: true });
-            // 监听按钮数据的变化
-            this.$watch('button', function (newData, oldData) {
-                var willUpdate = [];
-                willUpdate[_this.cols * _this.rows - 1] = newData.imgs;
-                return _this.init(willUpdate);
+            // 监听 prizes 数据的变化
+            this.$watch('prizes', function (newData) {
+                return _this.init({ prizeImgs: newData.map(function (prize) { return prize.imgs; }) });
             }, { deep: true });
-            this.$watch('rows', function () { return _this.init(_this.collectImg()); });
-            this.$watch('cols', function () { return _this.init(_this.collectImg()); });
-            this.$watch('blocks', function () { return _this.draw(); }, { deep: true });
+            // 监听 button 数据的变化
+            this.$watch('buttons', function (newData) {
+                var btnImgs = _this.buttons.map(function (btn) { return btn.imgs; });
+                if (_this.button)
+                    btnImgs.push(_this.button.imgs);
+                return _this.init({ btnImgs: btnImgs });
+            }, { deep: true });
+            // 临时过渡代码, 升级到2.x即可删除
+            this.$watch('button', function () {
+                var btnImgs = _this.buttons.map(function (btn) { return btn.imgs; });
+                if (_this.button)
+                    btnImgs.push(_this.button.imgs);
+                return _this.init({ btnImgs: btnImgs });
+            }, { deep: true });
+            this.$watch('rows', function () { return _this.init({}); });
+            this.$watch('cols', function () { return _this.init({}); });
             this.$watch('defaultConfig', function () { return _this.draw(); }, { deep: true });
             this.$watch('defaultStyle', function () { return _this.draw(); }, { deep: true });
             this.$watch('activeStyle', function () { return _this.draw(); }, { deep: true });
-            this.$watch('startCallback', function () { return _this.init([]); });
-            this.$watch('endCallback', function () { return _this.init([]); });
+            this.$watch('startCallback', function () { return _this.init({}); });
+            this.$watch('endCallback', function () { return _this.init({}); });
         };
         /**
          * 初始化 canvas 抽奖
@@ -1584,6 +1610,23 @@
                 // 中奖标识开始游走
                 _this.demo && _this.walk();
                 // 点击按钮开始, 这里不能使用 addEventListener
+                if (_this.buttons.length && config.canvasElement)
+                    config.canvasElement.onclick = function (e) {
+                        _this.buttons.forEach(function (btn) {
+                            var _a;
+                            var _b = _this.getGeometricProperty([
+                                btn.x, btn.y, btn.col || 1, btn.row || 1
+                            ]), x = _b[0], y = _b[1], width = _b[2], height = _b[3];
+                            ctx.beginPath();
+                            ctx.rect(x, y, width, height);
+                            if (!ctx.isPointInPath(e.offsetX, e.offsetY))
+                                return;
+                            if (_this.startTime)
+                                return;
+                            (_a = _this.startCallback) === null || _a === void 0 ? void 0 : _a.call(_this, e);
+                        });
+                    };
+                // 临时过渡代码, 升级到2.x即可删除
                 if (button && config.canvasElement)
                     config.canvasElement.onclick = function (e) {
                         var _a;
@@ -1604,32 +1647,34 @@
             };
             // 同步加载图片
             var num = 0, sum = 0;
-            if (isExpectType(willUpdateImgs, 'array')) {
-                this.draw(); // 先画一次防止闪烁, 因为加载图片是异步的
-                willUpdateImgs.forEach(function (imgs, cellIndex) {
+            this.draw();
+            Object.keys(willUpdateImgs).forEach(function (key) {
+                var imgName = key;
+                var willUpdate = willUpdateImgs[imgName];
+                var cellName = {
+                    blockImgs: 'blocks',
+                    prizeImgs: 'prizes',
+                    btnImgs: 'buttons',
+                }[imgName];
+                if (!willUpdate)
+                    return;
+                willUpdate.forEach(function (imgs, cellIndex) {
                     if (!imgs)
-                        return false;
+                        return;
                     imgs.forEach(function (imgInfo, imgIndex) {
                         sum++;
-                        _this.loadAndCacheImg(cellIndex, imgIndex, function () {
+                        _this.loadAndCacheImg(cellName, cellIndex, imgName, imgIndex, function () {
                             num++;
                             if (sum === num)
                                 endCallBack.call(_this);
                         });
                     });
                 });
-            }
+            });
             if (!sum)
                 endCallBack.call(this);
             // 初始化后回调函数
             (_b = config.afterInit) === null || _b === void 0 ? void 0 : _b.call(this);
-        };
-        LuckyGrid.prototype.collectImg = function () {
-            // 收集首次渲染的图片
-            var willUpdate = [[]];
-            this.prizes && (willUpdate = this.prizes.map(function (prize) { return prize.imgs; }));
-            this.button && (willUpdate[this.cols * this.rows - 1] = this.button.imgs);
-            return willUpdate;
         };
         /**
          * 根据索引单独加载指定图片并缓存
@@ -1637,34 +1682,55 @@
          * @param { number } imgIndex 奖品图片索引
          * @param { Function } callBack 图片加载完毕回调
          */
-        LuckyGrid.prototype.loadAndCacheImg = function (prizeIndex, imgIndex, callBack) {
+        LuckyGrid.prototype.loadAndCacheImg = function (cellName, cellIndex, imgName, imgIndex, callBack) {
             return __awaiter(this, void 0, void 0, function () {
-                var prize, imgInfo, num, sum;
+                var cell, imgInfo, _a, _b, num, sum;
+                var _c;
                 var _this = this;
-                return __generator(this, function (_a) {
-                    prize = this.cells[prizeIndex];
-                    if (!prize || !prize.imgs)
-                        return [2 /*return*/];
-                    imgInfo = prize.imgs[imgIndex];
-                    if (!this.cellImgs[prizeIndex])
-                        this.cellImgs[prizeIndex] = [];
-                    if (!this.cellImgs[prizeIndex][imgIndex]) {
-                        this.cellImgs[prizeIndex][imgIndex] = {};
+                return __generator(this, function (_d) {
+                    switch (_d.label) {
+                        case 0:
+                            cell = this[cellName][cellIndex];
+                            // 临时过渡代码, 升级到2.x即可删除
+                            if (cellName === 'buttons' && !this.buttons.length && this.button) {
+                                cell = this.button;
+                            }
+                            if (!cell || !cell.imgs)
+                                return [2 /*return*/];
+                            imgInfo = cell.imgs[imgIndex];
+                            if (!imgInfo)
+                                return [2 /*return*/];
+                            if (!this[imgName][cellIndex])
+                                this[imgName][cellIndex] = [];
+                            if (!(imgName === 'blockImgs' || imgName === 'btnImgs')) return [3 /*break*/, 2];
+                            _a = this[imgName][cellIndex];
+                            _b = imgIndex;
+                            _c = {};
+                            return [4 /*yield*/, this.loadImg(imgInfo.src, imgInfo)];
+                        case 1:
+                            _a[_b] = (_c.defaultImg = _d.sent(),
+                                _c);
+                            return [2 /*return*/, callBack.call(this)];
+                        case 2:
+                            // 能走到这里就是奖品图片了
+                            if (!this.prizeImgs[cellIndex][imgIndex]) {
+                                this.prizeImgs[cellIndex][imgIndex] = {};
+                            }
+                            num = 1, sum = 0;
+                            this.loadImg(imgInfo.src, imgInfo).then(function (res) {
+                                _this.prizeImgs[cellIndex][imgIndex].defaultImg = res;
+                                num === ++sum && callBack.call(_this);
+                            });
+                            // 如果有 activeImg 则多加载一张
+                            if (imgInfo.hasOwnProperty('activeSrc')) {
+                                num++;
+                                this.loadImg(imgInfo.activeSrc, imgInfo, '$activeResolve').then(function (res) {
+                                    _this.prizeImgs[cellIndex][imgIndex].activeImg = res;
+                                    num === ++sum && callBack.call(_this);
+                                });
+                            }
+                            return [2 /*return*/];
                     }
-                    num = 1, sum = 0;
-                    this.loadImg(imgInfo.src, imgInfo).then(function (res) {
-                        _this.cellImgs[prizeIndex][imgIndex].defaultImg = res;
-                        num === ++sum && callBack.call(_this);
-                    });
-                    // 如果有 activeImg 则多加载一张
-                    if (imgInfo.hasOwnProperty('activeSrc')) {
-                        num++;
-                        this.loadImg(imgInfo.activeSrc, imgInfo, '$activeResolve').then(function (res) {
-                            _this.cellImgs[prizeIndex][imgIndex].activeImg = res;
-                            num === ++sum && callBack.call(_this);
-                        });
-                    }
-                    return [2 /*return*/];
                 });
             });
         };
@@ -1711,9 +1777,9 @@
             // 清空画布
             ctx.clearRect(0, 0, config.width, config.height);
             // 合并奖品和按钮
-            this.cells = __spreadArrays(this.prizes);
+            this.cells = __spreadArrays(this.prizes, this.buttons);
             if (this.button)
-                this.cells[this.cols * this.rows - 1] = this.button;
+                this.cells.push(this.button);
             this.cells.forEach(function (cell) {
                 cell.col = cell.col || 1;
                 cell.row = cell.row || 1;
@@ -1739,14 +1805,14 @@
             this.cellWidth = (this.prizeArea.w - _defaultConfig.gutter * (this.cols - 1)) / this.cols;
             this.cellHeight = (this.prizeArea.h - _defaultConfig.gutter * (this.rows - 1)) / this.rows;
             // 绘制所有格子
-            this.cells.forEach(function (prize, cellIndex) {
-                var _a = _this.getGeometricProperty([prize.x, prize.y, prize.col, prize.row]), x = _a[0], y = _a[1], width = _a[2], height = _a[3];
+            this.cells.forEach(function (cell, cellIndex) {
+                var _a = _this.getGeometricProperty([cell.x, cell.y, cell.col, cell.row]), x = _a[0], y = _a[1], width = _a[2], height = _a[3];
                 var isActive = cellIndex === _this.currIndex % _this.prizes.length >> 0;
                 // 绘制背景色
-                var background = isActive ? _activeStyle.background : (prize.background || _defaultStyle.background);
+                var background = isActive ? _activeStyle.background : (cell.background || _defaultStyle.background);
                 if (hasBackground(background)) {
                     // 处理阴影 (暂时先用any, 这里后续要优化)
-                    var shadow = (isActive ? _activeStyle.shadow : (prize.shadow || _defaultStyle.shadow))
+                    var shadow = (isActive ? _activeStyle.shadow : (cell.shadow || _defaultStyle.shadow))
                         .replace(/px/g, '') // 清空px字符串
                         .split(',')[0].split(' ') // 防止有人声明多个阴影, 截取第一个阴影
                         .map(function (n, i) { return i < 3 ? Number(n) : n; }); // 把数组的前三个值*像素比
@@ -1760,38 +1826,38 @@
                         shadow[0] > 0 ? (width -= shadow[0]) : (width += shadow[0], x -= shadow[0]);
                         shadow[1] > 0 ? (height -= shadow[1]) : (height += shadow[1], y -= shadow[1]);
                     }
-                    drawRoundRect(ctx, x, y, width, height, _this.getLength(prize.borderRadius ? prize.borderRadius : _defaultStyle.borderRadius), _this.handleBackground(x, y, width, height, background));
+                    drawRoundRect(ctx, x, y, width, height, _this.getLength(cell.borderRadius ? cell.borderRadius : _defaultStyle.borderRadius), _this.handleBackground(x, y, width, height, background));
                     // 清空阴影
                     ctx.shadowColor = 'rgba(0, 0, 0, 0)';
                     ctx.shadowOffsetX = 0;
                     ctx.shadowOffsetY = 0;
                     ctx.shadowBlur = 0;
                 }
+                // 修正图片缓存
+                var cellName = 'prizeImgs';
+                if (cellIndex >= _this.prizes.length) {
+                    cellName = 'btnImgs';
+                    cellIndex -= _this.prizes.length;
+                }
                 // 绘制图片
-                prize.imgs && prize.imgs.forEach(function (imgInfo, imgIndex) {
-                    if (!_this.cellImgs[cellIndex])
-                        return false;
-                    var cellImg = _this.cellImgs[cellIndex][imgIndex];
+                cell.imgs && cell.imgs.forEach(function (imgInfo, imgIndex) {
+                    if (!_this[cellName][cellIndex])
+                        return;
+                    var cellImg = _this[cellName][cellIndex][imgIndex];
                     if (!cellImg)
-                        return false;
-                    var renderImg = (isActive && cellImg.activeImg) || cellImg.defaultImg;
+                        return;
+                    var renderImg = (isActive && cellImg['activeImg']) || cellImg.defaultImg;
                     if (!renderImg)
                         return;
-                    var _a = _this.computedWidthAndHeight(renderImg, imgInfo, prize), trueWidth = _a[0], trueHeight = _a[1];
-                    var _b = [x + _this.getOffsetX(trueWidth, prize.col), y + _this.getHeight(imgInfo.top, prize.row)], imgX = _b[0], imgY = _b[1];
-                    var drawImg;
-                    if (['WEB', 'MINI-WX'].includes(_this.config.flag)) {
-                        // 浏览器中直接绘制标签即可
-                        drawImg = renderImg;
-                    }
-                    else if (['UNI-H5', 'UNI-MINI-WX'].includes(_this.config.flag)) {
-                        // 小程序中直接绘制一个路径
-                        drawImg = renderImg.path;
-                    }
-                    ctx.drawImage(drawImg, imgX, imgY, trueWidth, trueHeight);
+                    var _a = _this.computedWidthAndHeight(renderImg, imgInfo, cell), trueWidth = _a[0], trueHeight = _a[1];
+                    var _b = [
+                        x + _this.getOffsetX(trueWidth, cell.col),
+                        y + _this.getHeight(imgInfo.top, cell.row)
+                    ], xAxis = _b[0], yAxis = _b[1];
+                    _this.drawImage(renderImg, xAxis, yAxis, trueWidth, trueHeight);
                 });
                 // 绘制文字
-                prize.fonts && prize.fonts.forEach(function (font) {
+                cell.fonts && cell.fonts.forEach(function (font) {
                     // 字体样式
                     var style = isActive && _activeStyle.fontStyle
                         ? _activeStyle.fontStyle
@@ -1818,7 +1884,7 @@
                         for (var i = 0; i < text.length; i++) {
                             str += text[i];
                             var currWidth = ctx.measureText(str).width;
-                            var maxWidth = _this.getWidth(font.lengthLimit || _defaultStyle.lengthLimit, prize.col);
+                            var maxWidth = _this.getWidth(font.lengthLimit || _defaultStyle.lengthLimit, cell.col);
                             if (currWidth > maxWidth) {
                                 lines.push(str.slice(0, -1));
                                 str = text[i];
@@ -1833,7 +1899,7 @@
                         lines = text.split('\n');
                     }
                     lines.forEach(function (line, lineIndex) {
-                        ctx.fillText(line, x + _this.getOffsetX(ctx.measureText(line).width, prize.col), y + _this.getHeight(font.top, prize.row) + (lineIndex + 1) * _this.getLength(lineHeight));
+                        ctx.fillText(line, x + _this.getOffsetX(ctx.measureText(line).width, cell.col), y + _this.getHeight(font.top, cell.row) + (lineIndex + 1) * _this.getLength(lineHeight));
                     });
                 });
             });
