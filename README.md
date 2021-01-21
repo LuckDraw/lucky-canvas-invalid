@@ -55,7 +55,7 @@
 
 ```html
 <div id="my-lucky"></div>
-<script src="https://cdn.jsdelivr.net/npm/lucky-canvas/dist/lucky-canvas.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/lucky-canvas@1.4/dist/lucky-canvas.umd.min.js"></script>
 <script>
 
   // 大转盘抽奖
