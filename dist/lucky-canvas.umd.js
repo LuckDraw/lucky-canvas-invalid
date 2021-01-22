@@ -246,7 +246,7 @@
     };
 
     var name = "lucky-canvas";
-    var version = "1.4.0";
+    var version = "1.4.1";
 
     var Dep = /** @class */ (function () {
         /**
@@ -376,7 +376,7 @@
      * @param { Object | Array } data
      */
     function observe(data) {
-        if (typeof data !== 'object')
+        if (!data || typeof data !== 'object')
             return;
         var luckyOb;
         if ('__luckyOb__' in data) {

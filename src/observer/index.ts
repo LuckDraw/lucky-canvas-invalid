@@ -39,7 +39,7 @@ export default class Observer {
  * @param { Object | Array } data
  */
 export function observe (data: any): Observer | void {
-  if (typeof data !== 'object') return
+  if (!data || typeof data !== 'object') return
   let luckyOb: Observer | void
   if ('__luckyOb__' in data) {
     luckyOb = data['__luckyOb__']
