@@ -63,12 +63,12 @@
     })
     // 模拟接口异步请求奖品列表
     setTimeout(() => {
-      luckyGrid.prizes = []
+      const prizes = []
       const data = [
-        { name: '1元红包', img: './img/0.png' },
-        { name: '100元红包', img: './img/1.png' },
-        { name: '0.5元红包', img: './img/2.png' },
-        { name: '2元红包', img: './img/3.png' },
+        { name: '1元红包', img: './img/3.png' },
+        { name: '100元红包', img: './img/11.png' },
+        { name: '0.5元红包', img: '' },
+        { name: '2元红包', img: './img/2.png' },
         { name: '10元红包', img: './img/4.png' },
         { name: '50元红包', img: './img/5.png' },
         { name: '0.3元红包', img: './img/6.png' },
@@ -77,13 +77,14 @@
       let axis = [[0, 0], [1, 0], [2, 0], [2, 1], [2, 2], [1, 2], [0, 2], [0, 1]]
       for (let i = 0; i < 8; i++) {
         let item = data[i]
-        luckyGrid.prizes.push({
+        prizes.push({
           name: item.name,
           index: i, x: axis[i][0], y: axis[i][1],
           fonts: [{ text: item.name, top: '70%' }],
-          imgs: [{ src: item.img, activeSrc: './img/btn.png', width: '53%', top: '8%' }]
+          imgs: [{ src: item.img, width: '53%', top: '8%' }]
         })
       }
+      luckyGrid.prizes = prizes
     })
     setTimeout(_ => {
       luckyGrid.prizes[0].fonts[0].text = 'xxx'

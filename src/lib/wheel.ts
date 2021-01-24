@@ -217,10 +217,14 @@ export default class LuckyWheel extends Lucky {
     if (!cell || !cell.imgs) return
     const imgInfo = cell.imgs[imgIndex]
     if (!imgInfo) return
-    // 同步加载图片
     if (!this[imgName][cellIndex]) this[imgName][cellIndex] = []
-    this[imgName][cellIndex][imgIndex] = await this.loadImg(imgInfo.src, imgInfo)
-    callBack.call(this)
+    // 异步加载图片
+    this.loadImg(imgInfo.src, imgInfo).then(res => {
+      this[imgName][cellIndex][imgIndex] = res
+      callBack.call(this)
+    }).catch(err => {
+      console.error(`${cellName}[${cellIndex}].imgs[${imgIndex}] ${err}`)
+    })
   }
 
   /**

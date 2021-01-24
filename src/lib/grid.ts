@@ -291,31 +291,20 @@ export default class LuckyGrid extends Lucky {
     const imgInfo = cell.imgs[imgIndex]
     if (!imgInfo) return
     if (!this[imgName][cellIndex]) this[imgName][cellIndex] = []
-    // 如果是背景图或按钮图片, 直接加载即可
-    if (imgName === 'blockImgs' || imgName === 'btnImgs') {
-      this[imgName][cellIndex][imgIndex] = {
-        defaultImg: await this.loadImg(imgInfo.src, imgInfo)
+    // 创建图片请求
+    const request = [
+      this.loadImg(imgInfo.src, imgInfo),
+      imgInfo['activeSrc'] && this.loadImg(imgInfo['activeSrc'], imgInfo, '$activeResolve')
+    ]
+    Promise.all(request).then(([defaultImg, activeImg]) => {
+      this[imgName][cellIndex][imgIndex] = { defaultImg, activeImg } as {
+        defaultImg: ImgObjType,
+        activeImg?: ImgObjType
       }
-      return callBack.call(this)
-    }
-    // 能走到这里就是奖品图片了
-    if (!this.prizeImgs[cellIndex][imgIndex]) {
-      this.prizeImgs[cellIndex][imgIndex] = {} as any
-    }
-    // 加载 defaultImg 默认图片
-    let num = 1, sum = 0
-    this.loadImg(imgInfo.src, imgInfo).then(res => {
-      this.prizeImgs[cellIndex][imgIndex].defaultImg = res
-      num === ++sum && callBack.call(this)
+      callBack.call(this)
+    }).catch(err => {
+      console.error(`${cellName}[${cellIndex}].imgs[${imgIndex}] ${err}`)
     })
-    // 如果有 activeImg 则多加载一张
-    if (Object.prototype.hasOwnProperty.call(imgInfo, 'activeSrc')) {
-      num++
-      this.loadImg((imgInfo as PrizeImgType).activeSrc!, imgInfo, '$activeResolve').then(res => {
-        this.prizeImgs[cellIndex][imgIndex].activeImg = res
-        num === ++sum && callBack.call(this)
-      })
-    }
   }
 
   /**

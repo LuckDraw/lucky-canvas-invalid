@@ -33,7 +33,7 @@
           { radius: '41px', background: '#f6c66f', pointer: true },
           {
             radius: '35px', background: '#ffdea0',
-            imgs: [{ src: './img/button.png', width: '65%', top: '-50%' }]
+            imgs: [{ src: '', width: '65%', top: '-50%' }]
           }
         ],
         start () {
@@ -84,7 +84,13 @@
       }, 1000)
       setTimeout(() => {
         // console.log(luckyWheel.prizes)
-        luckyWheel.prizes.pop()
+        // luckyWheel.prizes.pop()
+        luckyWheel.prizes.push({
+          title: '123',
+          background: 'pink',
+          fonts: [{ text: '123', top: '10%', fontWeight: 300 }],
+          imgs:[{ src: ``, width: '30%', top: '35%' }],
+        })
         // luckyWheel.blocks.push({ padding: '13px', background: '#000' })
         // luckyWheel.blocks[0] = { padding: '13px', background: '#000' }
       }, 2000);

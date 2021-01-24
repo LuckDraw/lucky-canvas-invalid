@@ -140,11 +140,13 @@ export default class Lucky {
     info: ImgType,
     resolveName = '$resolve'
   ): Promise<HTMLImageElement | UniImageType> {
-    return new Promise(resolve => {
+    return new Promise((resolve, reject) => {
+      if (!src) reject(`=> '${info.src}' 不能为空或不合法`)
       if (this.config.flag === 'WEB') {
         let imgObj = new Image()
         imgObj.src = src
         imgObj.onload = () => resolve(imgObj)
+        imgObj.onerror = () => reject(`=> '${info.src}' 图片加载失败`)
       } else {
         // 其余平台向外暴露, 交给外部自行处理
         info[resolveName] = resolve
