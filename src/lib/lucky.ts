@@ -21,18 +21,22 @@ export default class Lucky {
   constructor (config: string | HTMLDivElement | ConfigType) {
     // 先初始化 fontSize 以防后面有 rem 单位
     this.setHTMLFontSize()
+    /* eslint-disable */
     // 兼容代码开始: 为了处理 v1.0.6 版本在这里传入了一个 dom
     if (typeof config === 'string') config = { el: config } as ConfigType
     else if (config.nodeType === 1) config = { el: '', divElement: config } as ConfigType
     config = config as ConfigType
-    // 兼容代码结束
+    /* eslint-enable */
     this.config = config
     if (!config.flag) config.flag = 'WEB'
+    if (!Object.prototype.hasOwnProperty.call(config, 'ob')) config.ob = true
     if (config.el) config.divElement = document.querySelector(config.el) as HTMLDivElement
     let boxWidth = 0, boxHeight = 0
+    // 如果存在父盒子, 就获取盒子的宽高信息, 并创建canvas标签
     if (config.divElement) {
       boxWidth = config.divElement.offsetWidth
       boxHeight = config.divElement.offsetHeight
+      // 无论盒子内有没有canvas都执行覆盖逻辑
       config.canvasElement = document.createElement('canvas')
       config.divElement.appendChild(config.canvasElement)
     }
@@ -193,7 +197,7 @@ export default class Lucky {
    * @return { number } 返回新的字符串
    */
   protected changeUnits (value: string, denominator = 1): number {
-    return Number(value.replace(/^(\-*[0-9.]*)([a-z%]*)$/, (value, num, unit) => {
+    return Number(value.replace(/^([-]*[0-9.]*)([a-z%]*)$/, (value, num, unit) => {
       const unitFunc = {
         '%': (n: number) => n * (denominator / 100),
         'px': (n: number) => n * 1,

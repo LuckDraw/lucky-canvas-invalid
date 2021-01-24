@@ -60,11 +60,13 @@ export default class LuckyWheel extends Lucky {
    * @param config 元素标识
    * @param data 抽奖配置项
    */
-  constructor (config: string | HTMLDivElement | ConfigType, data: LuckyWheelConfig = {}) {
+  constructor (config: ConfigType, data: LuckyWheelConfig = {}) {
     super(config)
-    this.initData(data)
+    if (config.ob) {
+      this.initData(data)
+      this.initWatch()
+    }
     this.initComputed()
-    this.initWatch()
     // 收集首次渲染的图片
     this.init({
       blockImgs: this.blocks.map(block => block.imgs),
@@ -347,7 +349,7 @@ export default class LuckyWheel extends Lucky {
         ctx.fillStyle = fontColor!
         ctx.font = `${fontWeight} ${fontSize >> 0}px ${fontStyle}`
         let lines = [], text = String(font.text)
-        if (font.hasOwnProperty('wordWrap') ? font.wordWrap : _defaultStyle.wordWrap) {
+        if (Object.prototype.hasOwnProperty.call(font, 'wordWrap') ? font.wordWrap : _defaultStyle.wordWrap) {
           text = removeEnter(text)
           let str = ''
           for (let i = 0; i < text.length; i++) {

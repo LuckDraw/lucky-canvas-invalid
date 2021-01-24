@@ -84,7 +84,7 @@ export const computePadding = (
   const res = { paddingTop, paddingBottom, paddingLeft, paddingRight }
   for (let key in res) {
     // 是否含有这个属性, 并且是数字或字符串
-    res[key] = block.hasOwnProperty(key) && isExpectType(block[key], 'string', 'number')
+    res[key] = Object.prototype.hasOwnProperty.call(block, key) && isExpectType(block[key], 'string', 'number')
       ? ~~String(block[key]).replace(/px/g, '')
       : res[key]
   }

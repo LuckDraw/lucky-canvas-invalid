@@ -22,6 +22,7 @@ export interface ConfigType {
   // 临时处理元素类型, 当版本升到4.x之后就可以删掉了
   nodeType: number
   // 配置
+  ob?: boolean
   flag: 'WEB' | 'MINI-WX' | 'UNI-H5' | 'UNI-MINI-WX'
   el?: string
   divElement?: HTMLDivElement

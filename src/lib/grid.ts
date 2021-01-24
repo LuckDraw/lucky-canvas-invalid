@@ -17,6 +17,8 @@ import { isExpectType, removeEnter, computePadding, hasBackground } from '../uti
 import { drawRoundRect, getLinearGradient } from '../utils/math'
 import { quad } from '../utils/tween'
 
+type ImgObjType = HTMLImageElement | UniImageType
+
 export default class LuckyGrid extends Lucky {
   private rows: RowsType = 3
   private cols: ColsType = 3
@@ -72,27 +74,22 @@ export default class LuckyGrid extends Lucky {
   // 奖品区域几何信息
   private prizeArea: { x: number, y: number, w: number, h: number } | undefined
   // 图片缓存
-  private blockImgs: Array<{
-    defaultImg: HTMLImageElement | UniImageType
-  }[]> = [[]]
-  private prizeImgs: Array<{
-    defaultImg: HTMLImageElement | UniImageType,
-    activeImg?: HTMLImageElement | UniImageType
-  }[]> = []
-  private btnImgs: Array<{
-    defaultImg: HTMLImageElement | UniImageType
-  }[]> = [[]]
+  private blockImgs: Array<{ defaultImg: ImgObjType }[]> = [[]]
+  private btnImgs: Array<{ defaultImg: ImgObjType }[]> = [[]]
+  private prizeImgs: Array<{ defaultImg: ImgObjType, activeImg?: ImgObjType }[]> = []
 
   /**
    * 九宫格构造器
    * @param config 元素标识
    * @param data 抽奖配置项
    */
-  constructor (config: string | HTMLDivElement | ConfigType, data: LuckyGridConfig = {}) {
+  constructor (config: ConfigType, data: LuckyGridConfig = {}) {
     super(config)
-    this.initData(data)
+    if (config.ob) {
+      this.initData(data)
+      this.initWatch()
+    }
     this.initComputed()
-    this.initWatch()
     const btnImgs = this.buttons.map(btn => btn.imgs)
     if (this.button) btnImgs.push(this.button.imgs)
     this.init({
@@ -177,7 +174,7 @@ export default class LuckyGrid extends Lucky {
     }, { deep: true })
     // 监听 button 数据的变化
     this.$watch('buttons', (newData: Array<ButtonType>) => {
-      const btnImgs = this.buttons.map(btn => btn.imgs)
+      const btnImgs = newData.map(btn => btn.imgs)
       if (this.button) btnImgs.push(this.button.imgs)
       return this.init({ btnImgs })
     }, { deep: true })
@@ -312,7 +309,7 @@ export default class LuckyGrid extends Lucky {
       num === ++sum && callBack.call(this)
     })
     // 如果有 activeImg 则多加载一张
-    if (imgInfo.hasOwnProperty('activeSrc')) {
+    if (Object.prototype.hasOwnProperty.call(imgInfo, 'activeSrc')) {
       num++
       this.loadImg((imgInfo as PrizeImgType).activeSrc!, imgInfo, '$activeResolve').then(res => {
         this.prizeImgs[cellIndex][imgIndex].activeImg = res
@@ -329,7 +326,7 @@ export default class LuckyGrid extends Lucky {
    * @return [渲染宽度, 渲染高度]
    */
   private computedWidthAndHeight (
-    imgObj: HTMLImageElement | UniImageType,
+    imgObj: ImgObjType,
     imgInfo: CellImgType,
     cell: CellType<CellFontType, CellImgType>
   ): [number, number] {
@@ -470,7 +467,7 @@ export default class LuckyGrid extends Lucky {
         ctx.fillStyle = (isActive && _activeStyle.fontColor) ? _activeStyle.fontColor : (font.fontColor || _defaultStyle.fontColor)
         let lines = [], text = String(font.text)
         // 计算文字换行
-        if (font.hasOwnProperty('wordWrap') ? font.wordWrap : _defaultStyle.wordWrap) {
+        if (Object.prototype.hasOwnProperty.call(font, 'wordWrap') ? font.wordWrap : _defaultStyle.wordWrap) {
           text = removeEnter(text)
           let str = ''
           for (let i = 0; i < text.length; i++) {
