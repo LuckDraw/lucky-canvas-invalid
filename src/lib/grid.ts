@@ -291,7 +291,7 @@ export default class LuckyGrid extends Lucky {
     const imgInfo = cell.imgs[imgIndex]
     if (!imgInfo) return
     if (!this[imgName][cellIndex]) this[imgName][cellIndex] = []
-    // 创建图片请求
+    // 异步加载图片
     const request = [
       this.loadImg(imgInfo.src, imgInfo),
       imgInfo['activeSrc'] && this.loadImg(imgInfo['activeSrc'], imgInfo, '$activeResolve')

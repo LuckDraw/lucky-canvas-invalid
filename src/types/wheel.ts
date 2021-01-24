@@ -39,8 +39,10 @@ export interface DefaultConfigType {
   gutter?: string | number
   offsetDegree?: number
   speed?: number
+  speedFunction?: string
   accelerationTime?: number
   decelerationTime?: number
+  stopRange?: number
 }
 
 export interface DefaultStyleType {

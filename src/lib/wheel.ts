@@ -12,7 +12,7 @@ import LuckyWheelConfig, {
 import { FontType, ImgType, UniImageType } from '../types/index'
 import { isExpectType, removeEnter, hasBackground } from '../utils/index'
 import { getAngle, drawSector } from '../utils/math'
-import { quad } from '../utils/tween'
+import * as Tween from '../utils/tween'
 
 export default class LuckyWheel extends Lucky {
   private blocks: Array<BlockType> = []
@@ -23,8 +23,10 @@ export default class LuckyWheel extends Lucky {
     gutter: '0px',
     offsetDegree: 0,
     speed: 20,
+    speedFunction: 'quad',
     accelerationTime: 2500,
     decelerationTime: 2500,
+    stopRange: 0.8,
   }
   private defaultStyle: DefaultStyleType = {}
   private _defaultStyle = {
@@ -99,8 +101,10 @@ export default class LuckyWheel extends Lucky {
         gutter: '0px',
         offsetDegree: 0,
         speed: 20,
+        speedFunction: 'quad',
         accelerationTime: 2500,
         decelerationTime: 2500,
+        stopRange: 0.7,
         ...this.defaultConfig
       }
       return config
@@ -461,11 +465,13 @@ export default class LuckyWheel extends Lucky {
       this.endTime = Date.now()
       // 记录开始停止的位置
       this.stopDeg = rotateDeg
+      // 停止范围
+      const stopRange = (Math.random() * prizeDeg * this.getLength(_defaultConfig.stopRange) >> 0) - prizeDeg / 2
       // 测算最终停止的角度
       let i = 0
       while (++i) {
-        const endDeg = 360 * i - prizeFlag * prizeDeg - rotateDeg - _defaultConfig.offsetDegree
-        let currSpeed = quad.easeOut(this.FPS, this.stopDeg, endDeg, _defaultConfig.decelerationTime) - this.stopDeg
+        const endDeg = 360 * i - prizeFlag * prizeDeg - rotateDeg - _defaultConfig.offsetDegree + stopRange
+        let currSpeed = Tween[_defaultConfig.speedFunction].easeOut(this.FPS, this.stopDeg, endDeg, _defaultConfig.decelerationTime) - this.stopDeg
         if (currSpeed > _defaultConfig.speed) {
           this.endDeg = endDeg
           break
@@ -473,7 +479,7 @@ export default class LuckyWheel extends Lucky {
       }
       return this.slowDown()
     }
-    this.rotateDeg = (rotateDeg + quad.easeIn(interval, 0, _defaultConfig.speed, _defaultConfig.accelerationTime)) % 360
+    this.rotateDeg = (rotateDeg + Tween[_defaultConfig.speedFunction].easeIn(interval, 0, _defaultConfig.speed, _defaultConfig.accelerationTime)) % 360
     this.draw()
     rAF(this.run.bind(this, num + 1))
   }
@@ -489,7 +495,7 @@ export default class LuckyWheel extends Lucky {
       this.endCallback?.({...prizes.find((prize, index) => index === prizeFlag)})
       return
     }
-    this.rotateDeg = quad.easeOut(interval, stopDeg, endDeg, _defaultConfig.decelerationTime) % 360
+    this.rotateDeg = Tween[_defaultConfig.speedFunction].easeOut(interval, stopDeg, endDeg, _defaultConfig.decelerationTime) % 360
     this.draw()
     rAF(this.slowDown.bind(this))
   }
