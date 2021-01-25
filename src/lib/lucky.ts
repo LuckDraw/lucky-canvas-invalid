@@ -1,5 +1,6 @@
-import '../utils/polyfill.js'
+import '../utils/polyfill'
 import { isExpectType } from '../utils/index'
+import { getEnoughBall } from '../utils/egg'
 import { name, version } from '../../package.json'
 import { ConfigType, ImgType, UniImageType } from '../types/index'
 import { defineReactive } from '../observer'
@@ -10,13 +11,10 @@ export default class Lucky {
   protected readonly ctx: CanvasRenderingContext2D
   protected htmlFontSize: number = 16
   protected rAF: Function = function () {}
-  protected setTimeout: Function = function () {}
-  protected setInterval: Function = function () {}
-  protected clearInterval: Function = function () {}
 
   /**
    * 公共构造器
-   * @param config 
+   * @param config
    */
   constructor (config: string | HTMLDivElement | ConfigType) {
     // 先初始化 fontSize 以防后面有 rem 单位
@@ -28,6 +26,10 @@ export default class Lucky {
     config = config as ConfigType
     /* eslint-enable */
     this.config = config
+    // 拿到 config 即可设置 dpr
+    this.setDpr()
+    // 初始化 window 方法
+    this.initWindowFunction()
     if (!config.flag) config.flag = 'WEB'
     if (!Object.prototype.hasOwnProperty.call(config, 'ob')) config.ob = true
     if (config.el) config.divElement = document.querySelector(config.el) as HTMLDivElement
@@ -50,9 +52,15 @@ export default class Lucky {
       config.divElement.style.height = config.height + 'px'
     }
     if (config.canvasElement) {
+      let count = 0
+      config.ctx = config.canvasElement.getContext('2d')!
       // 添加版本信息到标签上, 方便定位版本问题
       config.canvasElement.setAttribute('package', `${name}@${version}`)
-      config.ctx = config.canvasElement.getContext('2d')!
+      config.canvasElement.addEventListener('click', e => {
+        this.handleClick(e)
+        count++ === 0 && setTimeout(() => count = 0, 1000)
+        count === 7 && this.drawEasterEggs(e)
+      })
     }
     this.ctx = config.ctx as CanvasRenderingContext2D
     // 如果最后得不到 canvas 上下文那就无法进行绘制
@@ -60,10 +68,47 @@ export default class Lucky {
       console.error('无法获取到 CanvasContext2D 或宽高')
       return
     }
-    // 最后等待 config 来设置 dpr
-    this.setDpr()
-    // 初始化 window 方法
-    this.initWindowFunction()
+  }
+
+  /**
+   * 点击事件
+   * @param e 事件参数
+   */
+  protected handleClick (e: MouseEvent): void {}
+
+  /**
+   * 绘制
+   */
+  protected draw (): void {}
+
+  /**
+   * 换算坐标
+   */
+  protected conversionAxis (x: number, y: number): [number, number] {
+    return [0, 0]
+  }
+
+  protected drawEasterEggs (e: MouseEvent) {
+    const { ctx, rAF } = this
+    const [x, y] = this.conversionAxis(e.offsetX, e.offsetY)
+    const _this = this
+    let balls = getEnoughBall(ctx, x, y, 50)
+    let easing = 0.1
+    let num = 0
+    ;(function animation() {
+      if (num++ > 60) return
+      rAF(animation)
+      _this.draw()
+      for (let item of balls) {
+        item.draw('fill')
+        item.vx = (item.dx - item.x) * easing
+        item.vy = (item.dy - item.y) * easing
+        item.x += item.vx
+        item.y += item.vy
+        item.sx += -item.sx * easing
+        item.sy += -item.sy * easing
+      }
+    })()
   }
 
   /**
@@ -93,18 +138,21 @@ export default class Lucky {
    * 从 window 对象上获取一些方法
    */
   private initWindowFunction (): void {
+    const { config } = this
     if (window) {
       this.rAF = window.requestAnimationFrame
-      this.setInterval = window.setInterval
-      this.clearInterval = window.clearInterval
+      config.setTimeout = window.setTimeout
+      config.setInterval = window.setInterval
+      config.clearTimeout = window.clearTimeout
+      config.clearInterval = window.clearInterval
       return
     }
-    if (this.config.rAF) {
+    if (config.rAF) {
       // 优先使用帧动画
-      this.rAF = this.config.rAF
-    } else if (this.config.setTimeout) {
+      this.rAF = config.rAF
+    } else if (config.setTimeout) {
       // 其次使用定时器
-      const timeout = this.config.setTimeout
+      const timeout = config.setTimeout
       this.rAF = (callback: Function): number => timeout(callback, 16)
     } else {
       // 如果config里面没有提供, 那就假设全局方法存在setTimeout

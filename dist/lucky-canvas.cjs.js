@@ -26,6 +26,8 @@ var extendStatics = function(d, b) {
 };
 
 function __extends(d, b) {
+    if (typeof b !== "function" && b !== null)
+        throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
     extendStatics(d, b);
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -80,6 +82,7 @@ function __generator(thisArg, body) {
     }
 }
 
+/** @deprecated */
 function __spreadArrays() {
     for (var s = 0, i = 0, il = arguments.length; i < il; i++) s += arguments[i].length;
     for (var r = Array(s), k = 0, i = 0; i < il; i++)
@@ -236,15 +239,77 @@ var computePadding = function (block) {
     var res = { paddingTop: paddingTop, paddingBottom: paddingBottom, paddingLeft: paddingLeft, paddingRight: paddingRight };
     for (var key in res) {
         // 是否含有这个属性, 并且是数字或字符串
-        res[key] = block.hasOwnProperty(key) && isExpectType(block[key], 'string', 'number')
+        res[key] = Object.prototype.hasOwnProperty.call(block, key) && isExpectType(block[key], 'string', 'number')
             ? ~~String(block[key]).replace(/px/g, '')
             : res[key];
     }
     return [paddingTop, paddingBottom, paddingLeft, paddingRight];
 };
 
+var innerRadius = 1;
+var moreOutterRadius = 100;
+var minRadius = 1;
+var maxRadius = 10;
+var mcolor = [
+    '#409EFF',
+    '#67C23A',
+    '#E6A23C',
+    '#F56C6C',
+    '#909399',
+];
+/**
+ * 随机生成一堆扩散的小球
+ */
+function getEnoughBall(ctx, mouseX, mouseY, num) {
+    var balls = [];
+    for (var i = 0; i < num; i++) {
+        var radius = Math.random() * (maxRadius - minRadius) + minRadius;
+        var ball = new Ball(ctx, 0, 0, radius, mcolor[Math.random() * mcolor.length >> 0]);
+        ball.x = mouseX + Math.random() * innerRadius - Math.random() * innerRadius;
+        ball.y = mouseY + Math.random() * innerRadius - Math.random() * innerRadius;
+        var x = mouseX - ball.x;
+        var y = mouseY - ball.y;
+        var scale = Math.abs(x / y);
+        ball.dx = (x < 0 ? 1 : -1) * moreOutterRadius / Math.sqrt(scale * scale + 1) * Math.random() * scale + mouseX;
+        ball.dy = (y < 0 ? 1 : -1) * moreOutterRadius / Math.sqrt(scale * scale + 1) * Math.random() + mouseY;
+        balls.push(ball);
+    }
+    return balls;
+}
+var Ball = /** @class */ (function () {
+    function Ball(ctx, x, y, radius, color) {
+        this.dx = 0;
+        this.dy = 0;
+        this.ctx = ctx;
+        this.x = x || 0;
+        this.y = y || 0;
+        this.vx = 0;
+        this.vy = 0;
+        this.sx = 1;
+        this.sy = 1;
+        this.radius = radius || 10;
+        this.color = color || 'black';
+    }
+    Ball.prototype.draw = function (type) {
+        if (!['fill', 'stroke'].includes(type))
+            return;
+        var ctx = this.ctx;
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.scale(this.sx, this.sy);
+        ctx.fillStyle = this.color;
+        ctx.strokeStyle = this.color;
+        ctx.beginPath();
+        ctx.arc(0, 0, this.radius, 0, 360 * Math.PI / 180);
+        ctx.closePath();
+        type === 'fill' ? ctx.fill() : ctx.stroke();
+        ctx.restore();
+    };
+    return Ball;
+}());
+
 var name = "lucky-canvas";
-var version = "1.4.1";
+var version = "1.4.2";
 
 var Dep = /** @class */ (function () {
     /**
@@ -489,29 +554,36 @@ var Lucky = /** @class */ (function () {
      * @param config
      */
     function Lucky(config) {
+        var _this_1 = this;
         this.htmlFontSize = 16;
         this.rAF = function () { };
-        this.setTimeout = function () { };
-        this.setInterval = function () { };
-        this.clearInterval = function () { };
         // 先初始化 fontSize 以防后面有 rem 单位
         this.setHTMLFontSize();
+        /* eslint-disable */
         // 兼容代码开始: 为了处理 v1.0.6 版本在这里传入了一个 dom
         if (typeof config === 'string')
             config = { el: config };
         else if (config.nodeType === 1)
             config = { el: '', divElement: config };
         config = config;
-        // 兼容代码结束
+        /* eslint-enable */
         this.config = config;
+        // 拿到 config 即可设置 dpr
+        this.setDpr();
+        // 初始化 window 方法
+        this.initWindowFunction();
         if (!config.flag)
             config.flag = 'WEB';
+        if (!Object.prototype.hasOwnProperty.call(config, 'ob'))
+            config.ob = true;
         if (config.el)
             config.divElement = document.querySelector(config.el);
         var boxWidth = 0, boxHeight = 0;
+        // 如果存在父盒子, 就获取盒子的宽高信息, 并创建canvas标签
         if (config.divElement) {
             boxWidth = config.divElement.offsetWidth;
             boxHeight = config.divElement.offsetHeight;
+            // 无论盒子内有没有canvas都执行覆盖逻辑
             config.canvasElement = document.createElement('canvas');
             config.divElement.appendChild(config.canvasElement);
         }
@@ -525,9 +597,15 @@ var Lucky = /** @class */ (function () {
             config.divElement.style.height = config.height + 'px';
         }
         if (config.canvasElement) {
+            var count_1 = 0;
+            config.ctx = config.canvasElement.getContext('2d');
             // 添加版本信息到标签上, 方便定位版本问题
             config.canvasElement.setAttribute('package', name + "@" + version);
-            config.ctx = config.canvasElement.getContext('2d');
+            config.canvasElement.addEventListener('click', function (e) {
+                _this_1.handleClick(e);
+                count_1++ === 0 && setTimeout(function () { return count_1 = 0; }, 1000);
+                count_1 === 7 && _this_1.drawEasterEggs(e);
+            });
         }
         this.ctx = config.ctx;
         // 如果最后得不到 canvas 上下文那就无法进行绘制
@@ -535,11 +613,46 @@ var Lucky = /** @class */ (function () {
             console.error('无法获取到 CanvasContext2D 或宽高');
             return;
         }
-        // 最后等待 config 来设置 dpr
-        this.setDpr();
-        // 初始化 window 方法
-        this.initWindowFunction();
     }
+    /**
+     * 点击事件
+     * @param e 事件参数
+     */
+    Lucky.prototype.handleClick = function (e) { };
+    /**
+     * 绘制
+     */
+    Lucky.prototype.draw = function () { };
+    /**
+     * 换算坐标
+     */
+    Lucky.prototype.conversionAxis = function (x, y) {
+        return [0, 0];
+    };
+    Lucky.prototype.drawEasterEggs = function (e) {
+        var _a = this, ctx = _a.ctx, rAF = _a.rAF;
+        var _b = this.conversionAxis(e.offsetX, e.offsetY), x = _b[0], y = _b[1];
+        var _this = this;
+        var balls = getEnoughBall(ctx, x, y, 50);
+        var easing = 0.1;
+        var num = 0;
+        (function animation() {
+            if (num++ > 60)
+                return;
+            rAF(animation);
+            _this.draw();
+            for (var _i = 0, balls_1 = balls; _i < balls_1.length; _i++) {
+                var item = balls_1[_i];
+                item.draw('fill');
+                item.vx = (item.dx - item.x) * easing;
+                item.vy = (item.dy - item.y) * easing;
+                item.x += item.vx;
+                item.y += item.vy;
+                item.sx += -item.sx * easing;
+                item.sy += -item.sy * easing;
+            }
+        })();
+    };
     /**
      * 设备像素比
      * window 环境下自动获取, 其余环境手动传入
@@ -566,19 +679,22 @@ var Lucky = /** @class */ (function () {
      * 从 window 对象上获取一些方法
      */
     Lucky.prototype.initWindowFunction = function () {
+        var config = this.config;
         if (window) {
             this.rAF = window.requestAnimationFrame;
-            this.setInterval = window.setInterval;
-            this.clearInterval = window.clearInterval;
+            config.setTimeout = window.setTimeout;
+            config.setInterval = window.setInterval;
+            config.clearTimeout = window.clearTimeout;
+            config.clearInterval = window.clearInterval;
             return;
         }
-        if (this.config.rAF) {
+        if (config.rAF) {
             // 优先使用帧动画
-            this.rAF = this.config.rAF;
+            this.rAF = config.rAF;
         }
-        else if (this.config.setTimeout) {
+        else if (config.setTimeout) {
             // 其次使用定时器
-            var timeout_1 = this.config.setTimeout;
+            var timeout_1 = config.setTimeout;
             this.rAF = function (callback) { return timeout_1(callback, 16); };
         }
         else {
@@ -608,13 +724,16 @@ var Lucky = /** @class */ (function () {
      * @param info 图片信息
      */
     Lucky.prototype.loadImg = function (src, info, resolveName) {
-        var _this = this;
+        var _this_1 = this;
         if (resolveName === void 0) { resolveName = '$resolve'; }
-        return new Promise(function (resolve) {
-            if (_this.config.flag === 'WEB') {
+        return new Promise(function (resolve, reject) {
+            if (!src)
+                reject("=> '" + info.src + "' \u4E0D\u80FD\u4E3A\u7A7A\u6216\u4E0D\u5408\u6CD5");
+            if (_this_1.config.flag === 'WEB') {
                 var imgObj_1 = new Image();
                 imgObj_1.src = src;
                 imgObj_1.onload = function () { return resolve(imgObj_1); };
+                imgObj_1.onerror = function () { return reject("=> '" + info.src + "' \u56FE\u7247\u52A0\u8F7D\u5931\u8D25"); };
             }
             else {
                 // 其余平台向外暴露, 交给外部自行处理
@@ -662,18 +781,18 @@ var Lucky = /** @class */ (function () {
      * @return { number } 返回新的字符串
      */
     Lucky.prototype.changeUnits = function (value, denominator) {
-        var _this = this;
+        var _this_1 = this;
         if (denominator === void 0) { denominator = 1; }
-        return Number(value.replace(/^(\-*[0-9.]*)([a-z%]*)$/, function (value, num, unit) {
+        return Number(value.replace(/^([-]*[0-9.]*)([a-z%]*)$/, function (value, num, unit) {
             var unitFunc = {
                 '%': function (n) { return n * (denominator / 100); },
                 'px': function (n) { return n * 1; },
-                'rem': function (n) { return n * _this.htmlFontSize; },
+                'rem': function (n) { return n * _this_1.htmlFontSize; },
             }[unit];
             if (unitFunc)
                 return unitFunc(num);
             // 如果找不到默认单位, 就交给外面处理
-            var otherUnitFunc = _this.config.unitFunc;
+            var otherUnitFunc = _this_1.config.unitFunc;
             return otherUnitFunc ? otherUnitFunc(num, unit) : num;
         }));
     };
@@ -695,10 +814,10 @@ var Lucky = /** @class */ (function () {
      * @param callback 回调函数
      */
     Lucky.prototype.$computed = function (data, key, callback) {
-        var _this = this;
+        var _this_1 = this;
         Object.defineProperty(data, key, {
             get: function () {
-                return callback.call(_this);
+                return callback.call(_this_1);
             }
         });
     };
@@ -940,6 +1059,95 @@ var quad = {
         return -c * (t /= d) * (t - 2) + b;
     }
 };
+// 三次方的缓动
+var cubic = {
+    easeIn: function (t, b, c, d) {
+        if (t >= d)
+            t = d;
+        return c * (t /= d) * t * t + b;
+    },
+    easeOut: function (t, b, c, d) {
+        if (t >= d)
+            t = d;
+        return c * ((t = t / d - 1) * t * t + 1) + b;
+    }
+};
+// 四次方的缓动
+var quart = {
+    easeIn: function (t, b, c, d) {
+        if (t >= d)
+            t = d;
+        return c * (t /= d) * t * t * t + b;
+    },
+    easeOut: function (t, b, c, d) {
+        if (t >= d)
+            t = d;
+        return -c * ((t = t / d - 1) * t * t * t - 1) + b;
+    }
+};
+// 五次方的缓动
+var quint = {
+    easeIn: function (t, b, c, d) {
+        if (t >= d)
+            t = d;
+        return c * (t /= d) * t * t * t * t + b;
+    },
+    easeOut: function (t, b, c, d) {
+        if (t >= d)
+            t = d;
+        return c * ((t = t / d - 1) * t * t * t * t + 1) + b;
+    }
+};
+// 正弦曲线的缓动
+var sine = {
+    easeIn: function (t, b, c, d) {
+        if (t >= d)
+            t = d;
+        return -c * Math.cos(t / d * (Math.PI / 2)) + c + b;
+    },
+    easeOut: function (t, b, c, d) {
+        if (t >= d)
+            t = d;
+        return c * Math.sin(t / d * (Math.PI / 2)) + b;
+    }
+};
+// 指数曲线的缓动
+var expo = {
+    easeIn: function (t, b, c, d) {
+        if (t >= d)
+            t = d;
+        return (t == 0) ? b : c * Math.pow(2, 10 * (t / d - 1)) + b;
+    },
+    easeOut: function (t, b, c, d) {
+        if (t >= d)
+            t = d;
+        return (t == d) ? b + c : c * (-Math.pow(2, -10 * t / d) + 1) + b;
+    }
+};
+// 圆形曲线的缓动
+var circ = {
+    easeIn: function (t, b, c, d) {
+        if (t >= d)
+            t = d;
+        return -c * (Math.sqrt(1 - (t /= d) * t) - 1) + b;
+    },
+    easeOut: function (t, b, c, d) {
+        if (t >= d)
+            t = d;
+        return c * Math.sqrt(1 - (t = t / d - 1) * t) + b;
+    }
+};
+
+var Tween = /*#__PURE__*/Object.freeze({
+    __proto__: null,
+    quad: quad,
+    cubic: cubic,
+    quart: quart,
+    quint: quint,
+    sine: sine,
+    expo: expo,
+    circ: circ
+});
 
 var LuckyWheel = /** @class */ (function (_super) {
     __extends(LuckyWheel, _super);
@@ -959,8 +1167,10 @@ var LuckyWheel = /** @class */ (function (_super) {
             gutter: '0px',
             offsetDegree: 0,
             speed: 20,
+            speedFunction: 'quad',
             accelerationTime: 2500,
             decelerationTime: 2500,
+            stopRange: 0.8,
         };
         _this.defaultStyle = {};
         _this._defaultStyle = {
@@ -987,9 +1197,11 @@ var LuckyWheel = /** @class */ (function (_super) {
         _this.blockImgs = [[]];
         _this.prizeImgs = [[]];
         _this.btnImgs = [[]];
-        _this.initData(data);
+        if (config.ob) {
+            _this.initData(data);
+            _this.initWatch();
+        }
         _this.initComputed();
-        _this.initWatch();
         // 收集首次渲染的图片
         _this.init({
             blockImgs: _this.blocks.map(function (block) { return block.imgs; }),
@@ -1018,7 +1230,7 @@ var LuckyWheel = /** @class */ (function (_super) {
         var _this = this;
         // 默认配置
         this.$computed(this, '_defaultConfig', function () {
-            var config = __assign({ gutter: '0px', offsetDegree: 0, speed: 20, accelerationTime: 2500, decelerationTime: 2500 }, _this.defaultConfig);
+            var config = __assign({ gutter: '0px', offsetDegree: 0, speed: 20, speedFunction: 'quad', accelerationTime: 2500, decelerationTime: 2500, stopRange: 0.8 }, _this.defaultConfig);
             return config;
         });
         // 默认样式
@@ -1064,24 +1276,9 @@ var LuckyWheel = /** @class */ (function (_super) {
         (_a = config.beforeInit) === null || _a === void 0 ? void 0 : _a.call(this);
         this.Radius = Math.min(config.width, config.height) / 2;
         ctx.translate(this.Radius, this.Radius);
-        var endCallBack = function () {
-            _this.draw();
-            // 防止多次绑定点击事件
-            if (config.canvasElement)
-                config.canvasElement.onclick = function (e) {
-                    var _a;
-                    ctx.beginPath();
-                    ctx.arc(0, 0, _this.maxBtnRadius, 0, Math.PI * 2, false);
-                    if (!ctx.isPointInPath(e.offsetX, e.offsetY))
-                        return;
-                    if (_this.startTime)
-                        return;
-                    (_a = _this.startCallback) === null || _a === void 0 ? void 0 : _a.call(_this, e);
-                };
-        };
-        // 同步加载图片
-        var num = 0, sum = 0;
-        this.draw(); // 先画一次防止闪烁, 因为加载图片是异步的
+        // 先画一次防止闪烁
+        this.draw();
+        // 异步加载图片
         Object.keys(willUpdateImgs).forEach(function (key) {
             var imgName = key;
             var cellName = {
@@ -1096,19 +1293,29 @@ var LuckyWheel = /** @class */ (function (_super) {
                 if (!imgs)
                     return;
                 imgs.forEach(function (imgInfo, imgIndex) {
-                    sum++;
                     _this.loadAndCacheImg(cellName, cellIndex, imgName, imgIndex, function () {
-                        num++;
-                        if (sum === num)
-                            endCallBack.call(_this);
+                        _this.draw();
                     });
                 });
             });
         });
-        if (!sum)
-            endCallBack.call(this);
         // 初始化后回调函数
         (_b = config.afterInit) === null || _b === void 0 ? void 0 : _b.call(this);
+    };
+    /**
+     * canvas点击事件
+     * @param e 事件参数
+     */
+    LuckyWheel.prototype.handleClick = function (e) {
+        var _a;
+        var ctx = this.ctx;
+        ctx.beginPath();
+        ctx.arc(0, 0, this.maxBtnRadius, 0, Math.PI * 2, false);
+        if (!ctx.isPointInPath(e.offsetX, e.offsetY))
+            return;
+        if (this.startTime)
+            return;
+        (_a = this.startCallback) === null || _a === void 0 ? void 0 : _a.call(this, e);
     };
     /**
      * 单独加载某一张图片并计算其实际渲染宽高
@@ -1118,27 +1325,25 @@ var LuckyWheel = /** @class */ (function (_super) {
      */
     LuckyWheel.prototype.loadAndCacheImg = function (cellName, cellIndex, imgName, imgIndex, callBack) {
         return __awaiter(this, void 0, void 0, function () {
-            var cell, imgInfo, _a, _b;
-            return __generator(this, function (_c) {
-                switch (_c.label) {
-                    case 0:
-                        cell = this[cellName][cellIndex];
-                        if (!cell || !cell.imgs)
-                            return [2 /*return*/];
-                        imgInfo = cell.imgs[imgIndex];
-                        if (!imgInfo)
-                            return [2 /*return*/];
-                        // 同步加载图片
-                        if (!this[imgName][cellIndex])
-                            this[imgName][cellIndex] = [];
-                        _a = this[imgName][cellIndex];
-                        _b = imgIndex;
-                        return [4 /*yield*/, this.loadImg(imgInfo.src, imgInfo)];
-                    case 1:
-                        _a[_b] = _c.sent();
-                        callBack.call(this);
-                        return [2 /*return*/];
-                }
+            var cell, imgInfo;
+            var _this = this;
+            return __generator(this, function (_a) {
+                cell = this[cellName][cellIndex];
+                if (!cell || !cell.imgs)
+                    return [2 /*return*/];
+                imgInfo = cell.imgs[imgIndex];
+                if (!imgInfo)
+                    return [2 /*return*/];
+                if (!this[imgName][cellIndex])
+                    this[imgName][cellIndex] = [];
+                // 异步加载图片
+                this.loadImg(imgInfo.src, imgInfo).then(function (res) {
+                    _this[imgName][cellIndex][imgIndex] = res;
+                    callBack.call(_this);
+                }).catch(function (err) {
+                    console.error(cellName + "[" + cellIndex + "].imgs[" + imgIndex + "] " + err);
+                });
+                return [2 /*return*/];
             });
         });
     };
@@ -1258,7 +1463,7 @@ var LuckyWheel = /** @class */ (function (_super) {
                 ctx.fillStyle = fontColor;
                 ctx.font = fontWeight + " " + (fontSize >> 0) + "px " + fontStyle;
                 var lines = [], text = String(font.text);
-                if (font.hasOwnProperty('wordWrap') ? font.wordWrap : _defaultStyle.wordWrap) {
+                if (Object.prototype.hasOwnProperty.call(font, 'wordWrap') ? font.wordWrap : _defaultStyle.wordWrap) {
                     text = removeEnter(text);
                     var str = '';
                     for (var i = 0; i < text.length; i++) {
@@ -1370,11 +1575,13 @@ var LuckyWheel = /** @class */ (function (_super) {
             this.endTime = Date.now();
             // 记录开始停止的位置
             this.stopDeg = rotateDeg;
+            // 停止范围
+            var stopRange = Math.random() * prizeDeg * this.getLength(_defaultConfig.stopRange) - prizeDeg / 2;
             // 测算最终停止的角度
             var i = 0;
             while (++i) {
-                var endDeg = 360 * i - prizeFlag * prizeDeg - rotateDeg - _defaultConfig.offsetDegree;
-                var currSpeed = quad.easeOut(this.FPS, this.stopDeg, endDeg, _defaultConfig.decelerationTime) - this.stopDeg;
+                var endDeg = 360 * i - prizeFlag * prizeDeg - rotateDeg - _defaultConfig.offsetDegree + stopRange;
+                var currSpeed = Tween[_defaultConfig.speedFunction].easeOut(this.FPS, this.stopDeg, endDeg, _defaultConfig.decelerationTime) - this.stopDeg;
                 if (currSpeed > _defaultConfig.speed) {
                     this.endDeg = endDeg;
                     break;
@@ -1382,7 +1589,7 @@ var LuckyWheel = /** @class */ (function (_super) {
             }
             return this.slowDown();
         }
-        this.rotateDeg = (rotateDeg + quad.easeIn(interval, 0, _defaultConfig.speed, _defaultConfig.accelerationTime)) % 360;
+        this.rotateDeg = (rotateDeg + Tween[_defaultConfig.speedFunction].easeIn(interval, 0, _defaultConfig.speed, _defaultConfig.accelerationTime)) % 360;
         this.draw();
         rAF(this.run.bind(this, num + 1));
     };
@@ -1398,7 +1605,7 @@ var LuckyWheel = /** @class */ (function (_super) {
             (_a = this.endCallback) === null || _a === void 0 ? void 0 : _a.call(this, __assign({}, prizes.find(function (prize, index) { return index === prizeFlag; })));
             return;
         }
-        this.rotateDeg = quad.easeOut(interval, stopDeg, endDeg, _defaultConfig.decelerationTime) % 360;
+        this.rotateDeg = Tween[_defaultConfig.speedFunction].easeOut(interval, stopDeg, endDeg, _defaultConfig.decelerationTime) % 360;
         this.draw();
         rAF(this.slowDown.bind(this));
     };
@@ -1437,6 +1644,15 @@ var LuckyWheel = /** @class */ (function (_super) {
      */
     LuckyWheel.prototype.getOffsetX = function (width) {
         return -width / 2;
+    };
+    /**
+     * 换算渲染坐标
+     * @param x
+     * @param y
+     */
+    LuckyWheel.prototype.conversionAxis = function (x, y) {
+        var config = this.config;
+        return [x / config.dpr - this.Radius, y / config.dpr - this.Radius];
     };
     return LuckyWheel;
 }(Lucky));
@@ -1500,11 +1716,13 @@ var LuckyGrid = /** @class */ (function (_super) {
         _this.cells = [];
         // 图片缓存
         _this.blockImgs = [[]];
-        _this.prizeImgs = [];
         _this.btnImgs = [[]];
-        _this.initData(data);
+        _this.prizeImgs = [];
+        if (config.ob) {
+            _this.initData(data);
+            _this.initWatch();
+        }
         _this.initComputed();
-        _this.initWatch();
         var btnImgs = _this.buttons.map(function (btn) { return btn.imgs; });
         if (_this.button)
             btnImgs.push(_this.button.imgs);
@@ -1569,7 +1787,7 @@ var LuckyGrid = /** @class */ (function (_super) {
         }, { deep: true });
         // 监听 button 数据的变化
         this.$watch('buttons', function (newData) {
-            var btnImgs = _this.buttons.map(function (btn) { return btn.imgs; });
+            var btnImgs = newData.map(function (btn) { return btn.imgs; });
             if (_this.button)
                 btnImgs.push(_this.button.imgs);
             return _this.init({ btnImgs: btnImgs });
@@ -1596,56 +1814,15 @@ var LuckyGrid = /** @class */ (function (_super) {
     LuckyGrid.prototype.init = function (willUpdateImgs) {
         var _this = this;
         var _a, _b;
-        var _c = this, config = _c.config, ctx = _c.ctx, button = _c.button;
+        var _c = this, config = _c.config; _c.ctx; _c.button;
         this.setHTMLFontSize();
         this.setDpr();
         this.zoomCanvas();
         // 初始化前回调函数
         (_a = config.beforeInit) === null || _a === void 0 ? void 0 : _a.call(this);
-        var endCallBack = function () {
-            // 开始首次渲染
-            _this.draw();
-            // 中奖标识开始游走
-            _this.demo && _this.walk();
-            // 点击按钮开始, 这里不能使用 addEventListener
-            if (_this.buttons.length && config.canvasElement)
-                config.canvasElement.onclick = function (e) {
-                    _this.buttons.forEach(function (btn) {
-                        var _a;
-                        var _b = _this.getGeometricProperty([
-                            btn.x, btn.y, btn.col || 1, btn.row || 1
-                        ]), x = _b[0], y = _b[1], width = _b[2], height = _b[3];
-                        ctx.beginPath();
-                        ctx.rect(x, y, width, height);
-                        if (!ctx.isPointInPath(e.offsetX, e.offsetY))
-                            return;
-                        if (_this.startTime)
-                            return;
-                        (_a = _this.startCallback) === null || _a === void 0 ? void 0 : _a.call(_this, e);
-                    });
-                };
-            // 临时过渡代码, 升级到2.x即可删除
-            if (button && config.canvasElement)
-                config.canvasElement.onclick = function (e) {
-                    var _a;
-                    var _b = _this.getGeometricProperty([
-                        button.x,
-                        button.y,
-                        button.col || 1,
-                        button.row || 1
-                    ]), x = _b[0], y = _b[1], width = _b[2], height = _b[3];
-                    ctx.beginPath();
-                    ctx.rect(x, y, width, height);
-                    if (!ctx.isPointInPath(e.offsetX, e.offsetY))
-                        return;
-                    if (_this.startTime)
-                        return;
-                    (_a = _this.startCallback) === null || _a === void 0 ? void 0 : _a.call(_this, e);
-                };
-        };
-        // 同步加载图片
-        var num = 0, sum = 0;
+        // 先画一次防止闪烁
         this.draw();
+        // 异步加载图片
         Object.keys(willUpdateImgs).forEach(function (key) {
             var imgName = key;
             var willUpdate = willUpdateImgs[imgName];
@@ -1660,19 +1837,39 @@ var LuckyGrid = /** @class */ (function (_super) {
                 if (!imgs)
                     return;
                 imgs.forEach(function (imgInfo, imgIndex) {
-                    sum++;
                     _this.loadAndCacheImg(cellName, cellIndex, imgName, imgIndex, function () {
-                        num++;
-                        if (sum === num)
-                            endCallBack.call(_this);
+                        _this.draw();
                     });
                 });
             });
         });
-        if (!sum)
-            endCallBack.call(this);
         // 初始化后回调函数
         (_b = config.afterInit) === null || _b === void 0 ? void 0 : _b.call(this);
+    };
+    /**
+     * canvas点击事件
+     * @param e 事件参数
+     */
+    LuckyGrid.prototype.handleClick = function (e) {
+        var _this = this;
+        var ctx = this.ctx;
+        __spreadArrays(this.buttons, [
+            this.button
+        ]).forEach(function (btn) {
+            var _a;
+            if (!btn)
+                return;
+            var _b = _this.getGeometricProperty([
+                btn.x, btn.y, btn.col || 1, btn.row || 1
+            ]), x = _b[0], y = _b[1], width = _b[2], height = _b[3];
+            ctx.beginPath();
+            ctx.rect(x, y, width, height);
+            if (!ctx.isPointInPath(e.offsetX, e.offsetY))
+                return;
+            if (_this.startTime)
+                return;
+            (_a = _this.startCallback) === null || _a === void 0 ? void 0 : _a.call(_this, e);
+        });
     };
     /**
      * 根据索引单独加载指定图片并缓存
@@ -1682,53 +1879,33 @@ var LuckyGrid = /** @class */ (function (_super) {
      */
     LuckyGrid.prototype.loadAndCacheImg = function (cellName, cellIndex, imgName, imgIndex, callBack) {
         return __awaiter(this, void 0, void 0, function () {
-            var cell, imgInfo, _a, _b, num, sum;
-            var _c;
+            var cell, imgInfo, request;
             var _this = this;
-            return __generator(this, function (_d) {
-                switch (_d.label) {
-                    case 0:
-                        cell = this[cellName][cellIndex];
-                        // 临时过渡代码, 升级到2.x即可删除
-                        if (cellName === 'buttons' && !this.buttons.length && this.button) {
-                            cell = this.button;
-                        }
-                        if (!cell || !cell.imgs)
-                            return [2 /*return*/];
-                        imgInfo = cell.imgs[imgIndex];
-                        if (!imgInfo)
-                            return [2 /*return*/];
-                        if (!this[imgName][cellIndex])
-                            this[imgName][cellIndex] = [];
-                        if (!(imgName === 'blockImgs' || imgName === 'btnImgs')) return [3 /*break*/, 2];
-                        _a = this[imgName][cellIndex];
-                        _b = imgIndex;
-                        _c = {};
-                        return [4 /*yield*/, this.loadImg(imgInfo.src, imgInfo)];
-                    case 1:
-                        _a[_b] = (_c.defaultImg = _d.sent(),
-                            _c);
-                        return [2 /*return*/, callBack.call(this)];
-                    case 2:
-                        // 能走到这里就是奖品图片了
-                        if (!this.prizeImgs[cellIndex][imgIndex]) {
-                            this.prizeImgs[cellIndex][imgIndex] = {};
-                        }
-                        num = 1, sum = 0;
-                        this.loadImg(imgInfo.src, imgInfo).then(function (res) {
-                            _this.prizeImgs[cellIndex][imgIndex].defaultImg = res;
-                            num === ++sum && callBack.call(_this);
-                        });
-                        // 如果有 activeImg 则多加载一张
-                        if (imgInfo.hasOwnProperty('activeSrc')) {
-                            num++;
-                            this.loadImg(imgInfo.activeSrc, imgInfo, '$activeResolve').then(function (res) {
-                                _this.prizeImgs[cellIndex][imgIndex].activeImg = res;
-                                num === ++sum && callBack.call(_this);
-                            });
-                        }
-                        return [2 /*return*/];
+            return __generator(this, function (_a) {
+                cell = this[cellName][cellIndex];
+                // 临时过渡代码, 升级到2.x即可删除
+                if (cellName === 'buttons' && !this.buttons.length && this.button) {
+                    cell = this.button;
                 }
+                if (!cell || !cell.imgs)
+                    return [2 /*return*/];
+                imgInfo = cell.imgs[imgIndex];
+                if (!imgInfo)
+                    return [2 /*return*/];
+                if (!this[imgName][cellIndex])
+                    this[imgName][cellIndex] = [];
+                request = [
+                    this.loadImg(imgInfo.src, imgInfo),
+                    imgInfo['activeSrc'] && this.loadImg(imgInfo['activeSrc'], imgInfo, '$activeResolve')
+                ];
+                Promise.all(request).then(function (_a) {
+                    var defaultImg = _a[0], activeImg = _a[1];
+                    _this[imgName][cellIndex][imgIndex] = { defaultImg: defaultImg, activeImg: activeImg };
+                    callBack.call(_this);
+                }).catch(function (err) {
+                    console.error(cellName + "[" + cellIndex + "].imgs[" + imgIndex + "] " + err);
+                });
+                return [2 /*return*/];
             });
         });
     };
@@ -1876,7 +2053,7 @@ var LuckyGrid = /** @class */ (function (_super) {
                 ctx.fillStyle = (isActive && _activeStyle.fontColor) ? _activeStyle.fontColor : (font.fontColor || _defaultStyle.fontColor);
                 var lines = [], text = String(font.text);
                 // 计算文字换行
-                if (font.hasOwnProperty('wordWrap') ? font.wordWrap : _defaultStyle.wordWrap) {
+                if (Object.prototype.hasOwnProperty.call(font, 'wordWrap') ? font.wordWrap : _defaultStyle.wordWrap) {
                     text = removeEnter(text);
                     var str = '';
                     for (var i = 0; i < text.length; i++) {
@@ -1925,7 +2102,7 @@ var LuckyGrid = /** @class */ (function (_super) {
      * 对外暴露: 开始抽奖方法
      */
     LuckyGrid.prototype.play = function () {
-        var clearInterval = this.clearInterval;
+        var clearInterval = this.config.clearInterval;
         if (this.startTime)
             return;
         clearInterval(this.timer);
@@ -1993,7 +2170,7 @@ var LuckyGrid = /** @class */ (function (_super) {
      */
     LuckyGrid.prototype.walk = function () {
         var _this = this;
-        var _a = this, setInterval = _a.setInterval, clearInterval = _a.clearInterval;
+        var _a = this.config, setInterval = _a.setInterval, clearInterval = _a.clearInterval;
         clearInterval(this.timer);
         this.timer = setInterval(function () {
             _this.currIndex += 1;
@@ -2052,6 +2229,15 @@ var LuckyGrid = /** @class */ (function (_super) {
     LuckyGrid.prototype.getOffsetX = function (width, col) {
         if (col === void 0) { col = 1; }
         return (this.cellWidth * col + this._defaultConfig.gutter * (col - 1) - width) / 2;
+    };
+    /**
+     * 换算渲染坐标
+     * @param x
+     * @param y
+     */
+    LuckyGrid.prototype.conversionAxis = function (x, y) {
+        var config = this.config;
+        return [x / config.dpr, y / config.dpr];
     };
     return LuckyGrid;
 }(Lucky));

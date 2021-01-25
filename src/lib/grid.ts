@@ -208,42 +208,9 @@ export default class LuckyGrid extends Lucky {
     this.zoomCanvas()
     // 初始化前回调函数
     config.beforeInit?.call(this)
-    const endCallBack = (): void => {
-      // 开始首次渲染
-      this.draw()
-      // 中奖标识开始游走
-      this.demo && this.walk()
-      // 点击按钮开始, 这里不能使用 addEventListener
-      if (this.buttons.length && config.canvasElement) config.canvasElement.onclick = e => {
-        this.buttons.forEach(btn => {
-          const [x, y, width, height] = this.getGeometricProperty([
-            btn.x, btn.y, btn.col || 1, btn.row || 1
-          ])
-          ctx.beginPath()
-          ctx.rect(x, y, width, height)
-          if (!ctx.isPointInPath(e.offsetX, e.offsetY)) return
-          if (this.startTime) return
-          this.startCallback?.(e)
-        })
-      }
-      // 临时过渡代码, 升级到2.x即可删除
-      if (button && config.canvasElement) config.canvasElement.onclick = e => {
-        const [x, y, width, height] = this.getGeometricProperty([
-          button.x,
-          button.y,
-          button.col || 1,
-          button.row || 1
-        ])
-        ctx.beginPath()
-        ctx.rect(x, y, width, height)
-        if (!ctx.isPointInPath(e.offsetX, e.offsetY)) return
-        if (this.startTime) return
-        this.startCallback?.(e)
-      }
-    }
-    // 同步加载图片
-    let num = 0, sum = 0
+    // 先画一次防止闪烁
     this.draw()
+    // 异步加载图片
     Object.keys(willUpdateImgs).forEach(key => {
       const imgName = key as 'blockImgs' | 'prizeImgs' | 'btnImgs'
       const willUpdate = willUpdateImgs[imgName]
@@ -256,17 +223,36 @@ export default class LuckyGrid extends Lucky {
       willUpdate.forEach((imgs, cellIndex) => {
         if (!imgs) return
         imgs.forEach((imgInfo, imgIndex) => {
-          sum++
           this.loadAndCacheImg(cellName, cellIndex, imgName, imgIndex, () => {
-            num++
-            if (sum === num) endCallBack.call(this)
+            this.draw()
           })
         })
       })
     })
-    if (!sum) endCallBack.call(this)
     // 初始化后回调函数
     config.afterInit?.call(this)
+  }
+
+  /**
+   * canvas点击事件
+   * @param e 事件参数
+   */
+  protected handleClick (e: MouseEvent): void {
+    const { ctx } = this
+    ;[
+      ...this.buttons,
+      this.button
+    ].forEach(btn => {
+      if (!btn) return
+      const [x, y, width, height] = this.getGeometricProperty([
+        btn.x, btn.y, btn.col || 1, btn.row || 1
+      ])
+      ctx.beginPath()
+      ctx.rect(x, y, width, height)
+      if (!ctx.isPointInPath(e.offsetX, e.offsetY)) return
+      if (this.startTime) return
+      this.startCallback?.(e)
+    })
   }
 
   /**
@@ -488,12 +474,12 @@ export default class LuckyGrid extends Lucky {
 
   /**
    * 处理背景色
-   * @param x 
-   * @param y 
-   * @param width 
-   * @param height 
-   * @param background 
-   * @param isActive 
+   * @param x
+   * @param y
+   * @param width
+   * @param height
+   * @param background
+   * @param isActive
    */
   private handleBackground (
     x: number,
@@ -514,7 +500,7 @@ export default class LuckyGrid extends Lucky {
    * 对外暴露: 开始抽奖方法
    */
   public play (): void {
-    const { clearInterval } = this
+    const { clearInterval } = this.config
     if (this.startTime) return
     clearInterval(this.timer)
     this.startTime = Date.now()
@@ -582,7 +568,7 @@ export default class LuckyGrid extends Lucky {
    * 开启中奖标识自动游走
    */
   public walk (): void {
-    const { setInterval, clearInterval } = this
+    const { setInterval, clearInterval } = this.config
     clearInterval(this.timer)
     this.timer = setInterval(() => {
       this.currIndex += 1
@@ -647,10 +633,20 @@ export default class LuckyGrid extends Lucky {
 
   /**
    * 获取相对(居中)X坐标
-   * @param width 
-   * @param col 
+   * @param width
+   * @param col
    */
   private getOffsetX (width: number, col = 1) {
     return (this.cellWidth * col + this._defaultConfig.gutter * (col - 1) - width) / 2
+  }
+
+  /**
+   * 换算渲染坐标
+   * @param x
+   * @param y
+   */
+  protected conversionAxis (x: number, y: number): [number, number] {
+    const { config } = this
+    return [x / config.dpr, y / config.dpr]
   }
 }

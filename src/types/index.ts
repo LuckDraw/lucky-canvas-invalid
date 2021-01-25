@@ -34,8 +34,9 @@ export interface ConfigType {
   unitFunc?: (num: number, unit: string) => number
   // 覆盖方法
   rAF?: Function
-  setTimeout?: Function
+  setTimeout: Function
   setInterval: Function
+  clearTimeout: Function
   clearInterval: Function
   // 组件生命周期
   beforeInit?: Function

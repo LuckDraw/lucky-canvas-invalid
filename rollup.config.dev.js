@@ -1,4 +1,5 @@
-import ts from '@rollup/plugin-typescript'
+import path from 'path'
+import ts from 'rollup-plugin-typescript2'
 import json from '@rollup/plugin-json'
 import resolve from '@rollup/plugin-node-resolve'
 import commonjs from '@rollup/plugin-commonjs'
@@ -14,18 +15,22 @@ export default {
       file: `examples/dev.js`,
       format: 'umd',
       name: 'LuckyCanvas',
+      sourcemap: true,
     },
   ],
   plugins: [
-    ts(),
-    json(),
     resolve(),
     commonjs(),
-    eslint({
-      throwOnError: true,
-      throwOnWarning: true,
-      include: ['src/**'],
-      exclude: ['node_modules/**']
+    json(),
+    // eslint({
+    //   throwOnError: true,
+    //   throwOnWarning: true,
+    //   include: ['src/**'],
+    //   exclude: ['node_modules/**']
+    // }),
+    ts({
+      tsconfig: path.resolve(__dirname, './tsconfig.json'),
+      extensions: ['.js', '.ts']
     }),
     babel({ exclude: 'node_modules/**' }),
     livereload(),
@@ -33,6 +38,6 @@ export default {
       open: true,
       port: 8888,
       contentBase: ''
-    })
+    }),
   ]
 }

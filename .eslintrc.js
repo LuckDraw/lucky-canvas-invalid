@@ -4,6 +4,8 @@ module.exports = {
     "es6": true,
     "node": true
   },
+  "parser": "@typescript-eslint/parser",
+  // "plugins": ['prettier'],
   "extends": "eslint:recommended",
   "globals": {
     "Atomics": "readonly",

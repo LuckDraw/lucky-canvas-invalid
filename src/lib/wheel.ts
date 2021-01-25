@@ -79,7 +79,7 @@ export default class LuckyWheel extends Lucky {
 
   /**
    * 初始化数据
-   * @param data 
+   * @param data
    */
   private initData (data: LuckyWheelConfig): void {
     this.$set(this, 'blocks', data.blocks || [])
@@ -104,7 +104,7 @@ export default class LuckyWheel extends Lucky {
         speedFunction: 'quad',
         accelerationTime: 2500,
         decelerationTime: 2500,
-        stopRange: 0.7,
+        stopRange: 0.8,
         ...this.defaultConfig
       }
       return config
@@ -164,20 +164,9 @@ export default class LuckyWheel extends Lucky {
     config.beforeInit?.call(this)
     this.Radius = Math.min(config.width, config.height) / 2
     ctx.translate(this.Radius, this.Radius)
-    const endCallBack = (): void => {
-      this.draw()
-      // 防止多次绑定点击事件
-      if (config.canvasElement) config.canvasElement.onclick = e => {
-        ctx.beginPath()
-        ctx.arc(0, 0, this.maxBtnRadius, 0, Math.PI * 2, false)
-        if (!ctx.isPointInPath(e.offsetX, e.offsetY)) return
-        if (this.startTime) return
-        this.startCallback?.(e)
-      }
-    }
-    // 同步加载图片
-    let num = 0, sum = 0
-    this.draw() // 先画一次防止闪烁, 因为加载图片是异步的
+    // 先画一次防止闪烁
+    this.draw()
+    // 异步加载图片
     Object.keys(willUpdateImgs).forEach(key => {
       const imgName = key as 'blockImgs' | 'prizeImgs' | 'btnImgs'
       const cellName = {
@@ -190,17 +179,27 @@ export default class LuckyWheel extends Lucky {
       willUpdate.forEach((imgs, cellIndex) => {
         if (!imgs) return
         imgs.forEach((imgInfo, imgIndex) => {
-          sum++
           this.loadAndCacheImg(cellName, cellIndex, imgName, imgIndex, () => {
-            num++
-            if (sum === num) endCallBack.call(this)
+            this.draw()
           })
         })
       })
     })
-    if (!sum) endCallBack.call(this)
     // 初始化后回调函数
     config.afterInit?.call(this)
+  }
+
+  /**
+   * canvas点击事件
+   * @param e 事件参数
+   */
+  protected handleClick (e: MouseEvent): void {
+    const { ctx } = this
+    ctx.beginPath()
+    ctx.arc(0, 0, this.maxBtnRadius, 0, Math.PI * 2, false)
+    if (!ctx.isPointInPath(e.offsetX, e.offsetY)) return
+    if (this.startTime) return
+    this.startCallback?.(e)
   }
 
   /**
@@ -270,7 +269,7 @@ export default class LuckyWheel extends Lucky {
   /**
    * 开始绘制
    */
-  private draw (): void {
+  protected draw (): void {
     const { config, ctx, _defaultConfig, _defaultStyle } = this
     // 触发绘制前回调
     config.beforeDraw?.call(this, ctx)
@@ -466,7 +465,7 @@ export default class LuckyWheel extends Lucky {
       // 记录开始停止的位置
       this.stopDeg = rotateDeg
       // 停止范围
-      const stopRange = (Math.random() * prizeDeg * this.getLength(_defaultConfig.stopRange) >> 0) - prizeDeg / 2
+      const stopRange = Math.random() * prizeDeg * this.getLength(_defaultConfig.stopRange) - prizeDeg / 2
       // 测算最终停止的角度
       let i = 0
       while (++i) {
@@ -537,5 +536,15 @@ export default class LuckyWheel extends Lucky {
    */
   private getOffsetX (width: number): number {
     return -width / 2
+  }
+
+  /**
+   * 换算渲染坐标
+   * @param x
+   * @param y
+   */
+  protected conversionAxis (x: number, y: number): [number, number] {
+    const { config } = this
+    return [x / config.dpr - this.Radius, y / config.dpr - this.Radius]
   }
 }
