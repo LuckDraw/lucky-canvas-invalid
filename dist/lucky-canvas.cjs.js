@@ -309,7 +309,7 @@ var Ball = /** @class */ (function () {
 }());
 
 var name = "lucky-canvas";
-var version = "1.4.2";
+var version = "1.4.3";
 
 var Dep = /** @class */ (function () {
     /**
@@ -1576,7 +1576,7 @@ var LuckyWheel = /** @class */ (function (_super) {
             // 记录开始停止的位置
             this.stopDeg = rotateDeg;
             // 停止范围
-            var stopRange = Math.random() * prizeDeg * this.getLength(_defaultConfig.stopRange) - prizeDeg / 2;
+            var stopRange = (Math.random() * prizeDeg - prizeDeg / 2) * this.getLength(_defaultConfig.stopRange);
             // 测算最终停止的角度
             var i = 0;
             while (++i) {
