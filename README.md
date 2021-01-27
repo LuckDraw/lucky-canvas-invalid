@@ -45,15 +45,15 @@
 
 <br />
 
-- 在 js / jq 中使用 [lucky-canvas](https://github.com/luckdraw/lucky-canvas)
+- **在 js / jq 中使用 [lucky-canvas](https://github.com/luckdraw/lucky-canvas)**
 
-- 在 vue2.x / vue3.x 中使用 [vue-luck-draw](https://github.com/luckdraw/vue-luck-draw)
+- **在 vue2.x / vue3.x 中使用 [vue-luck-draw](https://github.com/luckdraw/vue-luck-draw)**
 
-- 在 react 中使用 [react-luck-draw](https://github.com/luckdraw/react-luck-draw)
+- **在 react 中使用 [react-luck-draw](https://github.com/luckdraw/react-luck-draw)**
 
-- 在 uni-app 中使用 [uni-luck-draw](https://github.com/luckdraw/uni-luck-draw)
+- **在 uni-app 中使用 [uni-luck-draw](https://github.com/luckdraw/uni-luck-draw)**
 
-- 在 微信小程序 中使用 [mini-luck-draw](https://github.com/luckdraw/mini-luck-draw)
+- **在 微信小程序 中使用 [mini-luck-draw](https://github.com/luckdraw/mini-luck-draw)**
 
 
 <br />
