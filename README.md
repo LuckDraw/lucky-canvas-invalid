@@ -16,7 +16,7 @@
       <img src="https://img.shields.io/github/forks/luckdraw/lucky-canvas?color=%23ffca28&logo=github&style=flat-square" alt="forks" />
     </a>
     <a href="https://www.npmjs.com/package/lucky-canvas" target="_black">
-      <img src="https://img.shields.io/github/package-json/v/luckdraw/lucky-canvas?color=%23ffca28&logo=npm&style=flat-square" alt="version" />
+      <img src="https://img.shields.io/npm/v/lucky-canvas?color=%23ffca28&logo=npm&style=flat-square" alt="version" />
     </a>
     <a href="https://www.npmjs.com/package/lucky-canvas" target="_black">
       <img src="https://img.shields.io/npm/dm/lucky-canvas?color=%23ffca28&logo=npm&style=flat-square" alt="downloads" />
