@@ -43,6 +43,7 @@
 
 > **English**：**If anyone can help translate the document, please contact me** `ldq404@qq.com`
 
+<br />
 
 - 在 js / jq 中使用 [lucky-canvas](https://github.com/luckdraw/lucky-canvas)
 
