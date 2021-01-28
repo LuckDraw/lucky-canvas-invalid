@@ -437,7 +437,7 @@ export default class LuckyWheel extends Lucky {
     // 再次拦截, 因为play是可以异步调用的
     if (this.startTime) return
     this.startTime = Date.now()
-    this.prizeFlag = undefined
+    this.prizeFlag = void 0
     this.run()
   }
 

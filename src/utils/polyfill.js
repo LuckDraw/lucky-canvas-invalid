@@ -50,7 +50,7 @@ if (!Array.prototype.find) {
         k++;
       }
       // 7. Return undefined.
-      return undefined;
+      return void 0;
     }
   });
 }

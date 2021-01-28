@@ -504,7 +504,7 @@ export default class LuckyGrid extends Lucky {
     if (this.startTime) return
     clearInterval(this.timer)
     this.startTime = Date.now()
-    this.prizeFlag = undefined
+    this.prizeFlag = void 0
     this.run()
   }
 
@@ -524,7 +524,7 @@ export default class LuckyGrid extends Lucky {
     const { rAF, currIndex, prizes, prizeFlag, startTime, _defaultConfig } = this
     let interval = Date.now() - startTime
     // 先完全旋转, 再停止
-    if (interval >= _defaultConfig.accelerationTime && prizeFlag !== undefined) {
+    if (interval >= _defaultConfig.accelerationTime && prizeFlag !== void 0) {
       // 记录帧率
       this.FPS = interval / num
       // 记录开始停止的时间戳
