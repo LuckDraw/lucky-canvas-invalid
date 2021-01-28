@@ -3,7 +3,36 @@
   "version": "1.4.3",
   "description": "一个基于原生 js 的（大转盘抽奖 / 九宫格抽奖）插件",
   "main": "index.js",
-  "dependencies": {},
+  "scripts": {
+    "dev": "rollup --config rollup.config.dev.js -w",
+    "build": "rollup --config rollup.config.build.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/LuckDraw/lucky-canvas.git"
+  },
+  "keywords": [
+    "vue3抽奖",
+    "大转盘抽奖",
+    "九宫格抽奖",
+    "抽奖插件",
+    "js抽奖",
+    "移动端抽奖",
+    "canvas抽奖"
+  ],
+  "author": "ldq <ldq404@qq.com>",
+  "license": "BSD-3-Clause",
+  "bugs": {
+    "url": "https://github.com/LuckDraw/lucky-canvas/issues"
+  },
+  "homepage": "https://100px.net",
+  "files": [
+    "package.json",
+    "LICENSE",
+    "dist",
+    "index.js",
+    "umd.min.js"
+  ],
   "devDependencies": {
     "@babel/core": "^7.12.3",
     "@babel/preset-env": "^7.12.1",
@@ -27,27 +56,5 @@
     "tslib": "^2.0.3",
     "typescript": "^4.0.5"
   },
-  "scripts": {
-    "dev": "rollup --config rollup.config.dev.js -w",
-    "build": "rollup --config rollup.config.build.js"
-  },
-  "keywords": [
-    "vue3抽奖",
-    "大转盘抽奖",
-    "九宫格抽奖",
-    "抽奖插件",
-    "js抽奖",
-    "移动端抽奖",
-    "canvas抽奖"
-  ],
-  "author": "ldq <ldq404@qq.com>",
-  "license": "BSD-3-Clause",
-  "files": [
-    "package.json",
-    "LICENSE",
-    "dist",
-    "index.js",
-    "umd.min.js"
-  ],
-  "homepage": "https://100px.net"
+  "dependencies": {}
 }
