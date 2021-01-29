@@ -11,6 +11,7 @@ export default class Lucky {
   protected readonly ctx: CanvasRenderingContext2D
   protected htmlFontSize: number = 16
   protected rAF: Function = function () {}
+  private count: number = 0
 
   /**
    * 公共构造器
@@ -58,8 +59,7 @@ export default class Lucky {
       config.canvasElement.setAttribute('package', `${name}@${version}`)
       config.canvasElement.addEventListener('click', e => {
         this.handleClick(e)
-        count++ === 0 && setTimeout(() => count = 0, 1000)
-        count === 7 && this.drawEasterEggs(e)
+        this.drawEasterEggs(e.offsetX, e.offsetY)
       })
     }
     this.ctx = config.ctx as CanvasRenderingContext2D
@@ -88,9 +88,11 @@ export default class Lucky {
     return [0, 0]
   }
 
-  protected drawEasterEggs (e: MouseEvent) {
+  protected drawEasterEggs (offsetX: number, offsetY: number): void {
+    this.count++ === 0 && setTimeout(() => this.count = 0, 1000)
+    if (this.count !== 7) return
     const { ctx, rAF } = this
-    const [x, y] = this.conversionAxis(e.offsetX, e.offsetY)
+    const [x, y] = this.conversionAxis(offsetX, offsetY)
     const _this = this
     let balls = getEnoughBall(ctx, x, y, 50)
     let easing = 0.1
@@ -108,6 +110,7 @@ export default class Lucky {
         item.sx += -item.sx * easing
         item.sy += -item.sy * easing
       }
+      (ctx as any).draw?.(true)
     })()
   }
 

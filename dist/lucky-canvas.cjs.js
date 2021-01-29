@@ -148,7 +148,7 @@ if (!Array.prototype.find) {
       } // 7. Return undefined.
 
 
-      return undefined;
+      return void 0;
     }
   });
 }
@@ -309,7 +309,7 @@ var Ball = /** @class */ (function () {
 }());
 
 var name = "lucky-canvas";
-var version = "1.4.3";
+var version = "1.4.4";
 
 var Dep = /** @class */ (function () {
     /**
@@ -557,6 +557,7 @@ var Lucky = /** @class */ (function () {
         var _this_1 = this;
         this.htmlFontSize = 16;
         this.rAF = function () { };
+        this.count = 0;
         // 先初始化 fontSize 以防后面有 rem 单位
         this.setHTMLFontSize();
         /* eslint-disable */
@@ -597,14 +598,12 @@ var Lucky = /** @class */ (function () {
             config.divElement.style.height = config.height + 'px';
         }
         if (config.canvasElement) {
-            var count_1 = 0;
             config.ctx = config.canvasElement.getContext('2d');
             // 添加版本信息到标签上, 方便定位版本问题
             config.canvasElement.setAttribute('package', name + "@" + version);
             config.canvasElement.addEventListener('click', function (e) {
                 _this_1.handleClick(e);
-                count_1++ === 0 && setTimeout(function () { return count_1 = 0; }, 1000);
-                count_1 === 7 && _this_1.drawEasterEggs(e);
+                _this_1.drawEasterEggs(e.offsetX, e.offsetY);
             });
         }
         this.ctx = config.ctx;
@@ -629,14 +628,19 @@ var Lucky = /** @class */ (function () {
     Lucky.prototype.conversionAxis = function (x, y) {
         return [0, 0];
     };
-    Lucky.prototype.drawEasterEggs = function (e) {
+    Lucky.prototype.drawEasterEggs = function (offsetX, offsetY) {
+        var _this_1 = this;
+        this.count++ === 0 && setTimeout(function () { return _this_1.count = 0; }, 1000);
+        if (this.count !== 7)
+            return;
         var _a = this, ctx = _a.ctx, rAF = _a.rAF;
-        var _b = this.conversionAxis(e.offsetX, e.offsetY), x = _b[0], y = _b[1];
+        var _b = this.conversionAxis(offsetX, offsetY), x = _b[0], y = _b[1];
         var _this = this;
         var balls = getEnoughBall(ctx, x, y, 50);
         var easing = 0.1;
         var num = 0;
         (function animation() {
+            var _a, _b;
             if (num++ > 60)
                 return;
             rAF(animation);
@@ -651,6 +655,7 @@ var Lucky = /** @class */ (function () {
                 item.sx += -item.sx * easing;
                 item.sy += -item.sy * easing;
             }
+            (_b = (_a = ctx).draw) === null || _b === void 0 ? void 0 : _b.call(_a, true);
         })();
     };
     /**
@@ -1549,7 +1554,7 @@ var LuckyWheel = /** @class */ (function (_super) {
         if (this.startTime)
             return;
         this.startTime = Date.now();
-        this.prizeFlag = undefined;
+        this.prizeFlag = void 0;
         this.run();
     };
     /**
@@ -2107,7 +2112,7 @@ var LuckyGrid = /** @class */ (function (_super) {
             return;
         clearInterval(this.timer);
         this.startTime = Date.now();
-        this.prizeFlag = undefined;
+        this.prizeFlag = void 0;
         this.run();
     };
     /**
@@ -2126,7 +2131,7 @@ var LuckyGrid = /** @class */ (function (_super) {
         var _a = this, rAF = _a.rAF, currIndex = _a.currIndex, prizes = _a.prizes, prizeFlag = _a.prizeFlag, startTime = _a.startTime, _defaultConfig = _a._defaultConfig;
         var interval = Date.now() - startTime;
         // 先完全旋转, 再停止
-        if (interval >= _defaultConfig.accelerationTime && prizeFlag !== undefined) {
+        if (interval >= _defaultConfig.accelerationTime && prizeFlag !== void 0) {
             // 记录帧率
             this.FPS = interval / num;
             // 记录开始停止的时间戳
