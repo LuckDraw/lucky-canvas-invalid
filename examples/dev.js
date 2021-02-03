@@ -313,7 +313,7 @@
     }());
 
     var name = "lucky-canvas";
-    var version = "1.4.4";
+    var version = "1.5.0";
 
     var Dep = /** @class */ (function () {
         /**
@@ -632,8 +632,9 @@
         Lucky.prototype.conversionAxis = function (x, y) {
             return [0, 0];
         };
-        Lucky.prototype.drawEasterEggs = function (offsetX, offsetY) {
+        Lucky.prototype.drawEasterEggs = function (offsetX, offsetY, cb) {
             var _this_1 = this;
+            if (cb === void 0) { cb = function () { }; }
             this.count++ === 0 && setTimeout(function () { return _this_1.count = 0; }, 1000);
             if (this.count !== 7)
                 return;
@@ -644,7 +645,6 @@
             var easing = 0.1;
             var num = 0;
             (function animation() {
-                var _a, _b;
                 if (num++ > 60)
                     return;
                 rAF(animation);
@@ -659,7 +659,7 @@
                     item.sx += -item.sx * easing;
                     item.sy += -item.sy * easing;
                 }
-                (_b = (_a = ctx).draw) === null || _b === void 0 ? void 0 : _b.call(_a, true);
+                cb.call(_this);
             })();
         };
         /**
@@ -761,11 +761,11 @@
          */
         Lucky.prototype.drawImage = function (imgObj, xAxis, yAxis, width, height) {
             var drawImg, _a = this, config = _a.config, ctx = _a.ctx;
-            if (['WEB', 'MINI-WX'].includes(config.flag)) {
+            if (['WEB', 'MP-WX'].includes(config.flag)) {
                 // 浏览器中直接绘制标签即可
                 drawImg = imgObj;
             }
-            else if (['UNI-H5', 'UNI-MINI-WX'].includes(config.flag)) {
+            else if (['UNI-H5', 'UNI-MP-WX', 'TARO-H5', 'TARO-MP-WX'].includes(config.flag)) {
                 // 小程序中直接绘制一个路径
                 drawImg = imgObj.path;
             }
@@ -923,11 +923,11 @@
         }
         ctx.lineTo(x1, y1);
         // 微信小程序下 arcTo 在安卓真机下绘制有 bug
-        if (['WEB', 'UNI-H5'].includes(flag)) {
-            ctx.arcTo(x0, y0, x2, y2, r);
+        if (flag.indexOf('MP-WX') > 0) {
+            ctx.quadraticCurveTo(x0, y0, x2, y2);
         }
         else {
-            ctx.quadraticCurveTo(x0, y0, x2, y2);
+            ctx.arcTo(x0, y0, x2, y2, r);
         }
     };
     // 绘制扇形

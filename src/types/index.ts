@@ -23,7 +23,8 @@ export interface ConfigType {
   nodeType: number
   // 配置
   ob?: boolean
-  flag: 'WEB' | 'MINI-WX' | 'UNI-H5' | 'UNI-MINI-WX'
+  // flag: 'WEB' | 'MINI-WX' | 'UNI-H5' | 'UNI-MINI-WX'
+  flag: 'WEB' | 'MP-WX' | 'UNI-H5' | 'UNI-MP' | 'TARO-H5' | 'TARO-MP'
   el?: string
   divElement?: HTMLDivElement
   canvasElement?: HTMLCanvasElement

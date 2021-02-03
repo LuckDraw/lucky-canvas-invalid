@@ -88,7 +88,7 @@ export default class Lucky {
     return [0, 0]
   }
 
-  protected drawEasterEggs (offsetX: number, offsetY: number): void {
+  protected drawEasterEggs (offsetX: number, offsetY: number, cb = () => {}): void {
     this.count++ === 0 && setTimeout(() => this.count = 0, 1000)
     if (this.count !== 7) return
     const { ctx, rAF } = this
@@ -110,7 +110,7 @@ export default class Lucky {
         item.sx += -item.sx * easing
         item.sy += -item.sy * easing
       }
-      (ctx as any).draw?.(true)
+      cb.call(_this)
     })()
   }
 
@@ -222,10 +222,10 @@ export default class Lucky {
     height: number
   ): void {
     let drawImg, { config, ctx } = this
-    if (['WEB', 'MINI-WX'].includes(config.flag)) {
+    if (['WEB', 'MP-WX'].includes(config.flag)) {
       // 浏览器中直接绘制标签即可
       drawImg = imgObj
-    } else if (['UNI-H5', 'UNI-MINI-WX'].includes(config.flag)) {
+    } else if (['UNI-H5', 'UNI-MP', 'TARO-H5', 'TARO-MP'].includes(config.flag)) {
       // 小程序中直接绘制一个路径
       drawImg = (imgObj as UniImageType).path
     }

@@ -72,10 +72,10 @@ export const drawRadian = (
   }
   ctx.lineTo(x1, y1)
   // 微信小程序下 arcTo 在安卓真机下绘制有 bug
-  if (['WEB', 'UNI-H5'].includes(flag)) {
-    ctx.arcTo(x0, y0, x2, y2, r)
-  } else {
+  if (flag.indexOf('MP') > 0) {
     ctx.quadraticCurveTo(x0, y0, x2, y2)
+  } else {
+    ctx.arcTo(x0, y0, x2, y2, r)
   }
 }
 
