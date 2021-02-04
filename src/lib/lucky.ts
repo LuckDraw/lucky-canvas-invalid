@@ -1,6 +1,5 @@
 import '../utils/polyfill'
 import { isExpectType } from '../utils/index'
-import { getEnoughBall } from '../utils/egg'
 import { name, version } from '../../package.json'
 import { ConfigType, ImgType, UniImageType } from '../types/index'
 import { defineReactive } from '../observer'
@@ -11,7 +10,6 @@ export default class Lucky {
   protected readonly ctx: CanvasRenderingContext2D
   protected htmlFontSize: number = 16
   protected rAF: Function = function () {}
-  private count: number = 0
 
   /**
    * 公共构造器
@@ -53,13 +51,11 @@ export default class Lucky {
       config.divElement.style.height = config.height + 'px'
     }
     if (config.canvasElement) {
-      let count = 0
       config.ctx = config.canvasElement.getContext('2d')!
       // 添加版本信息到标签上, 方便定位版本问题
       config.canvasElement.setAttribute('package', `${name}@${version}`)
       config.canvasElement.addEventListener('click', e => {
         this.handleClick(e)
-        this.drawEasterEggs(e.offsetX, e.offsetY)
       })
     }
     this.ctx = config.ctx as CanvasRenderingContext2D
@@ -77,41 +73,10 @@ export default class Lucky {
   protected handleClick (e: MouseEvent): void {}
 
   /**
-   * 绘制
-   */
-  protected draw (): void {}
-
-  /**
    * 换算坐标
    */
   protected conversionAxis (x: number, y: number): [number, number] {
     return [0, 0]
-  }
-
-  protected drawEasterEggs (offsetX: number, offsetY: number, cb = () => {}): void {
-    this.count++ === 0 && setTimeout(() => this.count = 0, 1000)
-    if (this.count !== 7) return
-    const { ctx, rAF } = this
-    const [x, y] = this.conversionAxis(offsetX, offsetY)
-    const _this = this
-    let balls = getEnoughBall(ctx, x, y, 50)
-    let easing = 0.1
-    let num = 0
-    ;(function animation() {
-      if (num++ > 60) return
-      rAF(animation)
-      _this.draw()
-      for (let item of balls) {
-        item.draw('fill')
-        item.vx = (item.dx - item.x) * easing
-        item.vy = (item.dy - item.y) * easing
-        item.x += item.vx
-        item.y += item.vy
-        item.sx += -item.sx * easing
-        item.sy += -item.sy * easing
-      }
-      cb.call(_this)
-    })()
   }
 
   /**

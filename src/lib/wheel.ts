@@ -160,9 +160,9 @@ export default class LuckyWheel extends Lucky {
     this.setDpr()
     this.setHTMLFontSize()
     this.zoomCanvas()
+    this.Radius = Math.min(config.width, config.height) / 2
     // 初始化前回调函数
     config.beforeInit?.call(this)
-    this.Radius = Math.min(config.width, config.height) / 2
     ctx.translate(this.Radius, this.Radius)
     // 先画一次防止闪烁
     this.draw()
@@ -175,10 +175,8 @@ export default class LuckyWheel extends Lucky {
         btnImgs: 'buttons',
       }[imgName] as 'blocks' | 'prizes' | 'buttons'
       const willUpdate = willUpdateImgs[imgName]
-      if (!willUpdate) return
-      willUpdate.forEach((imgs, cellIndex) => {
-        if (!imgs) return
-        imgs.forEach((imgInfo, imgIndex) => {
+      willUpdate && willUpdate.forEach((imgs, cellIndex) => {
+        imgs && imgs.forEach((imgInfo, imgIndex) => {
           this.loadAndCacheImg(cellName, cellIndex, imgName, imgIndex, () => {
             this.draw()
           })

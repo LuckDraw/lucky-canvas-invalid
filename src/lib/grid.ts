@@ -219,10 +219,8 @@ export default class LuckyGrid extends Lucky {
         prizeImgs: 'prizes',
         btnImgs: 'buttons',
       }[imgName] as 'blocks' | 'prizes' | 'buttons'
-      if (!willUpdate) return
-      willUpdate.forEach((imgs, cellIndex) => {
-        if (!imgs) return
-        imgs.forEach((imgInfo, imgIndex) => {
+      willUpdate && willUpdate.forEach((imgs, cellIndex) => {
+        imgs && imgs.forEach((imgInfo, imgIndex) => {
           this.loadAndCacheImg(cellName, cellIndex, imgName, imgIndex, () => {
             this.draw()
           })
