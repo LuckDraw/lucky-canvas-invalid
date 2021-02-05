@@ -95,7 +95,10 @@
 
 <br />
 
-## 其余推荐开源项目
+### **如果您觉得这个项目还不错, 可以在 [Github](https://github.com/LuckDraw/lucky-canvas) 上面帮我点个`star` ☜(ﾟヮﾟ☜)**
+
+<br />
+
+## 推荐的开源项目
 
 - [🎁 h5-Dooring 一款功能强大，高可扩展的H5可视化编辑器](https://github.com/MrXujiang/h5-Dooring)
-
