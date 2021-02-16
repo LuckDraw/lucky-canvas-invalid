@@ -219,7 +219,8 @@
      * @return { object } block 边框信息
      */
     var computePadding = function (block) {
-        var padding = block.padding.replace(/px/g, '').split(' ').map(function (n) { return ~~n; }) || [0], paddingTop = 0, paddingBottom = 0, paddingLeft = 0, paddingRight = 0;
+        var _a;
+        var padding = ((_a = block.padding) === null || _a === void 0 ? void 0 : _a.replace(/px/g, '').split(' ').map(function (n) { return ~~n; })) || [0], paddingTop = 0, paddingBottom = 0, paddingLeft = 0, paddingRight = 0;
         switch (padding.length) {
             case 1:
                 paddingTop = paddingBottom = paddingLeft = paddingRight = padding[0];
@@ -249,68 +250,6 @@
         }
         return [paddingTop, paddingBottom, paddingLeft, paddingRight];
     };
-
-    var innerRadius = 1;
-    var moreOutterRadius = 100;
-    var minRadius = 1;
-    var maxRadius = 10;
-    var mcolor = [
-        '#409EFF',
-        '#67C23A',
-        '#E6A23C',
-        '#F56C6C',
-        '#909399',
-    ];
-    /**
-     * 随机生成一堆扩散的小球
-     */
-    function getEnoughBall(ctx, mouseX, mouseY, num) {
-        var balls = [];
-        for (var i = 0; i < num; i++) {
-            var radius = Math.random() * (maxRadius - minRadius) + minRadius;
-            var ball = new Ball(ctx, 0, 0, radius, mcolor[Math.random() * mcolor.length >> 0]);
-            ball.x = mouseX + Math.random() * innerRadius - Math.random() * innerRadius;
-            ball.y = mouseY + Math.random() * innerRadius - Math.random() * innerRadius;
-            var x = mouseX - ball.x;
-            var y = mouseY - ball.y;
-            var scale = Math.abs(x / y);
-            ball.dx = (x < 0 ? 1 : -1) * moreOutterRadius / Math.sqrt(scale * scale + 1) * Math.random() * scale + mouseX;
-            ball.dy = (y < 0 ? 1 : -1) * moreOutterRadius / Math.sqrt(scale * scale + 1) * Math.random() + mouseY;
-            balls.push(ball);
-        }
-        return balls;
-    }
-    var Ball = /** @class */ (function () {
-        function Ball(ctx, x, y, radius, color) {
-            this.dx = 0;
-            this.dy = 0;
-            this.ctx = ctx;
-            this.x = x || 0;
-            this.y = y || 0;
-            this.vx = 0;
-            this.vy = 0;
-            this.sx = 1;
-            this.sy = 1;
-            this.radius = radius || 10;
-            this.color = color || 'black';
-        }
-        Ball.prototype.draw = function (type) {
-            if (!['fill', 'stroke'].includes(type))
-                return;
-            var ctx = this.ctx;
-            ctx.save();
-            ctx.translate(this.x, this.y);
-            ctx.scale(this.sx, this.sy);
-            ctx.fillStyle = this.color;
-            ctx.strokeStyle = this.color;
-            ctx.beginPath();
-            ctx.arc(0, 0, this.radius, 0, 360 * Math.PI / 180);
-            ctx.closePath();
-            type === 'fill' ? ctx.fill() : ctx.stroke();
-            ctx.restore();
-        };
-        return Ball;
-    }());
 
     var name = "lucky-canvas";
     var version = "1.5.0";
@@ -558,10 +497,9 @@
          * @param config
          */
         function Lucky(config) {
-            var _this_1 = this;
+            var _this = this;
             this.htmlFontSize = 16;
             this.rAF = function () { };
-            this.count = 0;
             // 先初始化 fontSize 以防后面有 rem 单位
             this.setHTMLFontSize();
             /* eslint-disable */
@@ -605,10 +543,10 @@
                 config.ctx = config.canvasElement.getContext('2d');
                 // 添加版本信息到标签上, 方便定位版本问题
                 config.canvasElement.setAttribute('package', name + "@" + version);
-                config.canvasElement.addEventListener('click', function (e) {
-                    _this_1.handleClick(e);
-                    _this_1.drawEasterEggs(e.offsetX, e.offsetY);
-                });
+                config.canvasElement.addEventListener('click', function (e) { return _this.handleClick(e); });
+                config.canvasElement.addEventListener('mousemove', function (e) { return _this.handleMouseMove(e); });
+                config.canvasElement.addEventListener('mousedown', function (e) { return _this.handleMouseDown(e); });
+                config.canvasElement.addEventListener('mouseup', function (e) { return _this.handleMouseUp(e); });
             }
             this.ctx = config.ctx;
             // 如果最后得不到 canvas 上下文那就无法进行绘制
@@ -618,49 +556,30 @@
             }
         }
         /**
-         * 点击事件
+         * 鼠标点击事件
          * @param e 事件参数
          */
         Lucky.prototype.handleClick = function (e) { };
         /**
-         * 绘制
+         * 鼠标按下事件
+         * @param e 事件参数
          */
-        Lucky.prototype.draw = function () { };
+        Lucky.prototype.handleMouseDown = function (e) { };
+        /**
+         * 鼠标抬起事件
+         * @param e 事件参数
+         */
+        Lucky.prototype.handleMouseUp = function (e) { };
+        /**
+         * 鼠标移动事件
+         * @param e 事件参数
+         */
+        Lucky.prototype.handleMouseMove = function (e) { };
         /**
          * 换算坐标
          */
         Lucky.prototype.conversionAxis = function (x, y) {
             return [0, 0];
-        };
-        Lucky.prototype.drawEasterEggs = function (offsetX, offsetY, cb) {
-            var _this_1 = this;
-            if (cb === void 0) { cb = function () { }; }
-            this.count++ === 0 && setTimeout(function () { return _this_1.count = 0; }, 1000);
-            if (this.count !== 7)
-                return;
-            var _a = this, ctx = _a.ctx, rAF = _a.rAF;
-            var _b = this.conversionAxis(offsetX, offsetY), x = _b[0], y = _b[1];
-            var _this = this;
-            var balls = getEnoughBall(ctx, x, y, 50);
-            var easing = 0.1;
-            var num = 0;
-            (function animation() {
-                if (num++ > 60)
-                    return;
-                rAF(animation);
-                _this.draw();
-                for (var _i = 0, balls_1 = balls; _i < balls_1.length; _i++) {
-                    var item = balls_1[_i];
-                    item.draw('fill');
-                    item.vx = (item.dx - item.x) * easing;
-                    item.vy = (item.dy - item.y) * easing;
-                    item.x += item.vx;
-                    item.y += item.vy;
-                    item.sx += -item.sx * easing;
-                    item.sy += -item.sy * easing;
-                }
-                cb.call(_this);
-            })();
         };
         /**
          * 设备像素比
@@ -733,12 +652,12 @@
          * @param info 图片信息
          */
         Lucky.prototype.loadImg = function (src, info, resolveName) {
-            var _this_1 = this;
+            var _this = this;
             if (resolveName === void 0) { resolveName = '$resolve'; }
             return new Promise(function (resolve, reject) {
                 if (!src)
                     reject("=> '" + info.src + "' \u4E0D\u80FD\u4E3A\u7A7A\u6216\u4E0D\u5408\u6CD5");
-                if (_this_1.config.flag === 'WEB') {
+                if (_this.config.flag === 'WEB') {
                     var imgObj_1 = new Image();
                     imgObj_1.src = src;
                     imgObj_1.onload = function () { return resolve(imgObj_1); };
@@ -765,7 +684,7 @@
                 // 浏览器中直接绘制标签即可
                 drawImg = imgObj;
             }
-            else if (['UNI-H5', 'UNI-MP-WX', 'TARO-H5', 'TARO-MP-WX'].includes(config.flag)) {
+            else if (['UNI-H5', 'UNI-MP', 'TARO-H5', 'TARO-MP'].includes(config.flag)) {
                 // 小程序中直接绘制一个路径
                 drawImg = imgObj.path;
             }
@@ -790,18 +709,18 @@
          * @return { number } 返回新的字符串
          */
         Lucky.prototype.changeUnits = function (value, denominator) {
-            var _this_1 = this;
+            var _this = this;
             if (denominator === void 0) { denominator = 1; }
             return Number(value.replace(/^([-]*[0-9.]*)([a-z%]*)$/, function (value, num, unit) {
                 var unitFunc = {
                     '%': function (n) { return n * (denominator / 100); },
                     'px': function (n) { return n * 1; },
-                    'rem': function (n) { return n * _this_1.htmlFontSize; },
+                    'rem': function (n) { return n * _this.htmlFontSize; },
                 }[unit];
                 if (unitFunc)
                     return unitFunc(num);
                 // 如果找不到默认单位, 就交给外面处理
-                var otherUnitFunc = _this_1.config.unitFunc;
+                var otherUnitFunc = _this.config.unitFunc;
                 return otherUnitFunc ? otherUnitFunc(num, unit) : num;
             }));
         };
@@ -823,10 +742,10 @@
          * @param callback 回调函数
          */
         Lucky.prototype.$computed = function (data, key, callback) {
-            var _this_1 = this;
+            var _this = this;
             Object.defineProperty(data, key, {
                 get: function () {
-                    return callback.call(_this_1);
+                    return callback.call(_this);
                 }
             });
         };
@@ -923,7 +842,7 @@
         }
         ctx.lineTo(x1, y1);
         // 微信小程序下 arcTo 在安卓真机下绘制有 bug
-        if (flag.indexOf('MP-WX') > 0) {
+        if (flag.indexOf('MP') > 0) {
             ctx.quadraticCurveTo(x0, y0, x2, y2);
         }
         else {
@@ -1281,9 +1200,9 @@
             this.setDpr();
             this.setHTMLFontSize();
             this.zoomCanvas();
+            this.Radius = Math.min(config.width, config.height) / 2;
             // 初始化前回调函数
             (_a = config.beforeInit) === null || _a === void 0 ? void 0 : _a.call(this);
-            this.Radius = Math.min(config.width, config.height) / 2;
             ctx.translate(this.Radius, this.Radius);
             // 先画一次防止闪烁
             this.draw();
@@ -1296,12 +1215,8 @@
                     btnImgs: 'buttons',
                 }[imgName];
                 var willUpdate = willUpdateImgs[imgName];
-                if (!willUpdate)
-                    return;
-                willUpdate.forEach(function (imgs, cellIndex) {
-                    if (!imgs)
-                        return;
-                    imgs.forEach(function (imgInfo, imgIndex) {
+                willUpdate && willUpdate.forEach(function (imgs, cellIndex) {
+                    imgs && imgs.forEach(function (imgInfo, imgIndex) {
                         _this.loadAndCacheImg(cellName, cellIndex, imgName, imgIndex, function () {
                             _this.draw();
                         });
@@ -1840,12 +1755,8 @@
                     prizeImgs: 'prizes',
                     btnImgs: 'buttons',
                 }[imgName];
-                if (!willUpdate)
-                    return;
-                willUpdate.forEach(function (imgs, cellIndex) {
-                    if (!imgs)
-                        return;
-                    imgs.forEach(function (imgInfo, imgIndex) {
+                willUpdate && willUpdate.forEach(function (imgs, cellIndex) {
+                    imgs && imgs.forEach(function (imgInfo, imgIndex) {
                         _this.loadAndCacheImg(cellName, cellIndex, imgName, imgIndex, function () {
                             _this.draw();
                         });
@@ -1971,7 +1882,7 @@
             // 计算获取奖品区域的几何信息
             this.prizeArea = this.blocks.reduce(function (_a, block) {
                 var x = _a.x, y = _a.y, w = _a.w, h = _a.h;
-                var _b = computePadding(block).map(function (n) { return ~~n; }), paddingTop = _b[0], paddingBottom = _b[1], paddingLeft = _b[2], paddingRight = _b[3];
+                var _b = computePadding(block), paddingTop = _b[0], paddingBottom = _b[1], paddingLeft = _b[2], paddingRight = _b[3];
                 var r = block.borderRadius ? _this.getLength(block.borderRadius) : 0;
                 // 绘制边框
                 var background = block.background || _defaultStyle.background;
@@ -2251,6 +2162,114 @@
         return LuckyGrid;
     }(Lucky));
 
+    var LuckyCard = /** @class */ (function (_super) {
+        __extends(LuckyCard, _super);
+        /**
+         * 刮刮乐构造器
+         * @param config
+         * @param data
+         */
+        function LuckyCard(config, data) {
+            if (data === void 0) { data = {}; }
+            var _this = _super.call(this, config) || this;
+            _this.blocks = [];
+            _this.prizes = [];
+            // 鼠标是否按下
+            _this.isMouseDown = false;
+            _this.prevCanvas = '';
+            // 奖品区域几何信息
+            _this.prizeArea = {
+                x: 0, y: 0, w: 0, h: 0
+            };
+            _this.initData(data);
+            _this.init();
+            return _this;
+        }
+        LuckyCard.prototype.initData = function (data) {
+            this.$set(this, 'blocks', data.blocks || []);
+            this.$set(this, 'prizes', data.prizes || []);
+        };
+        LuckyCard.prototype.init = function () {
+            var _a = this; _a.config; _a.ctx;
+            this.setDpr();
+            this.setHTMLFontSize();
+            this.zoomCanvas();
+            this.draw();
+        };
+        LuckyCard.prototype.draw = function () {
+            var _this = this;
+            var _a = this, config = _a.config, ctx = _a.ctx;
+            ctx.globalCompositeOperation = 'source-over';
+            // 计算奖品区域
+            this.prizeArea = this.blocks.reduce(function (_a, block) {
+                var x = _a.x, y = _a.y, w = _a.w, h = _a.h;
+                var _b = computePadding(block), paddingTop = _b[0], paddingBottom = _b[1], paddingLeft = _b[2], paddingRight = _b[3];
+                var r = block.borderRadius ? _this.getLength(block.borderRadius) : 0;
+                // 绘制边框
+                var background = block.background || '';
+                if (hasBackground(background)) {
+                    drawRoundRect(ctx, x, y, w, h, r, background);
+                }
+                return {
+                    x: x + paddingLeft,
+                    y: y + paddingTop,
+                    w: w - paddingLeft - paddingRight,
+                    h: h - paddingTop - paddingBottom
+                };
+            }, { x: 0, y: 0, w: config.width, h: config.height });
+            // 开始绘制奖品
+            this.prizes.forEach(function (prize, prizeIndex) {
+                var _a = _this.prizeArea, x = _a.x, y = _a.y, w = _a.w, h = _a.h;
+                var background = prize.background || '';
+                if (hasBackground(background)) {
+                    drawRoundRect(ctx, x, y, w, h, 0, background);
+                }
+            });
+            ctx.globalCompositeOperation = 'destination-out';
+        };
+        /**
+         * 鼠标移动事件
+         * @param e 事件参数
+         */
+        LuckyCard.prototype.handleMouseMove = function (e) {
+            if (!this.isMouseDown)
+                return;
+            var ctx = this.ctx;
+            ctx.beginPath();
+            var radius = 20;
+            var _a = this.conversionAxis(e.offsetX, e.offsetY), x = _a[0], y = _a[1];
+            // ctx.clearRect(x - radius, y - radius, radius * 2, radius * 2)
+            drawRoundRect(ctx, x - radius, y - radius, radius * 2, radius * 2, 15, '#ccc');
+            ctx.fill();
+            console.log(x, y);
+        };
+        /**
+         * 鼠标按下事件
+         * @param e 事件参数
+         */
+        LuckyCard.prototype.handleMouseDown = function (e) {
+            this.isMouseDown = true;
+        };
+        /**
+         * 鼠标抬起事件
+         * @param e 事件参数
+         */
+        LuckyCard.prototype.handleMouseUp = function (e) {
+            this.isMouseDown = false;
+        };
+        /**
+         * 换算渲染坐标
+         * @param x
+         * @param y
+         */
+        LuckyCard.prototype.conversionAxis = function (x, y) {
+            var config = this.config;
+            return [x / config.dpr, y / config.dpr];
+        };
+        return LuckyCard;
+    }(Lucky));
+
+    exports.LuckyCard = LuckyCard;
     exports.LuckyGrid = LuckyGrid;
     exports.LuckyWheel = LuckyWheel;
 

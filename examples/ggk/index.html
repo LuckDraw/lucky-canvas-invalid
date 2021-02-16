@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<body>
+  <div id="my-lucky"></div>
+  <script src="../dev.js"></script>
+  <script>
+    var $lucky = new LuckyCanvas.LuckyCard({
+      el: '#my-lucky',
+      width: '500px',
+      height: '300px'
+    }, {
+      masks: [{
+        x: 0, y: 0, width: '100%', height: '100%',
+        background: '#ccc',
+        fonts: [{
+          text: '刮奖区'
+        }],
+        imgs: [{
+
+        }]
+      }]
+    })
+  </script>
+</body>
+</html>
