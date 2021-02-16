@@ -277,7 +277,7 @@ export default class LuckyWheel extends Lucky {
     this.prizeRadius = this.blocks.reduce((radius, block, blockIndex) => {
       if (hasBackground(block.background)) {
         ctx.beginPath()
-        ctx.fillStyle = block.background
+        ctx.fillStyle = block.background!
         ctx.arc(0, 0, radius, 0, Math.PI * 2, false)
         ctx.fill()
       }

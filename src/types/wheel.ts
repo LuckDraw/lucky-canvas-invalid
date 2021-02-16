@@ -1,4 +1,8 @@
-import { FontType, ImgType } from './index'
+import {
+  FontType,
+  ImgType,
+  backgroundType
+} from './index'
 
 export interface PrizeFontType extends FontType {
   wordWrap?: boolean
@@ -16,13 +20,13 @@ export interface PrizeImgType extends ImgType {}
 export interface ButtonImgType extends ImgType {}
 
 export interface BlockType {
-  background: string
-  padding: string
+  padding?: string
+  background?: backgroundType
   imgs?: Array<BlockImgType>
 }
 
 export interface PrizeType {
-  background?: string
+  background?: backgroundType
   fonts?: Array<PrizeFontType>
   imgs?: Array<PrizeImgType>
 }
@@ -30,7 +34,7 @@ export interface PrizeType {
 export interface ButtonType {
   radius?: string
   pointer?: boolean
-  background?: string
+  background?: backgroundType
   fonts?: Array<ButtonFontType>
   imgs?: Array<ButtonImgType>
 }
@@ -46,7 +50,7 @@ export interface DefaultConfigType {
 }
 
 export interface DefaultStyleType {
-  background?: string
+  background?: backgroundType
   fontColor?: PrizeFontType['fontColor']
   fontSize?: PrizeFontType['fontSize']
   fontStyle?: PrizeFontType['fontStyle']

@@ -54,9 +54,10 @@ export default class Lucky {
       config.ctx = config.canvasElement.getContext('2d')!
       // 添加版本信息到标签上, 方便定位版本问题
       config.canvasElement.setAttribute('package', `${name}@${version}`)
-      config.canvasElement.addEventListener('click', e => {
-        this.handleClick(e)
-      })
+      config.canvasElement.addEventListener('click', e => this.handleClick(e))
+      config.canvasElement.addEventListener('mousemove', e => this.handleMouseMove(e))
+      config.canvasElement.addEventListener('mousedown', e => this.handleMouseDown(e))
+      config.canvasElement.addEventListener('mouseup', e => this.handleMouseUp(e))
     }
     this.ctx = config.ctx as CanvasRenderingContext2D
     // 如果最后得不到 canvas 上下文那就无法进行绘制
@@ -67,10 +68,28 @@ export default class Lucky {
   }
 
   /**
-   * 点击事件
+   * 鼠标点击事件
    * @param e 事件参数
    */
   protected handleClick (e: MouseEvent): void {}
+
+  /**
+   * 鼠标按下事件
+   * @param e 事件参数
+   */
+  protected handleMouseDown (e: MouseEvent): void {}
+
+  /**
+   * 鼠标抬起事件
+   * @param e 事件参数
+   */
+  protected handleMouseUp (e: MouseEvent): void {}
+
+  /**
+   * 鼠标移动事件
+   * @param e 事件参数
+   */
+  protected handleMouseMove (e: MouseEvent): void {}
 
   /**
    * 换算坐标

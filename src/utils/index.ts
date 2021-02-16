@@ -54,9 +54,9 @@ export const hasBackground = (color: string | undefined | null): boolean => {
  * @return { object } block 边框信息
  */
 export const computePadding = (
-  block: { padding: string }
+  block: { padding?: string }
 ): [number, number, number, number] => {
-  let padding = block.padding.replace(/px/g, '').split(' ').map(n => ~~n) || [0],
+  let padding = block.padding?.replace(/px/g, '').split(' ').map(n => ~~n) || [0],
     paddingTop = 0,
     paddingBottom = 0,
     paddingLeft = 0,

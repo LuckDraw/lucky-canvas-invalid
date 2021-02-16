@@ -1,4 +1,10 @@
-import { FontType, ImgType } from './index'
+import {
+  FontType,
+  ImgType,
+  borderRadiusType,
+  backgroundType,
+  shadowType
+} from './index'
 
 export interface PrizeFontType extends FontType {
   wordWrap?: boolean
@@ -22,14 +28,10 @@ export interface ButtonImgType extends ImgType {}
 
 export type CellImgType = PrizeImgType | ButtonImgType
 
-type borderRadiusType =  string | number
-type backgroundType = string
-type shadowType = string
-
 export interface BlockType {
   borderRadius?: borderRadiusType
-  background: backgroundType
-  padding: string
+  background?: backgroundType
+  padding?: string
   paddingTop?: string | number
   paddingRight?: string | number
   paddingBottom?: string | number

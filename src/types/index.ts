@@ -18,6 +18,10 @@ export interface ImgType {
   $resolve?: Function
 }
 
+export type borderRadiusType =  string | number
+export type backgroundType = string
+export type shadowType = string
+
 export interface ConfigType {
   // 临时处理元素类型, 当版本升到4.x之后就可以删掉了
   nodeType: number
