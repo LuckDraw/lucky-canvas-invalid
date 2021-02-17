@@ -8,6 +8,10 @@
 </head>
 <body>
   <div id="my-lucky"></div>
+  <div>
+    <button onclick="$lucky.play()">开始</button>
+    <button onclick="$lucky.draw()">重置</button>
+  </div>
   <script src="../dev.js"></script>
   <script>
     var $lucky = new LuckyCanvas.LuckyCard({
@@ -15,16 +19,22 @@
       width: '500px',
       height: '300px'
     }, {
-      masks: [{
-        x: 0, y: 0, width: '100%', height: '100%',
+      mask: {
         background: '#ccc',
+        percentage: 0.5,
         fonts: [{
           text: '刮奖区'
         }],
         imgs: [{
 
         }]
-      }]
+      },
+      start: function () {
+        console.log('start')
+      },
+      end: function () {
+        console.log()
+      }
     })
   </script>
 </body>

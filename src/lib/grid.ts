@@ -602,7 +602,7 @@ export default class LuckyGrid extends Lucky {
   private getWidth (
     width: string | number | undefined,
     col: number = 1
-  ) {
+  ): number {
     if (isExpectType(width, 'number')) return (width as number)
     if (isExpectType(width, 'string')) return this.changeUnits(
       width as string,
@@ -620,7 +620,7 @@ export default class LuckyGrid extends Lucky {
   private getHeight (
     height: string | number | undefined,
     row: number = 1
-  ) {
+  ): number {
     if (isExpectType(height, 'number')) return (height as number)
     if (isExpectType(height, 'string')) return this.changeUnits(
       height as string,
@@ -634,7 +634,7 @@ export default class LuckyGrid extends Lucky {
    * @param width
    * @param col
    */
-  private getOffsetX (width: number, col = 1) {
+  private getOffsetX (width: number, col = 1): number {
     return (this.cellWidth * col + this._defaultConfig.gutter * (col - 1) - width) / 2
   }
 

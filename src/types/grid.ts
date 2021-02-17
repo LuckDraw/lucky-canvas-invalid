@@ -1,9 +1,9 @@
 import {
   FontType,
   ImgType,
-  borderRadiusType,
-  backgroundType,
-  shadowType
+  BorderRadiusType,
+  BackgroundType,
+  ShadowType
 } from './index'
 
 export interface PrizeFontType extends FontType {
@@ -29,8 +29,8 @@ export interface ButtonImgType extends ImgType {}
 export type CellImgType = PrizeImgType | ButtonImgType
 
 export interface BlockType {
-  borderRadius?: borderRadiusType
-  background?: backgroundType
+  borderRadius?: BorderRadiusType
+  background?: BackgroundType
   padding?: string
   paddingTop?: string | number
   paddingRight?: string | number
@@ -44,9 +44,9 @@ export interface CellType<T, U> {
   y: number
   col: number
   row: number
-  borderRadius?: borderRadiusType
-  background: backgroundType
-  shadow?: shadowType
+  borderRadius?: BorderRadiusType
+  background: BackgroundType
+  shadow?: ShadowType
   fonts?: Array<T>
   imgs?: Array<U>
 }
@@ -63,9 +63,9 @@ export interface DefaultConfigType {
 }
 
 export interface DefaultStyleType {
-  borderRadius?: borderRadiusType
-  background?: backgroundType
-  shadow?: shadowType
+  borderRadius?: BorderRadiusType
+  background?: BackgroundType
+  shadow?: ShadowType
   fontColor?: PrizeFontType['fontColor']
   fontSize?: PrizeFontType['fontSize']
   fontStyle?: PrizeFontType['fontStyle']
@@ -76,8 +76,8 @@ export interface DefaultStyleType {
 }
 
 export interface ActiveStyleType {
-  background?: backgroundType
-  shadow?: shadowType
+  background?: BackgroundType
+  shadow?: ShadowType
   fontColor?: PrizeFontType['fontColor']
   fontSize?: PrizeFontType['fontSize']
   fontStyle?: PrizeFontType['fontStyle']

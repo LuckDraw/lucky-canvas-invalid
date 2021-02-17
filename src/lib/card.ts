@@ -1,22 +1,27 @@
 import Lucky from './lucky'
 import { ConfigType, UniImageType } from '../types/index'
 import LuckyCardConfig, {
-  BlockType,
-  PrizeType
+  MaskType,
+  DefaultConfigType,
+  StartCallbackType,
+  EndCallbackType
 } from '../types/card'
 import { isExpectType, computePadding, hasBackground } from '../utils/index'
 import { drawRoundRect } from '../utils/math'
 
 export default class LuckyCard extends Lucky {
-  private blocks: Array<BlockType> = []
-  private prizes: Array<PrizeType> = []
+  private mask: MaskType = {}
+  private defaultConfig: DefaultConfigType = {}
+  private _defaultConfig = {
+    percent: 0.5,
+    cleanZone: { x: 0, y: 0, width: 0, height: 0 }
+  }
+  private startCallback?: StartCallbackType
+  private endCallback?: EndCallbackType
+  // 是否可以开始游戏
+  private canPlay: boolean = false
   // 鼠标是否按下
   private isMouseDown: boolean = false
-  private prevCanvas: string = ''
-  // 奖品区域几何信息
-  private prizeArea: { x: number, y: number, w: number, h: number } = {
-    x: 0, y: 0, w: 0, h: 0
-  }
 
   /**
    * 刮刮乐构造器
@@ -29,8 +34,9 @@ export default class LuckyCard extends Lucky {
     this.init()
   }
   initData (data: LuckyCardConfig) {
-    this.$set(this, 'blocks', data.blocks || [])
-    this.$set(this, 'prizes', data.prizes || [])
+    this.$set(this, 'mask', data.mask || [])
+    this.$set(this, 'startCallback', data.start)
+    this.$set(this, 'endCallback', data.end)
   }
   init () {
     const { config, ctx } = this
@@ -40,32 +46,15 @@ export default class LuckyCard extends Lucky {
     this.draw()
   }
   draw () {
-    const { config, ctx } = this
+    const { config, ctx, mask } = this
     ctx.globalCompositeOperation = 'source-over'
-    // 计算奖品区域
-    this.prizeArea = this.blocks.reduce(({x, y, w, h}, block) => {
-      const [paddingTop, paddingBottom, paddingLeft, paddingRight] = computePadding(block)
-      const r = block.borderRadius ? this.getLength(block.borderRadius) : 0
-      // 绘制边框
-      const background = block.background || ''
-      if (hasBackground(background)) {
-        drawRoundRect(ctx, x, y, w, h, r, background)
-      }
-      return {
-        x: x + paddingLeft,
-        y: y + paddingTop,
-        w: w - paddingLeft - paddingRight,
-        h: h - paddingTop - paddingBottom
-      }
-    }, { x: 0, y: 0, w: config.width, h: config.height })
-    // 开始绘制奖品
-    this.prizes.forEach((prize, prizeIndex) => {
-      const { x, y, w, h } = this.prizeArea
-      const background = prize.background || ''
-      if (hasBackground(background)) {
-        drawRoundRect(ctx, x, y, w, h, 0, background)
-      }
-    })
+    const background = mask.background
+    if (hasBackground(background)) {
+      ctx.fillStyle = background!
+      ctx.beginPath()
+      ctx.rect(0, 0, config.width, config.height)
+      ctx.fill()
+    }
     ctx.globalCompositeOperation = 'destination-out'
   }
 
@@ -73,23 +62,48 @@ export default class LuckyCard extends Lucky {
    * 鼠标移动事件
    * @param e 事件参数
    */
-  handleMouseMove (e: MouseEvent): void {
-    if (!this.isMouseDown) return
-    const { ctx } = this
+  protected handleMouseMove (e: MouseEvent): void {
+    if (!this.canPlay || !this.isMouseDown) return
+    const { config, ctx, _defaultConfig } = this
     ctx.beginPath()
     const radius = 20
     const [x, y] = this.conversionAxis(e.offsetX, e.offsetY)
     // ctx.clearRect(x - radius, y - radius, radius * 2, radius * 2)
     drawRoundRect(ctx, x - radius, y - radius, radius * 2, radius * 2, 15, '#ccc')
     ctx.fill()
-    console.log(x, y)
+    const ImageData = ctx.getImageData(0, 0, config.width * config.dpr, config.height * config.dpr)?.data
+    let count = 0, len = ImageData.length / 4
+    for (let i = 1; i <= len; i++) {
+      if (ImageData[(i - 1) * 4] < 128) count++
+    }
+    const percent = +(count / len).toFixed(2)
+    if (percent > this.getLength(_defaultConfig.percent)) {
+      this.clean()
+      this.endCallback?.()
+    }
+  }
+
+  /**
+   * 开始游戏 (调用该方法才可以擦除)
+   */
+  public play () {
+    this.canPlay = true
+    this.startCallback?.()
+  }
+
+  /**
+   * 擦除所有区域
+   */
+  public clean () {
+    const { config, ctx } = this
+    ctx.clearRect(0, 0, config.width, config.height)
   }
 
   /**
    * 鼠标按下事件
    * @param e 事件参数
    */
-  handleMouseDown (e: MouseEvent): void {
+  protected handleMouseDown (e: MouseEvent): void {
     this.isMouseDown = true
   }
 
@@ -97,8 +111,32 @@ export default class LuckyCard extends Lucky {
    * 鼠标抬起事件
    * @param e 事件参数
    */
-  handleMouseUp (e: MouseEvent): void {
+  protected handleMouseUp (e: MouseEvent): void {
     this.isMouseDown = false
+  }
+
+  /**
+   * 获取相对宽度
+   */
+  private getWidth (
+    width: string | number | undefined,
+    maxWidth: number = this.config.width
+  ): number {
+    if (isExpectType(width, 'number')) return (width as number)
+    if (isExpectType(width, 'string')) return this.changeUnits(width as string, maxWidth)
+    return 0
+  }
+
+  /**
+   * 获取相对高度
+   */
+  private getHeight (
+    height: string | number | undefined,
+    maxHeight: number = this.config.height
+  ): number {
+    if (isExpectType(height, 'number')) return (height as number)
+    if (isExpectType(height, 'string')) return this.changeUnits(height as string, maxHeight)
+    return 0
   }
 
   /**

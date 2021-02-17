@@ -609,7 +609,14 @@
         Lucky.prototype.initWindowFunction = function () {
             var config = this.config;
             if (window) {
-                this.rAF = window.requestAnimationFrame;
+                this.rAF = (function () {
+                    return window.requestAnimationFrame ||
+                        window.webkitRequestAnimationFrame ||
+                        window['mozRequestAnimationFrame'] ||
+                        function (callback) {
+                            window.setTimeout(callback, 1000 / 60);
+                        };
+                })();
                 config.setTimeout = window.setTimeout;
                 config.setInterval = window.setInterval;
                 config.clearTimeout = window.clearTimeout;
@@ -623,11 +630,11 @@
             else if (config.setTimeout) {
                 // 其次使用定时器
                 var timeout_1 = config.setTimeout;
-                this.rAF = function (callback) { return timeout_1(callback, 16); };
+                this.rAF = function (callback) { return timeout_1(callback, 16.7); };
             }
             else {
                 // 如果config里面没有提供, 那就假设全局方法存在setTimeout
-                this.rAF = function (callback) { return setTimeout(callback, 16); };
+                this.rAF = function (callback) { return setTimeout(callback, 16.7); };
             }
         };
         /**
@@ -2172,22 +2179,24 @@
         function LuckyCard(config, data) {
             if (data === void 0) { data = {}; }
             var _this = _super.call(this, config) || this;
-            _this.blocks = [];
-            _this.prizes = [];
+            _this.mask = {};
+            _this.defaultConfig = {};
+            _this._defaultConfig = {
+                percent: 0.5,
+                cleanZone: { x: 0, y: 0, width: 0, height: 0 }
+            };
+            // 是否可以开始游戏
+            _this.canPlay = false;
             // 鼠标是否按下
             _this.isMouseDown = false;
-            _this.prevCanvas = '';
-            // 奖品区域几何信息
-            _this.prizeArea = {
-                x: 0, y: 0, w: 0, h: 0
-            };
             _this.initData(data);
             _this.init();
             return _this;
         }
         LuckyCard.prototype.initData = function (data) {
-            this.$set(this, 'blocks', data.blocks || []);
-            this.$set(this, 'prizes', data.prizes || []);
+            this.$set(this, 'mask', data.mask || []);
+            this.$set(this, 'startCallback', data.start);
+            this.$set(this, 'endCallback', data.end);
         };
         LuckyCard.prototype.init = function () {
             var _a = this; _a.config; _a.ctx;
@@ -2197,34 +2206,15 @@
             this.draw();
         };
         LuckyCard.prototype.draw = function () {
-            var _this = this;
-            var _a = this, config = _a.config, ctx = _a.ctx;
+            var _a = this, config = _a.config, ctx = _a.ctx, mask = _a.mask;
             ctx.globalCompositeOperation = 'source-over';
-            // 计算奖品区域
-            this.prizeArea = this.blocks.reduce(function (_a, block) {
-                var x = _a.x, y = _a.y, w = _a.w, h = _a.h;
-                var _b = computePadding(block), paddingTop = _b[0], paddingBottom = _b[1], paddingLeft = _b[2], paddingRight = _b[3];
-                var r = block.borderRadius ? _this.getLength(block.borderRadius) : 0;
-                // 绘制边框
-                var background = block.background || '';
-                if (hasBackground(background)) {
-                    drawRoundRect(ctx, x, y, w, h, r, background);
-                }
-                return {
-                    x: x + paddingLeft,
-                    y: y + paddingTop,
-                    w: w - paddingLeft - paddingRight,
-                    h: h - paddingTop - paddingBottom
-                };
-            }, { x: 0, y: 0, w: config.width, h: config.height });
-            // 开始绘制奖品
-            this.prizes.forEach(function (prize, prizeIndex) {
-                var _a = _this.prizeArea, x = _a.x, y = _a.y, w = _a.w, h = _a.h;
-                var background = prize.background || '';
-                if (hasBackground(background)) {
-                    drawRoundRect(ctx, x, y, w, h, 0, background);
-                }
-            });
+            var background = mask.background;
+            if (hasBackground(background)) {
+                ctx.fillStyle = background;
+                ctx.beginPath();
+                ctx.rect(0, 0, config.width, config.height);
+                ctx.fill();
+            }
             ctx.globalCompositeOperation = 'destination-out';
         };
         /**
@@ -2232,16 +2222,42 @@
          * @param e 事件参数
          */
         LuckyCard.prototype.handleMouseMove = function (e) {
-            if (!this.isMouseDown)
+            var _a, _b;
+            if (!this.canPlay || !this.isMouseDown)
                 return;
-            var ctx = this.ctx;
+            var _c = this, config = _c.config, ctx = _c.ctx, _defaultConfig = _c._defaultConfig;
             ctx.beginPath();
             var radius = 20;
-            var _a = this.conversionAxis(e.offsetX, e.offsetY), x = _a[0], y = _a[1];
+            var _d = this.conversionAxis(e.offsetX, e.offsetY), x = _d[0], y = _d[1];
             // ctx.clearRect(x - radius, y - radius, radius * 2, radius * 2)
             drawRoundRect(ctx, x - radius, y - radius, radius * 2, radius * 2, 15, '#ccc');
             ctx.fill();
-            console.log(x, y);
+            var ImageData = (_a = ctx.getImageData(0, 0, config.width * config.dpr, config.height * config.dpr)) === null || _a === void 0 ? void 0 : _a.data;
+            var count = 0, len = ImageData.length / 4;
+            for (var i = 1; i <= len; i++) {
+                if (ImageData[(i - 1) * 4] < 128)
+                    count++;
+            }
+            var percent = +(count / len).toFixed(2);
+            if (percent > this.getLength(_defaultConfig.percent)) {
+                this.clean();
+                (_b = this.endCallback) === null || _b === void 0 ? void 0 : _b.call(this);
+            }
+        };
+        /**
+         * 开始游戏 (调用该方法才可以擦除)
+         */
+        LuckyCard.prototype.play = function () {
+            var _a;
+            this.canPlay = true;
+            (_a = this.startCallback) === null || _a === void 0 ? void 0 : _a.call(this);
+        };
+        /**
+         * 擦除所有区域
+         */
+        LuckyCard.prototype.clean = function () {
+            var _a = this, config = _a.config, ctx = _a.ctx;
+            ctx.clearRect(0, 0, config.width, config.height);
         };
         /**
          * 鼠标按下事件
@@ -2256,6 +2272,28 @@
          */
         LuckyCard.prototype.handleMouseUp = function (e) {
             this.isMouseDown = false;
+        };
+        /**
+         * 获取相对宽度
+         */
+        LuckyCard.prototype.getWidth = function (width, maxWidth) {
+            if (maxWidth === void 0) { maxWidth = this.config.width; }
+            if (isExpectType(width, 'number'))
+                return width;
+            if (isExpectType(width, 'string'))
+                return this.changeUnits(width, maxWidth);
+            return 0;
+        };
+        /**
+         * 获取相对高度
+         */
+        LuckyCard.prototype.getHeight = function (height, maxHeight) {
+            if (maxHeight === void 0) { maxHeight = this.config.height; }
+            if (isExpectType(height, 'number'))
+                return height;
+            if (isExpectType(height, 'string'))
+                return this.changeUnits(height, maxHeight);
+            return 0;
         };
         /**
          * 换算渲染坐标
