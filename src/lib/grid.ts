@@ -68,7 +68,13 @@ export default class LuckyGrid extends Lucky {
   private demo = false                  // 是否自动游走
   private timer = 0                     // 游走定时器
   private FPS = 16.6                    // 屏幕刷新率
-  private prizeFlag: number | undefined // 中奖索引
+  /**
+   * 中奖索引
+   * prizeFlag = undefined 时, 处于开始抽奖阶段, 正常旋转
+   * prizeFlag >= 0 时, 说明stop方法被调用, 并且传入了中奖索引
+   * prizeFlag === -1 时, 说明stop方法被调用, 并且传入了负值, 本次抽奖无效
+   */
+  private prizeFlag: number | undefined = -1
   // 所有格子
   private cells: CellType<CellFontType, CellImgType>[] = []
   // 奖品区域几何信息
@@ -366,7 +372,12 @@ export default class LuckyGrid extends Lucky {
     // 绘制所有格子
     this.cells.forEach((cell, cellIndex) => {
       let [x, y, width, height] = this.getGeometricProperty([cell.x, cell.y, cell.col, cell.row])
-      const isActive = cellIndex === this.currIndex % this.prizes.length >> 0
+      // 默认不显示中奖标识
+      let isActive = false
+      // 只要 prizeFlag 不是负数, 就显示中奖标识
+      if (this.prizeFlag === void 0 || this.prizeFlag > -1) {
+        isActive = cellIndex === this.currIndex % this.prizes.length >> 0
+      }
       // 绘制背景色
       const background = isActive ? _activeStyle.background : (cell.background || _defaultStyle.background)
       if (hasBackground(background)) {
@@ -511,7 +522,13 @@ export default class LuckyGrid extends Lucky {
    * @param index 中奖索引
    */
   public stop (index: number): void {
-    this.prizeFlag = index % this.prizes.length
+    // 判断 prizeFlag 是否等于 -1
+    this.prizeFlag = index < 0 ? -1 : index % this.prizes.length
+    // 如果是 -1 就初始化状态
+    if (this.prizeFlag === -1) {
+      this.currIndex = 0
+      this.draw()
+    }
   }
 
   /**
@@ -552,6 +569,8 @@ export default class LuckyGrid extends Lucky {
   private slowDown (): void {
     const { rAF, prizes, prizeFlag, stopIndex, endIndex, _defaultConfig } = this
     let interval = Date.now() - this.endTime
+    // 如果等于 -1 就直接停止游戏
+    if (prizeFlag === -1) return (this.startTime = 0, void 0)
     if (interval > _defaultConfig.decelerationTime) {
       this.startTime = 0
       this.endCallback?.({...prizes.find((prize, index) => index === prizeFlag)})

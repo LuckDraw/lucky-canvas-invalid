@@ -11,7 +11,7 @@
     <script src="../dev.js"></script>
     <script>
       // 创建大转盘抽奖
-      let luckyWheel = new LuckyCanvas.LuckyWheel({
+      var luckyWheel = new LuckyCanvas.LuckyWheel({
         el: '#my-lucky',
         width: '300px',
         height: '300px',
@@ -39,12 +39,13 @@
         ],
         start () {
           luckyWheel.play()
-          setTimeout(() => {
-            luckyWheel.stop(Math.random() * 8 >> 0)
-          }, 3000)
+          // setTimeout(() => {
+          //   luckyWheel.stop(Math.random() * 8 >> 0)
+          // }, 3000)
         },
         end (prize) {
-          alert(`恭喜你获得${prize.title}`)
+          console.log(prize)
+          // alert(`恭喜你获得${prize.title}`)
         },
       })
       // 设置奖品

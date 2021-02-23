@@ -28,8 +28,6 @@
     };
 
     function __extends(d, b) {
-        if (typeof b !== "function" && b !== null)
-            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
         extendStatics(d, b);
         function __() { this.constructor = d; }
         d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -84,7 +82,6 @@
         }
     }
 
-    /** @deprecated */
     function __spreadArrays() {
         for (var s = 0, i = 0, il = arguments.length; i < il; i++) s += arguments[i].length;
         for (var r = Array(s), k = 0, i = 0; i < il; i++)
@@ -217,7 +214,8 @@
      * @return { object } block 边框信息
      */
     var computePadding = function (block) {
-        var padding = block.padding.replace(/px/g, '').split(' ').map(function (n) { return ~~n; }) || [0], paddingTop = 0, paddingBottom = 0, paddingLeft = 0, paddingRight = 0;
+        var _a;
+        var padding = ((_a = block.padding) === null || _a === void 0 ? void 0 : _a.replace(/px/g, '').split(' ').map(function (n) { return ~~n; })) || [0], paddingTop = 0, paddingBottom = 0, paddingLeft = 0, paddingRight = 0;
         switch (padding.length) {
             case 1:
                 paddingTop = paddingBottom = paddingLeft = paddingRight = padding[0];
@@ -248,70 +246,8 @@
         return [paddingTop, paddingBottom, paddingLeft, paddingRight];
     };
 
-    var innerRadius = 1;
-    var moreOutterRadius = 100;
-    var minRadius = 1;
-    var maxRadius = 10;
-    var mcolor = [
-        '#409EFF',
-        '#67C23A',
-        '#E6A23C',
-        '#F56C6C',
-        '#909399',
-    ];
-    /**
-     * 随机生成一堆扩散的小球
-     */
-    function getEnoughBall(ctx, mouseX, mouseY, num) {
-        var balls = [];
-        for (var i = 0; i < num; i++) {
-            var radius = Math.random() * (maxRadius - minRadius) + minRadius;
-            var ball = new Ball(ctx, 0, 0, radius, mcolor[Math.random() * mcolor.length >> 0]);
-            ball.x = mouseX + Math.random() * innerRadius - Math.random() * innerRadius;
-            ball.y = mouseY + Math.random() * innerRadius - Math.random() * innerRadius;
-            var x = mouseX - ball.x;
-            var y = mouseY - ball.y;
-            var scale = Math.abs(x / y);
-            ball.dx = (x < 0 ? 1 : -1) * moreOutterRadius / Math.sqrt(scale * scale + 1) * Math.random() * scale + mouseX;
-            ball.dy = (y < 0 ? 1 : -1) * moreOutterRadius / Math.sqrt(scale * scale + 1) * Math.random() + mouseY;
-            balls.push(ball);
-        }
-        return balls;
-    }
-    var Ball = /** @class */ (function () {
-        function Ball(ctx, x, y, radius, color) {
-            this.dx = 0;
-            this.dy = 0;
-            this.ctx = ctx;
-            this.x = x || 0;
-            this.y = y || 0;
-            this.vx = 0;
-            this.vy = 0;
-            this.sx = 1;
-            this.sy = 1;
-            this.radius = radius || 10;
-            this.color = color || 'black';
-        }
-        Ball.prototype.draw = function (type) {
-            if (!['fill', 'stroke'].includes(type))
-                return;
-            var ctx = this.ctx;
-            ctx.save();
-            ctx.translate(this.x, this.y);
-            ctx.scale(this.sx, this.sy);
-            ctx.fillStyle = this.color;
-            ctx.strokeStyle = this.color;
-            ctx.beginPath();
-            ctx.arc(0, 0, this.radius, 0, 360 * Math.PI / 180);
-            ctx.closePath();
-            type === 'fill' ? ctx.fill() : ctx.stroke();
-            ctx.restore();
-        };
-        return Ball;
-    }());
-
     var name = "lucky-canvas";
-    var version = "1.5.0";
+    var version = "1.5.1";
 
     var Dep = /** @class */ (function () {
         /**
@@ -556,10 +492,9 @@
          * @param config
          */
         function Lucky(config) {
-            var _this_1 = this;
+            var _this = this;
             this.htmlFontSize = 16;
             this.rAF = function () { };
-            this.count = 0;
             // 先初始化 fontSize 以防后面有 rem 单位
             this.setHTMLFontSize();
             /* eslint-disable */
@@ -603,10 +538,10 @@
                 config.ctx = config.canvasElement.getContext('2d');
                 // 添加版本信息到标签上, 方便定位版本问题
                 config.canvasElement.setAttribute('package', name + "@" + version);
-                config.canvasElement.addEventListener('click', function (e) {
-                    _this_1.handleClick(e);
-                    _this_1.drawEasterEggs(e.offsetX, e.offsetY);
-                });
+                config.canvasElement.addEventListener('click', function (e) { return _this.handleClick(e); });
+                config.canvasElement.addEventListener('mousemove', function (e) { return _this.handleMouseMove(e); });
+                config.canvasElement.addEventListener('mousedown', function (e) { return _this.handleMouseDown(e); });
+                config.canvasElement.addEventListener('mouseup', function (e) { return _this.handleMouseUp(e); });
             }
             this.ctx = config.ctx;
             // 如果最后得不到 canvas 上下文那就无法进行绘制
@@ -616,49 +551,30 @@
             }
         }
         /**
-         * 点击事件
+         * 鼠标点击事件
          * @param e 事件参数
          */
         Lucky.prototype.handleClick = function (e) { };
         /**
-         * 绘制
+         * 鼠标按下事件
+         * @param e 事件参数
          */
-        Lucky.prototype.draw = function () { };
+        Lucky.prototype.handleMouseDown = function (e) { };
+        /**
+         * 鼠标抬起事件
+         * @param e 事件参数
+         */
+        Lucky.prototype.handleMouseUp = function (e) { };
+        /**
+         * 鼠标移动事件
+         * @param e 事件参数
+         */
+        Lucky.prototype.handleMouseMove = function (e) { };
         /**
          * 换算坐标
          */
         Lucky.prototype.conversionAxis = function (x, y) {
             return [0, 0];
-        };
-        Lucky.prototype.drawEasterEggs = function (offsetX, offsetY, cb) {
-            var _this_1 = this;
-            if (cb === void 0) { cb = function () { }; }
-            this.count++ === 0 && setTimeout(function () { return _this_1.count = 0; }, 1000);
-            if (this.count !== 7)
-                return;
-            var _a = this, ctx = _a.ctx, rAF = _a.rAF;
-            var _b = this.conversionAxis(offsetX, offsetY), x = _b[0], y = _b[1];
-            var _this = this;
-            var balls = getEnoughBall(ctx, x, y, 50);
-            var easing = 0.1;
-            var num = 0;
-            (function animation() {
-                if (num++ > 60)
-                    return;
-                rAF(animation);
-                _this.draw();
-                for (var _i = 0, balls_1 = balls; _i < balls_1.length; _i++) {
-                    var item = balls_1[_i];
-                    item.draw('fill');
-                    item.vx = (item.dx - item.x) * easing;
-                    item.vy = (item.dy - item.y) * easing;
-                    item.x += item.vx;
-                    item.y += item.vy;
-                    item.sx += -item.sx * easing;
-                    item.sy += -item.sy * easing;
-                }
-                cb.call(_this);
-            })();
         };
         /**
          * 设备像素比
@@ -731,12 +647,12 @@
          * @param info 图片信息
          */
         Lucky.prototype.loadImg = function (src, info, resolveName) {
-            var _this_1 = this;
+            var _this = this;
             if (resolveName === void 0) { resolveName = '$resolve'; }
             return new Promise(function (resolve, reject) {
                 if (!src)
                     reject("=> '" + info.src + "' \u4E0D\u80FD\u4E3A\u7A7A\u6216\u4E0D\u5408\u6CD5");
-                if (_this_1.config.flag === 'WEB') {
+                if (_this.config.flag === 'WEB') {
                     var imgObj_1 = new Image();
                     imgObj_1.src = src;
                     imgObj_1.onload = function () { return resolve(imgObj_1); };
@@ -788,18 +704,18 @@
          * @return { number } 返回新的字符串
          */
         Lucky.prototype.changeUnits = function (value, denominator) {
-            var _this_1 = this;
+            var _this = this;
             if (denominator === void 0) { denominator = 1; }
             return Number(value.replace(/^([-]*[0-9.]*)([a-z%]*)$/, function (value, num, unit) {
                 var unitFunc = {
                     '%': function (n) { return n * (denominator / 100); },
                     'px': function (n) { return n * 1; },
-                    'rem': function (n) { return n * _this_1.htmlFontSize; },
+                    'rem': function (n) { return n * _this.htmlFontSize; },
                 }[unit];
                 if (unitFunc)
                     return unitFunc(num);
                 // 如果找不到默认单位, 就交给外面处理
-                var otherUnitFunc = _this_1.config.unitFunc;
+                var otherUnitFunc = _this.config.unitFunc;
                 return otherUnitFunc ? otherUnitFunc(num, unit) : num;
             }));
         };
@@ -821,10 +737,10 @@
          * @param callback 回调函数
          */
         Lucky.prototype.$computed = function (data, key, callback) {
-            var _this_1 = this;
+            var _this = this;
             Object.defineProperty(data, key, {
                 get: function () {
-                    return callback.call(_this_1);
+                    return callback.call(_this);
                 }
             });
         };
@@ -1279,9 +1195,9 @@
             this.setDpr();
             this.setHTMLFontSize();
             this.zoomCanvas();
+            this.Radius = Math.min(config.width, config.height) / 2;
             // 初始化前回调函数
             (_a = config.beforeInit) === null || _a === void 0 ? void 0 : _a.call(this);
-            this.Radius = Math.min(config.width, config.height) / 2;
             ctx.translate(this.Radius, this.Radius);
             // 先画一次防止闪烁
             this.draw();
@@ -1294,12 +1210,8 @@
                     btnImgs: 'buttons',
                 }[imgName];
                 var willUpdate = willUpdateImgs[imgName];
-                if (!willUpdate)
-                    return;
-                willUpdate.forEach(function (imgs, cellIndex) {
-                    if (!imgs)
-                        return;
-                    imgs.forEach(function (imgInfo, imgIndex) {
+                willUpdate && willUpdate.forEach(function (imgs, cellIndex) {
+                    imgs && imgs.forEach(function (imgInfo, imgIndex) {
                         _this.loadAndCacheImg(cellName, cellIndex, imgName, imgIndex, function () {
                             _this.draw();
                         });
@@ -1564,7 +1476,13 @@
          * @param index 中奖索引
          */
         LuckyWheel.prototype.stop = function (index) {
-            this.prizeFlag = Number(index) % this.prizes.length;
+            // 判断 prizeFlag 是否等于 -1
+            this.prizeFlag = index < 0 ? -1 : index % this.prizes.length;
+            // 如果是 -1 就初始化状态
+            if (this.prizeFlag === -1) {
+                this.rotateDeg = this.prizeDeg / 2;
+                this.draw();
+            }
         };
         /**
          * 实际开始执行方法
@@ -1575,7 +1493,7 @@
             var _a = this, rAF = _a.rAF, prizeFlag = _a.prizeFlag, prizeDeg = _a.prizeDeg, rotateDeg = _a.rotateDeg, _defaultConfig = _a._defaultConfig;
             var interval = Date.now() - this.startTime;
             // 先完全旋转, 再停止
-            if (interval >= _defaultConfig.accelerationTime && prizeFlag !== undefined) {
+            if (interval >= _defaultConfig.accelerationTime && prizeFlag !== void 0) {
                 // 记录帧率
                 this.FPS = interval / num;
                 // 记录开始停止的时间戳
@@ -1607,6 +1525,8 @@
             var _a;
             var _b = this, rAF = _b.rAF, prizes = _b.prizes, prizeFlag = _b.prizeFlag, stopDeg = _b.stopDeg, endDeg = _b.endDeg, _defaultConfig = _b._defaultConfig;
             var interval = Date.now() - this.endTime;
+            if (prizeFlag === -1)
+                return (this.startTime = 0, void 0);
             if (interval >= _defaultConfig.decelerationTime) {
                 this.startTime = 0;
                 (_a = this.endCallback) === null || _a === void 0 ? void 0 : _a.call(this, __assign({}, prizes.find(function (prize, index) { return index === prizeFlag; })));
@@ -1719,6 +1639,13 @@
             _this.demo = false; // 是否自动游走
             _this.timer = 0; // 游走定时器
             _this.FPS = 16.6; // 屏幕刷新率
+            /**
+             * 中奖索引
+             * prizeFlag = undefined 时, 处于开始抽奖阶段, 正常旋转
+             * prizeFlag >= 0 时, 说明stop方法被调用, 并且传入了中奖索引
+             * prizeFlag === -1 时, 说明stop方法被调用, 并且传入了负值, 本次抽奖无效
+             */
+            _this.prizeFlag = -1;
             // 所有格子
             _this.cells = [];
             // 图片缓存
@@ -1821,7 +1748,7 @@
         LuckyGrid.prototype.init = function (willUpdateImgs) {
             var _this = this;
             var _a, _b;
-            var _c = this, config = _c.config; _c.ctx; _c.button;
+            var _c = this, config = _c.config, ctx = _c.ctx, button = _c.button;
             this.setHTMLFontSize();
             this.setDpr();
             this.zoomCanvas();
@@ -1838,12 +1765,8 @@
                     prizeImgs: 'prizes',
                     btnImgs: 'buttons',
                 }[imgName];
-                if (!willUpdate)
-                    return;
-                willUpdate.forEach(function (imgs, cellIndex) {
-                    if (!imgs)
-                        return;
-                    imgs.forEach(function (imgInfo, imgIndex) {
+                willUpdate && willUpdate.forEach(function (imgs, cellIndex) {
+                    imgs && imgs.forEach(function (imgInfo, imgIndex) {
                         _this.loadAndCacheImg(cellName, cellIndex, imgName, imgIndex, function () {
                             _this.draw();
                         });
@@ -1969,7 +1892,7 @@
             // 计算获取奖品区域的几何信息
             this.prizeArea = this.blocks.reduce(function (_a, block) {
                 var x = _a.x, y = _a.y, w = _a.w, h = _a.h;
-                var _b = computePadding(block).map(function (n) { return ~~n; }), paddingTop = _b[0], paddingBottom = _b[1], paddingLeft = _b[2], paddingRight = _b[3];
+                var _b = computePadding(block), paddingTop = _b[0], paddingBottom = _b[1], paddingLeft = _b[2], paddingRight = _b[3];
                 var r = block.borderRadius ? _this.getLength(block.borderRadius) : 0;
                 // 绘制边框
                 var background = block.background || _defaultStyle.background;
@@ -1989,7 +1912,12 @@
             // 绘制所有格子
             this.cells.forEach(function (cell, cellIndex) {
                 var _a = _this.getGeometricProperty([cell.x, cell.y, cell.col, cell.row]), x = _a[0], y = _a[1], width = _a[2], height = _a[3];
-                var isActive = cellIndex === _this.currIndex % _this.prizes.length >> 0;
+                // 默认不显示中奖标识
+                var isActive = false;
+                // 只要 prizeFlag 不是负数, 就显示中奖标识
+                if (_this.prizeFlag === void 0 || _this.prizeFlag > -1) {
+                    isActive = cellIndex === _this.currIndex % _this.prizes.length >> 0;
+                }
                 // 绘制背景色
                 var background = isActive ? _activeStyle.background : (cell.background || _defaultStyle.background);
                 if (hasBackground(background)) {
@@ -2122,7 +2050,13 @@
          * @param index 中奖索引
          */
         LuckyGrid.prototype.stop = function (index) {
-            this.prizeFlag = index % this.prizes.length;
+            // 判断 prizeFlag 是否等于 -1
+            this.prizeFlag = index < 0 ? -1 : index % this.prizes.length;
+            // 如果是 -1 就初始化状态
+            if (this.prizeFlag === -1) {
+                this.currIndex = 0;
+                this.draw();
+            }
         };
         /**
          * 实际开始执行方法
@@ -2163,6 +2097,9 @@
             var _a;
             var _b = this, rAF = _b.rAF, prizes = _b.prizes, prizeFlag = _b.prizeFlag, stopIndex = _b.stopIndex, endIndex = _b.endIndex, _defaultConfig = _b._defaultConfig;
             var interval = Date.now() - this.endTime;
+            // 如果等于 -1 就直接停止游戏
+            if (prizeFlag === -1)
+                return (this.startTime = 0, void 0);
             if (interval > _defaultConfig.decelerationTime) {
                 this.startTime = 0;
                 (_a = this.endCallback) === null || _a === void 0 ? void 0 : _a.call(this, __assign({}, prizes.find(function (prize, index) { return index === prizeFlag; })));

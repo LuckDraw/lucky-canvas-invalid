@@ -51,8 +51,14 @@ export default class LuckyWheel extends Lucky {
   private endTime = 0                   // 停止时间戳
   private stopDeg = 0                   // 刻舟求剑
   private endDeg = 0                    // 停止角度
-  private prizeFlag: number | undefined // 中奖索引
   private FPS = 16.6                    // 屏幕刷新率
+  /**
+   * 中奖索引
+   * prizeFlag = undefined 时, 处于开始抽奖阶段, 正常旋转
+   * prizeFlag >= 0 时, 说明stop方法被调用, 并且传入了中奖索引
+   * prizeFlag === -1 时, 说明stop方法被调用, 并且传入了负值, 本次抽奖无效
+   */
+  private prizeFlag: number | undefined
   private blockImgs: Array<HTMLImageElement[] | UniImageType[]> = [[]]
   private prizeImgs: Array<HTMLImageElement[] | UniImageType[]> = [[]]
   private btnImgs: Array<HTMLImageElement[] | UniImageType[]> = [[]]
@@ -443,8 +449,14 @@ export default class LuckyWheel extends Lucky {
    * 对外暴露: 缓慢停止方法
    * @param index 中奖索引
    */
-  public stop (index: string | number): void {
-    this.prizeFlag = Number(index) % this.prizes.length
+  public stop (index: number): void {
+    // 判断 prizeFlag 是否等于 -1
+    this.prizeFlag = index < 0 ? -1 : index % this.prizes.length
+    // 如果是 -1 就初始化状态
+    if (this.prizeFlag === -1) {
+      this.rotateDeg = this.prizeDeg / 2
+      this.draw()
+    }
   }
 
   /**
@@ -455,7 +467,7 @@ export default class LuckyWheel extends Lucky {
     const { rAF, prizeFlag, prizeDeg, rotateDeg, _defaultConfig } = this
     let interval = Date.now() - this.startTime
     // 先完全旋转, 再停止
-    if (interval >= _defaultConfig.accelerationTime && prizeFlag !== undefined) {
+    if (interval >= _defaultConfig.accelerationTime && prizeFlag !== void 0) {
       // 记录帧率
       this.FPS = interval / num
       // 记录开始停止的时间戳
@@ -487,6 +499,7 @@ export default class LuckyWheel extends Lucky {
   private slowDown (): void {
     const { rAF, prizes, prizeFlag, stopDeg, endDeg, _defaultConfig } = this
     let interval = Date.now() - this.endTime
+    if (prizeFlag === -1) return (this.startTime = 0, void 0)
     if (interval >= _defaultConfig.decelerationTime) {
       this.startTime = 0
       this.endCallback?.({...prizes.find((prize, index) => index === prizeFlag)})

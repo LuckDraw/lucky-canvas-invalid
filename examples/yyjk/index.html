@@ -11,7 +11,7 @@
   <script>
     let luckyNum = 1
     // 创建九宫格抽奖
-    let luckyGrid = new LuckyCanvas.LuckyGrid({
+    var luckyGrid = new LuckyCanvas.LuckyGrid({
       el: '#my-lucky',
       width: '300px',
       height: '300px'
@@ -50,15 +50,18 @@
       },
       start () {
         if (!luckyNum) return alert('还剩0次抽奖机会')
+          luckyGrid.stop(4)
         luckyGrid.play()
-        setTimeout(() => {
-          luckyGrid.stop(Math.random() * 8 >> 0)
-        }, 2000)
+        // setTimeout(() => {
+        //   luckyGrid.stop(4)
+        // }, 3000)
       },
       end (prize) {
-        alert(`恭喜你获得大奖: ${prize.name}`)
-        luckyNum--
+        console.log(prize)
+        // alert(`恭喜你获得大奖: ${prize.name}`)
+        // luckyNum--
         luckyGrid.buttons[0].fonts[0].text = `${luckyNum} 次`
+        // luckyGrid.stop(-1)
       }
     })
     // 模拟接口异步请求奖品列表
@@ -66,8 +69,8 @@
       const prizes = []
       const data = [
         { name: '1元红包', img: './img/3.png' },
-        { name: '100元红包', img: './img/11.png' },
-        { name: '0.5元红包', img: '' },
+        { name: '100元红包', img: './img/1.png' },
+        { name: '0.5元红包', img: './img/3.png' },
         { name: '2元红包', img: './img/2.png' },
         { name: '10元红包', img: './img/4.png' },
         { name: '50元红包', img: './img/5.png' },
@@ -89,8 +92,21 @@
     setTimeout(_ => {
       luckyGrid.prizes[0].fonts[0].text = 'xxx'
       luckyGrid.defaultStyle.fontColor = 'green'
-      luckyGrid.rows = 4
+      // luckyGrid.rows = 4
     }, 500)
+
+// ;(function test () {
+//   setTimeout(() => {
+//     console.log(111)
+//     test()
+//   }, 1000)
+// })();
+// ;(function test () {
+//   window.requestAnimationFrame(() => {
+//     console.log(222)
+//     test()
+//   })
+// })();
   </script>
 </body>
 </html>
