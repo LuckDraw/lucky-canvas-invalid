@@ -247,7 +247,7 @@
     };
 
     var name = "lucky-canvas";
-    var version = "1.5.1";
+    var version = "1.5.2";
 
     var Dep = /** @class */ (function () {
         /**
@@ -1480,7 +1480,7 @@
             this.prizeFlag = index < 0 ? -1 : index % this.prizes.length;
             // 如果是 -1 就初始化状态
             if (this.prizeFlag === -1) {
-                this.rotateDeg = this.prizeDeg / 2;
+                this.rotateDeg = this.prizeDeg / 2 - this._defaultConfig.offsetDegree;
                 this.draw();
             }
         };
