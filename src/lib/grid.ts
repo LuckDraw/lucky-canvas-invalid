@@ -96,6 +96,8 @@ export default class LuckyGrid extends Lucky {
       this.initWatch()
     }
     this.initComputed()
+    // 创建前回调函数
+    config.beforeCreate?.call(this)
     const btnImgs = this.buttons.map(btn => btn.imgs)
     if (this.button) btnImgs.push(this.button.imgs)
     this.init({

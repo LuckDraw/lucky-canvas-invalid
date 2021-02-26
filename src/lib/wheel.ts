@@ -75,6 +75,8 @@ export default class LuckyWheel extends Lucky {
       this.initWatch()
     }
     this.initComputed()
+    // 创建前回调函数
+    config.beforeCreate?.call(this)
     // 收集首次渲染的图片
     this.init({
       blockImgs: this.blocks.map(block => block.imgs),

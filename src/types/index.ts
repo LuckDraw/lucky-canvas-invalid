@@ -44,6 +44,7 @@ export interface ConfigType {
   clearTimeout: Function
   clearInterval: Function
   // 组件生命周期
+  beforeCreate?: Function
   beforeInit?: Function
   afterInit?: Function
   beforeDraw?: Function
