@@ -127,7 +127,14 @@ export default class Lucky {
   private initWindowFunction (): void {
     const { config } = this
     if (window) {
-      this.rAF = window.requestAnimationFrame
+      this.rAF = (function () {
+        return window.requestAnimationFrame ||
+          window.webkitRequestAnimationFrame ||
+          window['mozRequestAnimationFrame'] ||
+          function (callback) {
+            window.setTimeout(callback, 1000 / 60)
+          }
+      })()
       config.setTimeout = window.setTimeout
       config.setInterval = window.setInterval
       config.clearTimeout = window.clearTimeout
@@ -140,10 +147,10 @@ export default class Lucky {
     } else if (config.setTimeout) {
       // 其次使用定时器
       const timeout = config.setTimeout
-      this.rAF = (callback: Function): number => timeout(callback, 16)
+      this.rAF = (callback: Function): number => timeout(callback, 16.7)
     } else {
       // 如果config里面没有提供, 那就假设全局方法存在setTimeout
-      this.rAF = (callback: Function): number => setTimeout(callback, 16)
+      this.rAF = (callback: Function): number => setTimeout(callback, 16.7)
     }
   }
 

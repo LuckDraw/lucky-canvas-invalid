@@ -249,7 +249,7 @@
     };
 
     var name = "lucky-canvas";
-    var version = "1.5.1";
+    var version = "1.5.2";
 
     var Dep = /** @class */ (function () {
         /**
@@ -606,7 +606,14 @@
         Lucky.prototype.initWindowFunction = function () {
             var config = this.config;
             if (window) {
-                this.rAF = window.requestAnimationFrame;
+                this.rAF = (function () {
+                    return window.requestAnimationFrame ||
+                        window.webkitRequestAnimationFrame ||
+                        window['mozRequestAnimationFrame'] ||
+                        function (callback) {
+                            window.setTimeout(callback, 1000 / 60);
+                        };
+                })();
                 config.setTimeout = window.setTimeout;
                 config.setInterval = window.setInterval;
                 config.clearTimeout = window.clearTimeout;
@@ -620,11 +627,11 @@
             else if (config.setTimeout) {
                 // 其次使用定时器
                 var timeout_1 = config.setTimeout;
-                this.rAF = function (callback) { return timeout_1(callback, 16); };
+                this.rAF = function (callback) { return timeout_1(callback, 16.7); };
             }
             else {
                 // 如果config里面没有提供, 那就假设全局方法存在setTimeout
-                this.rAF = function (callback) { return setTimeout(callback, 16); };
+                this.rAF = function (callback) { return setTimeout(callback, 16.7); };
             }
         };
         /**
@@ -1083,6 +1090,7 @@
          */
         function LuckyWheel(config, data) {
             if (data === void 0) { data = {}; }
+            var _a;
             var _this = _super.call(this, config) || this;
             _this.blocks = [];
             _this.prizes = [];
@@ -1104,7 +1112,7 @@
                 fontStyle: 'sans-serif',
                 fontWeight: '400',
                 lineHeight: '',
-                background: 'transparent',
+                background: 'rgba(0,0,0,0)',
                 wordWrap: true,
                 lengthLimit: '90%',
             };
@@ -1127,6 +1135,8 @@
                 _this.initWatch();
             }
             _this.initComputed();
+            // 创建前回调函数
+            (_a = config.beforeCreate) === null || _a === void 0 ? void 0 : _a.call(_this);
             // 收集首次渲染的图片
             _this.init({
                 blockImgs: _this.blocks.map(function (block) { return block.imgs; }),
@@ -1160,7 +1170,7 @@
             });
             // 默认样式
             this.$computed(this, '_defaultStyle', function () {
-                var style = __assign({ fontSize: '18px', fontColor: '#000', fontStyle: 'sans-serif', fontWeight: '400', background: 'transparent', wordWrap: true, lengthLimit: '90%' }, _this.defaultStyle);
+                var style = __assign({ fontSize: '18px', fontColor: '#000', fontStyle: 'sans-serif', fontWeight: '400', background: 'rgba(0,0,0,0)', wordWrap: true, lengthLimit: '90%' }, _this.defaultStyle);
                 return style;
             });
         };
@@ -1201,8 +1211,8 @@
             // 初始化前回调函数
             (_a = config.beforeInit) === null || _a === void 0 ? void 0 : _a.call(this);
             ctx.translate(this.Radius, this.Radius);
-            // 先画一次防止闪烁
-            this.draw();
+            this.draw(); // 先画一次, 防止闪烁
+            this.draw(); // 再画一次, 拿到正确的按钮轮廓
             // 异步加载图片
             Object.keys(willUpdateImgs).forEach(function (key) {
                 var imgName = key;
@@ -1482,7 +1492,7 @@
             this.prizeFlag = index < 0 ? -1 : index % this.prizes.length;
             // 如果是 -1 就初始化状态
             if (this.prizeFlag === -1) {
-                this.rotateDeg = this.prizeDeg / 2;
+                this.rotateDeg = this.prizeDeg / 2 - this._defaultConfig.offsetDegree;
                 this.draw();
             }
         };
@@ -1527,9 +1537,11 @@
             var _a;
             var _b = this, rAF = _b.rAF, prizes = _b.prizes, prizeFlag = _b.prizeFlag, stopDeg = _b.stopDeg, endDeg = _b.endDeg, _defaultConfig = _b._defaultConfig;
             var interval = Date.now() - this.endTime;
-            if (interval >= _defaultConfig.decelerationTime || prizeFlag === -1) {
+            if (prizeFlag === -1)
+                return (this.startTime = 0, void 0);
+            if (interval >= _defaultConfig.decelerationTime) {
                 this.startTime = 0;
-                (_a = this.endCallback) === null || _a === void 0 ? void 0 : _a.call(this, prizes.find(function (prize, index) { return index === prizeFlag; }));
+                (_a = this.endCallback) === null || _a === void 0 ? void 0 : _a.call(this, __assign({}, prizes.find(function (prize, index) { return index === prizeFlag; })));
                 return;
             }
             this.rotateDeg = Tween[_defaultConfig.speedFunction].easeOut(interval, stopDeg, endDeg, _defaultConfig.decelerationTime) % 360;
@@ -1593,6 +1605,7 @@
          */
         function LuckyGrid(config, data) {
             if (data === void 0) { data = {}; }
+            var _a;
             var _this = _super.call(this, config) || this;
             _this.rows = 3;
             _this.cols = 3;
@@ -1614,7 +1627,7 @@
                 fontStyle: 'sans-serif',
                 fontWeight: '400',
                 lineHeight: '',
-                background: 'transparent',
+                background: 'rgba(0,0,0,0)',
                 shadow: '',
                 wordWrap: true,
                 lengthLimit: '90%',
@@ -1657,6 +1670,8 @@
                 _this.initWatch();
             }
             _this.initComputed();
+            // 创建前回调函数
+            (_a = config.beforeCreate) === null || _a === void 0 ? void 0 : _a.call(_this);
             var btnImgs = _this.buttons.map(function (btn) { return btn.imgs; });
             if (_this.button)
                 btnImgs.push(_this.button.imgs);
@@ -1699,7 +1714,7 @@
             });
             // 默认样式
             this.$computed(this, '_defaultStyle', function () {
-                return __assign({ borderRadius: 20, fontColor: '#000', fontSize: '18px', fontStyle: 'sans-serif', fontWeight: '400', background: 'transparent', shadow: '', wordWrap: true, lengthLimit: '90%' }, _this.defaultStyle);
+                return __assign({ borderRadius: 20, fontColor: '#000', fontSize: '18px', fontStyle: 'sans-serif', fontWeight: '400', background: 'rgba(0,0,0,0)', shadow: '', wordWrap: true, lengthLimit: '90%' }, _this.defaultStyle);
             });
             // 中奖样式
             this.$computed(this, '_activeStyle', function () {
@@ -2098,9 +2113,11 @@
             var _b = this, rAF = _b.rAF, prizes = _b.prizes, prizeFlag = _b.prizeFlag, stopIndex = _b.stopIndex, endIndex = _b.endIndex, _defaultConfig = _b._defaultConfig;
             var interval = Date.now() - this.endTime;
             // 如果等于 -1 就直接停止游戏
-            if (interval > _defaultConfig.decelerationTime || prizeFlag === -1) {
+            if (prizeFlag === -1)
+                return (this.startTime = 0, void 0);
+            if (interval > _defaultConfig.decelerationTime) {
                 this.startTime = 0;
-                (_a = this.endCallback) === null || _a === void 0 ? void 0 : _a.call(this, prizes.find(function (prize, index) { return index === prizeFlag; }));
+                (_a = this.endCallback) === null || _a === void 0 ? void 0 : _a.call(this, __assign({}, prizes.find(function (prize, index) { return index === prizeFlag; })));
                 return;
             }
             this.currIndex = quad.easeOut(interval, stopIndex, endIndex, _defaultConfig.decelerationTime) % prizes.length;

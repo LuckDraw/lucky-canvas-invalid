@@ -1,7 +1,7 @@
 import {
   FontType,
   ImgType,
-  backgroundType
+  BackgroundType
 } from './index'
 
 export interface PrizeFontType extends FontType {
@@ -21,12 +21,12 @@ export interface ButtonImgType extends ImgType {}
 
 export interface BlockType {
   padding?: string
-  background?: backgroundType
+  background?: BackgroundType
   imgs?: Array<BlockImgType>
 }
 
 export interface PrizeType {
-  background?: backgroundType
+  background?: BackgroundType
   fonts?: Array<PrizeFontType>
   imgs?: Array<PrizeImgType>
 }
@@ -34,7 +34,7 @@ export interface PrizeType {
 export interface ButtonType {
   radius?: string
   pointer?: boolean
-  background?: backgroundType
+  background?: BackgroundType
   fonts?: Array<ButtonFontType>
   imgs?: Array<ButtonImgType>
 }
@@ -50,7 +50,7 @@ export interface DefaultConfigType {
 }
 
 export interface DefaultStyleType {
-  background?: backgroundType
+  background?: BackgroundType
   fontColor?: PrizeFontType['fontColor']
   fontSize?: PrizeFontType['fontSize']
   fontStyle?: PrizeFontType['fontStyle']

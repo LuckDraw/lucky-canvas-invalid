@@ -35,7 +35,7 @@ export default class LuckyWheel extends Lucky {
     fontStyle: 'sans-serif',
     fontWeight: '400',
     lineHeight: '',
-    background: 'transparent',
+    background: 'rgba(0,0,0,0)',
     wordWrap: true,
     lengthLimit: '90%',
   }
@@ -124,7 +124,7 @@ export default class LuckyWheel extends Lucky {
         fontColor: '#000',
         fontStyle: 'sans-serif',
         fontWeight: '400',
-        background: 'transparent',
+        background: 'rgba(0,0,0,0)',
         wordWrap: true,
         lengthLimit: '90%',
         ...this.defaultStyle
@@ -172,8 +172,8 @@ export default class LuckyWheel extends Lucky {
     // 初始化前回调函数
     config.beforeInit?.call(this)
     ctx.translate(this.Radius, this.Radius)
-    // 先画一次防止闪烁
-    this.draw()
+    this.draw() // 先画一次, 防止闪烁
+    this.draw() // 再画一次, 拿到正确的按钮轮廓
     // 异步加载图片
     Object.keys(willUpdateImgs).forEach(key => {
       const imgName = key as 'blockImgs' | 'prizeImgs' | 'btnImgs'
