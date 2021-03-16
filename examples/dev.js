@@ -249,7 +249,7 @@
     };
 
     var name = "lucky-canvas";
-    var version = "1.5.2";
+    var version = "1.5.3";
 
     var Dep = /** @class */ (function () {
         /**
@@ -497,6 +497,8 @@
             var _this = this;
             this.htmlFontSize = 16;
             this.rAF = function () { };
+            this.boxWidth = 0;
+            this.boxHeight = 0;
             // 先初始化 fontSize 以防后面有 rem 单位
             this.setHTMLFontSize();
             /* eslint-disable */
@@ -518,24 +520,15 @@
                 config.ob = true;
             if (config.el)
                 config.divElement = document.querySelector(config.el);
-            var boxWidth = 0, boxHeight = 0;
-            // 如果存在父盒子, 就获取盒子的宽高信息, 并创建canvas标签
+            // 如果存在父盒子, 就创建canvas标签
             if (config.divElement) {
-                boxWidth = config.divElement.offsetWidth;
-                boxHeight = config.divElement.offsetHeight;
                 // 无论盒子内有没有canvas都执行覆盖逻辑
                 config.canvasElement = document.createElement('canvas');
                 config.divElement.appendChild(config.canvasElement);
             }
-            // 宽高优先从config里取, 其次从style上面取
-            config.width = this.getLength(config.width) || boxWidth;
-            config.height = this.getLength(config.height) || boxHeight;
-            // 重新把宽高赋给盒子
-            if (config.divElement) {
-                config.divElement.style.overflow = 'hidden';
-                config.divElement.style.width = config.width + 'px';
-                config.divElement.style.height = config.height + 'px';
-            }
+            // 初始化宽高
+            this.resetWidthAndHeight();
+            // 获取 canvas 上下文
             if (config.canvasElement) {
                 config.ctx = config.canvasElement.getContext('2d');
                 // 添加版本信息到标签上, 方便定位版本问题
@@ -547,11 +540,24 @@
             }
             this.ctx = config.ctx;
             // 如果最后得不到 canvas 上下文那就无法进行绘制
-            if (!config.ctx || !config.width || !config.height) {
-                console.error('无法获取到 CanvasContext2D 或宽高');
+            if (!config.ctx) {
+                console.error('无法获取到 CanvasContext2D');
+                return;
+            }
+            if (!this.boxWidth || !this.boxHeight) {
+                console.error('无法获取到宽度或高度');
                 return;
             }
         }
+        /**
+         * 初始化方法
+         */
+        Lucky.prototype.init = function (willUpdateImgs) {
+            this.setDpr();
+            this.setHTMLFontSize();
+            this.resetWidthAndHeight();
+            this.zoomCanvas();
+        };
         /**
          * 鼠标点击事件
          * @param e 事件参数
@@ -601,6 +607,27 @@
             this.htmlFontSize = +window.getComputedStyle(document.documentElement).fontSize.slice(0, -2);
         };
         /**
+         * 重置盒子和canvas的宽高
+         */
+        Lucky.prototype.resetWidthAndHeight = function () {
+            var config = this.config;
+            // 如果是浏览器环境并且存在盒子
+            var boxWidth = 0, boxHeight = 0;
+            if (config.divElement) {
+                boxWidth = config.divElement.offsetWidth;
+                boxHeight = config.divElement.offsetHeight;
+            }
+            // 如果 config 上面没有宽高, 就从 style 上面取
+            this.boxWidth = this.getLength(config.width) || boxWidth;
+            this.boxHeight = this.getLength(config.height) || boxHeight;
+            // 重新把宽高赋给盒子
+            if (config.divElement) {
+                config.divElement.style.overflow = 'hidden';
+                config.divElement.style.width = this.boxWidth + 'px';
+                config.divElement.style.height = this.boxHeight + 'px';
+            }
+        };
+        /**
          * 从 window 对象上获取一些方法
          */
         Lucky.prototype.initWindowFunction = function () {
@@ -640,14 +667,15 @@
         Lucky.prototype.zoomCanvas = function () {
             var _a = this, config = _a.config, ctx = _a.ctx;
             var canvasElement = config.canvasElement, dpr = config.dpr;
+            var _b = [this.boxWidth * dpr, this.boxHeight * dpr], width = _b[0], height = _b[1];
             var compute = function (len) { return (len * dpr - len) / (len * dpr) * (dpr / 2) * 100; };
             if (!canvasElement)
                 return;
-            canvasElement.width = config.width * dpr;
-            canvasElement.height = config.height * dpr;
-            canvasElement.style.width = canvasElement.width + "px";
-            canvasElement.style.height = canvasElement.height + "px";
-            canvasElement.style.transform = "scale(" + 1 / dpr + ") translate(\n      " + -compute(canvasElement.width) + "%, " + -compute(canvasElement.height) + "%\n    )";
+            canvasElement.width = width;
+            canvasElement.height = height;
+            canvasElement.style.width = width + "px";
+            canvasElement.style.height = height + "px";
+            canvasElement.style.transform = "scale(" + 1 / dpr + ") translate(" + -compute(width) + "%, " + -compute(height) + "%)";
             ctx.scale(dpr, dpr);
         };
         /**
@@ -1203,11 +1231,9 @@
         LuckyWheel.prototype.init = function (willUpdateImgs) {
             var _this = this;
             var _a, _b;
+            _super.prototype.init.call(this);
             var _c = this, config = _c.config, ctx = _c.ctx;
-            this.setDpr();
-            this.setHTMLFontSize();
-            this.zoomCanvas();
-            this.Radius = Math.min(config.width, config.height) / 2;
+            this.Radius = Math.min(this.boxWidth, this.boxHeight) / 2;
             // 初始化前回调函数
             (_a = config.beforeInit) === null || _a === void 0 ? void 0 : _a.call(this);
             ctx.translate(this.Radius, this.Radius);
@@ -1763,10 +1789,8 @@
         LuckyGrid.prototype.init = function (willUpdateImgs) {
             var _this = this;
             var _a, _b;
+            _super.prototype.init.call(this);
             var _c = this, config = _c.config, ctx = _c.ctx, button = _c.button;
-            this.setHTMLFontSize();
-            this.setDpr();
-            this.zoomCanvas();
             // 初始化前回调函数
             (_a = config.beforeInit) === null || _a === void 0 ? void 0 : _a.call(this);
             // 先画一次防止闪烁
@@ -1895,7 +1919,7 @@
             // 触发绘制前回调
             (_a = config.beforeDraw) === null || _a === void 0 ? void 0 : _a.call(this, ctx);
             // 清空画布
-            ctx.clearRect(0, 0, config.width, config.height);
+            ctx.clearRect(0, 0, this.boxWidth, this.boxHeight);
             // 合并奖品和按钮
             this.cells = __spreadArrays(this.prizes, this.buttons);
             if (this.button)
@@ -1920,7 +1944,7 @@
                     w: w - paddingLeft - paddingRight,
                     h: h - paddingTop - paddingBottom
                 };
-            }, { x: 0, y: 0, w: config.width, h: config.height });
+            }, { x: 0, y: 0, w: this.boxWidth, h: this.boxHeight });
             // 计算单一奖品格子的宽度和高度
             this.cellWidth = (this.prizeArea.w - _defaultConfig.gutter * (this.cols - 1)) / this.cols;
             this.cellHeight = (this.prizeArea.h - _defaultConfig.gutter * (this.rows - 1)) / this.rows;

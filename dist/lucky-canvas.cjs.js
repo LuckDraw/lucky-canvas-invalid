@@ -245,7 +245,7 @@ var computePadding = function (block) {
 };
 
 var name = "lucky-canvas";
-var version = "1.5.2";
+var version = "1.5.3";
 
 var Dep = /** @class */ (function () {
     /**
@@ -493,6 +493,8 @@ var Lucky = /** @class */ (function () {
         var _this = this;
         this.htmlFontSize = 16;
         this.rAF = function () { };
+        this.boxWidth = 0;
+        this.boxHeight = 0;
         // 先初始化 fontSize 以防后面有 rem 单位
         this.setHTMLFontSize();
         /* eslint-disable */
@@ -514,24 +516,15 @@ var Lucky = /** @class */ (function () {
             config.ob = true;
         if (config.el)
             config.divElement = document.querySelector(config.el);
-        var boxWidth = 0, boxHeight = 0;
-        // 如果存在父盒子, 就获取盒子的宽高信息, 并创建canvas标签
+        // 如果存在父盒子, 就创建canvas标签
         if (config.divElement) {
-            boxWidth = config.divElement.offsetWidth;
-            boxHeight = config.divElement.offsetHeight;
             // 无论盒子内有没有canvas都执行覆盖逻辑
             config.canvasElement = document.createElement('canvas');
             config.divElement.appendChild(config.canvasElement);
         }
-        // 宽高优先从config里取, 其次从style上面取
-        config.width = this.getLength(config.width) || boxWidth;
-        config.height = this.getLength(config.height) || boxHeight;
-        // 重新把宽高赋给盒子
-        if (config.divElement) {
-            config.divElement.style.overflow = 'hidden';
-            config.divElement.style.width = config.width + 'px';
-            config.divElement.style.height = config.height + 'px';
-        }
+        // 初始化宽高
+        this.resetWidthAndHeight();
+        // 获取 canvas 上下文
         if (config.canvasElement) {
             config.ctx = config.canvasElement.getContext('2d');
             // 添加版本信息到标签上, 方便定位版本问题
@@ -543,11 +536,24 @@ var Lucky = /** @class */ (function () {
         }
         this.ctx = config.ctx;
         // 如果最后得不到 canvas 上下文那就无法进行绘制
-        if (!config.ctx || !config.width || !config.height) {
-            console.error('无法获取到 CanvasContext2D 或宽高');
+        if (!config.ctx) {
+            console.error('无法获取到 CanvasContext2D');
+            return;
+        }
+        if (!this.boxWidth || !this.boxHeight) {
+            console.error('无法获取到宽度或高度');
             return;
         }
     }
+    /**
+     * 初始化方法
+     */
+    Lucky.prototype.init = function (willUpdateImgs) {
+        this.setDpr();
+        this.setHTMLFontSize();
+        this.resetWidthAndHeight();
+        this.zoomCanvas();
+    };
     /**
      * 鼠标点击事件
      * @param e 事件参数
@@ -597,12 +603,40 @@ var Lucky = /** @class */ (function () {
         this.htmlFontSize = +window.getComputedStyle(document.documentElement).fontSize.slice(0, -2);
     };
     /**
+     * 重置盒子和canvas的宽高
+     */
+    Lucky.prototype.resetWidthAndHeight = function () {
+        var config = this.config;
+        // 如果是浏览器环境并且存在盒子
+        var boxWidth = 0, boxHeight = 0;
+        if (config.divElement) {
+            boxWidth = config.divElement.offsetWidth;
+            boxHeight = config.divElement.offsetHeight;
+        }
+        // 如果 config 上面没有宽高, 就从 style 上面取
+        this.boxWidth = this.getLength(config.width) || boxWidth;
+        this.boxHeight = this.getLength(config.height) || boxHeight;
+        // 重新把宽高赋给盒子
+        if (config.divElement) {
+            config.divElement.style.overflow = 'hidden';
+            config.divElement.style.width = this.boxWidth + 'px';
+            config.divElement.style.height = this.boxHeight + 'px';
+        }
+    };
+    /**
      * 从 window 对象上获取一些方法
      */
     Lucky.prototype.initWindowFunction = function () {
         var config = this.config;
         if (window) {
-            this.rAF = window.requestAnimationFrame;
+            this.rAF = (function () {
+                return window.requestAnimationFrame ||
+                    window.webkitRequestAnimationFrame ||
+                    window['mozRequestAnimationFrame'] ||
+                    function (callback) {
+                        window.setTimeout(callback, 1000 / 60);
+                    };
+            })();
             config.setTimeout = window.setTimeout;
             config.setInterval = window.setInterval;
             config.clearTimeout = window.clearTimeout;
@@ -616,11 +650,11 @@ var Lucky = /** @class */ (function () {
         else if (config.setTimeout) {
             // 其次使用定时器
             var timeout_1 = config.setTimeout;
-            this.rAF = function (callback) { return timeout_1(callback, 16); };
+            this.rAF = function (callback) { return timeout_1(callback, 16.7); };
         }
         else {
             // 如果config里面没有提供, 那就假设全局方法存在setTimeout
-            this.rAF = function (callback) { return setTimeout(callback, 16); };
+            this.rAF = function (callback) { return setTimeout(callback, 16.7); };
         }
     };
     /**
@@ -629,14 +663,15 @@ var Lucky = /** @class */ (function () {
     Lucky.prototype.zoomCanvas = function () {
         var _a = this, config = _a.config, ctx = _a.ctx;
         var canvasElement = config.canvasElement, dpr = config.dpr;
+        var _b = [this.boxWidth * dpr, this.boxHeight * dpr], width = _b[0], height = _b[1];
         var compute = function (len) { return (len * dpr - len) / (len * dpr) * (dpr / 2) * 100; };
         if (!canvasElement)
             return;
-        canvasElement.width = config.width * dpr;
-        canvasElement.height = config.height * dpr;
-        canvasElement.style.width = canvasElement.width + "px";
-        canvasElement.style.height = canvasElement.height + "px";
-        canvasElement.style.transform = "scale(" + 1 / dpr + ") translate(\n      " + -compute(canvasElement.width) + "%, " + -compute(canvasElement.height) + "%\n    )";
+        canvasElement.width = width;
+        canvasElement.height = height;
+        canvasElement.style.width = width + "px";
+        canvasElement.style.height = height + "px";
+        canvasElement.style.transform = "scale(" + 1 / dpr + ") translate(" + -compute(width) + "%, " + -compute(height) + "%)";
         ctx.scale(dpr, dpr);
     };
     /**
@@ -1079,6 +1114,7 @@ var LuckyWheel = /** @class */ (function (_super) {
      */
     function LuckyWheel(config, data) {
         if (data === void 0) { data = {}; }
+        var _a;
         var _this = _super.call(this, config) || this;
         _this.blocks = [];
         _this.prizes = [];
@@ -1100,7 +1136,7 @@ var LuckyWheel = /** @class */ (function (_super) {
             fontStyle: 'sans-serif',
             fontWeight: '400',
             lineHeight: '',
-            background: 'transparent',
+            background: 'rgba(0,0,0,0)',
             wordWrap: true,
             lengthLimit: '90%',
         };
@@ -1123,6 +1159,8 @@ var LuckyWheel = /** @class */ (function (_super) {
             _this.initWatch();
         }
         _this.initComputed();
+        // 创建前回调函数
+        (_a = config.beforeCreate) === null || _a === void 0 ? void 0 : _a.call(_this);
         // 收集首次渲染的图片
         _this.init({
             blockImgs: _this.blocks.map(function (block) { return block.imgs; }),
@@ -1156,7 +1194,7 @@ var LuckyWheel = /** @class */ (function (_super) {
         });
         // 默认样式
         this.$computed(this, '_defaultStyle', function () {
-            var style = __assign({ fontSize: '18px', fontColor: '#000', fontStyle: 'sans-serif', fontWeight: '400', background: 'transparent', wordWrap: true, lengthLimit: '90%' }, _this.defaultStyle);
+            var style = __assign({ fontSize: '18px', fontColor: '#000', fontStyle: 'sans-serif', fontWeight: '400', background: 'rgba(0,0,0,0)', wordWrap: true, lengthLimit: '90%' }, _this.defaultStyle);
             return style;
         });
     };
@@ -1189,16 +1227,14 @@ var LuckyWheel = /** @class */ (function (_super) {
     LuckyWheel.prototype.init = function (willUpdateImgs) {
         var _this = this;
         var _a, _b;
+        _super.prototype.init.call(this);
         var _c = this, config = _c.config, ctx = _c.ctx;
-        this.setDpr();
-        this.setHTMLFontSize();
-        this.zoomCanvas();
-        this.Radius = Math.min(config.width, config.height) / 2;
+        this.Radius = Math.min(this.boxWidth, this.boxHeight) / 2;
         // 初始化前回调函数
         (_a = config.beforeInit) === null || _a === void 0 ? void 0 : _a.call(this);
         ctx.translate(this.Radius, this.Radius);
-        // 先画一次防止闪烁
-        this.draw();
+        this.draw(); // 先画一次, 防止闪烁
+        this.draw(); // 再画一次, 拿到正确的按钮轮廓
         // 异步加载图片
         Object.keys(willUpdateImgs).forEach(function (key) {
             var imgName = key;
@@ -1591,6 +1627,7 @@ var LuckyGrid = /** @class */ (function (_super) {
      */
     function LuckyGrid(config, data) {
         if (data === void 0) { data = {}; }
+        var _a;
         var _this = _super.call(this, config) || this;
         _this.rows = 3;
         _this.cols = 3;
@@ -1612,7 +1649,7 @@ var LuckyGrid = /** @class */ (function (_super) {
             fontStyle: 'sans-serif',
             fontWeight: '400',
             lineHeight: '',
-            background: 'transparent',
+            background: 'rgba(0,0,0,0)',
             shadow: '',
             wordWrap: true,
             lengthLimit: '90%',
@@ -1655,6 +1692,8 @@ var LuckyGrid = /** @class */ (function (_super) {
             _this.initWatch();
         }
         _this.initComputed();
+        // 创建前回调函数
+        (_a = config.beforeCreate) === null || _a === void 0 ? void 0 : _a.call(_this);
         var btnImgs = _this.buttons.map(function (btn) { return btn.imgs; });
         if (_this.button)
             btnImgs.push(_this.button.imgs);
@@ -1697,7 +1736,7 @@ var LuckyGrid = /** @class */ (function (_super) {
         });
         // 默认样式
         this.$computed(this, '_defaultStyle', function () {
-            return __assign({ borderRadius: 20, fontColor: '#000', fontSize: '18px', fontStyle: 'sans-serif', fontWeight: '400', background: 'transparent', shadow: '', wordWrap: true, lengthLimit: '90%' }, _this.defaultStyle);
+            return __assign({ borderRadius: 20, fontColor: '#000', fontSize: '18px', fontStyle: 'sans-serif', fontWeight: '400', background: 'rgba(0,0,0,0)', shadow: '', wordWrap: true, lengthLimit: '90%' }, _this.defaultStyle);
         });
         // 中奖样式
         this.$computed(this, '_activeStyle', function () {
@@ -1746,10 +1785,8 @@ var LuckyGrid = /** @class */ (function (_super) {
     LuckyGrid.prototype.init = function (willUpdateImgs) {
         var _this = this;
         var _a, _b;
+        _super.prototype.init.call(this);
         var _c = this, config = _c.config, ctx = _c.ctx, button = _c.button;
-        this.setHTMLFontSize();
-        this.setDpr();
-        this.zoomCanvas();
         // 初始化前回调函数
         (_a = config.beforeInit) === null || _a === void 0 ? void 0 : _a.call(this);
         // 先画一次防止闪烁
@@ -1878,7 +1915,7 @@ var LuckyGrid = /** @class */ (function (_super) {
         // 触发绘制前回调
         (_a = config.beforeDraw) === null || _a === void 0 ? void 0 : _a.call(this, ctx);
         // 清空画布
-        ctx.clearRect(0, 0, config.width, config.height);
+        ctx.clearRect(0, 0, this.boxWidth, this.boxHeight);
         // 合并奖品和按钮
         this.cells = __spreadArrays(this.prizes, this.buttons);
         if (this.button)
@@ -1903,7 +1940,7 @@ var LuckyGrid = /** @class */ (function (_super) {
                 w: w - paddingLeft - paddingRight,
                 h: h - paddingTop - paddingBottom
             };
-        }, { x: 0, y: 0, w: config.width, h: config.height });
+        }, { x: 0, y: 0, w: this.boxWidth, h: this.boxHeight });
         // 计算单一奖品格子的宽度和高度
         this.cellWidth = (this.prizeArea.w - _defaultConfig.gutter * (this.cols - 1)) / this.cols;
         this.cellHeight = (this.prizeArea.h - _defaultConfig.gutter * (this.rows - 1)) / this.rows;

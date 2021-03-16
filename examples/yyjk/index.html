@@ -52,9 +52,9 @@
         if (!luckyNum) return alert('还剩0次抽奖机会')
           luckyGrid.stop(4)
         luckyGrid.play()
-        // setTimeout(() => {
-        //   luckyGrid.stop(4)
-        // }, 3000)
+        setTimeout(() => {
+          luckyGrid.stop(4)
+        }, 3000)
       },
       end (prize) {
         console.log(prize)

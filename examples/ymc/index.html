@@ -7,14 +7,16 @@
 </head>
 <body>
   <body>
+    <script src="http://g.tbcdn.cn/mtb/lib-flexible/0.3.4/??flexible_css.js,flexible.js"></script>
+
     <div id="my-lucky"></div>
     <script src="../dev.js"></script>
     <script>
       // 创建大转盘抽奖
       var luckyWheel = new LuckyCanvas.LuckyWheel({
         el: '#my-lucky',
-        width: '300px',
-        height: '300px',
+        width: '6rem',
+        height: '6rem',
       }, {
         // prizes: [],
         defaultStyle: {
@@ -39,9 +41,9 @@
         ],
         start () {
           luckyWheel.play()
-          // setTimeout(() => {
-          //   luckyWheel.stop(Math.random() * 8 >> 0)
-          // }, 3000)
+          setTimeout(() => {
+            luckyWheel.stop(Math.random() * 8 >> 0)
+          }, 3000)
         },
         end (prize) {
           console.log(prize)
@@ -96,6 +98,11 @@
         // luckyWheel.blocks.push({ padding: '13px', background: '#000' })
         // luckyWheel.blocks[0] = { padding: '13px', background: '#000' }
       }, 2000);
+      window.onresize = function () {
+        console.log(111)
+        luckyWheel.init({})
+        
+      }
     </script>
   </body>
 </body>
