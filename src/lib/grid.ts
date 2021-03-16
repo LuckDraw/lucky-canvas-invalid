@@ -210,10 +210,8 @@ export default class LuckyGrid extends Lucky {
     prizeImgs?: Array<PrizeImgType[] | undefined>,
     btnImgs?: Array<ButtonImgType[] | undefined>
   }): void {
+    super.init()
     const { config, ctx, button } = this
-    this.setHTMLFontSize()
-    this.setDpr()
-    this.zoomCanvas()
     // 初始化前回调函数
     config.beforeInit?.call(this)
     // 先画一次防止闪烁
@@ -341,7 +339,7 @@ export default class LuckyGrid extends Lucky {
     // 触发绘制前回调
     config.beforeDraw?.call(this, ctx)
     // 清空画布
-    ctx.clearRect(0, 0, config.width, config.height)
+    ctx.clearRect(0, 0, this.boxWidth, this.boxHeight)
     // 合并奖品和按钮
     this.cells = [
       ...this.prizes,
@@ -367,7 +365,7 @@ export default class LuckyGrid extends Lucky {
         w: w - paddingLeft - paddingRight,
         h: h - paddingTop - paddingBottom
       }
-    }, { x: 0, y: 0, w: config.width, h: config.height })
+    }, { x: 0, y: 0, w: this.boxWidth, h: this.boxHeight })
     // 计算单一奖品格子的宽度和高度
     this.cellWidth = (this.prizeArea.w - _defaultConfig.gutter * (this.cols - 1)) / this.cols
     this.cellHeight = (this.prizeArea.h - _defaultConfig.gutter * (this.rows - 1)) / this.rows

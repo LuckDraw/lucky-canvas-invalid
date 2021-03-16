@@ -34,8 +34,8 @@ export interface ConfigType {
   canvasElement?: HTMLCanvasElement
   ctx: CanvasRenderingContext2D
   dpr: number
-  width: number
-  height: number
+  width: string
+  height: string
   unitFunc?: (num: number, unit: string) => number
   // 覆盖方法
   rAF?: Function

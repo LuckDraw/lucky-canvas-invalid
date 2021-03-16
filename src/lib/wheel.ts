@@ -164,11 +164,9 @@ export default class LuckyWheel extends Lucky {
     prizeImgs?: Array<PrizeImgType[] | undefined>
     btnImgs?: Array<ButtonImgType[] | undefined>
   }): void {
+    super.init()
     const { config, ctx } = this
-    this.setDpr()
-    this.setHTMLFontSize()
-    this.zoomCanvas()
-    this.Radius = Math.min(config.width, config.height) / 2
+    this.Radius = Math.min(this.boxWidth, this.boxHeight) / 2
     // 初始化前回调函数
     config.beforeInit?.call(this)
     ctx.translate(this.Radius, this.Radius)

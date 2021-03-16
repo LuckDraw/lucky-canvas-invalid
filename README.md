@@ -39,7 +39,7 @@
 
 ## 官方文档 & Demo演示
 
-> **中文**：[https://100px.net/document/js.html](https://100px.net/document/js.html)  
+> **中文**：[https://100px.net/usage/js.html](https://100px.net/usage/js.html)  
 
 > **English**：**If anyone can help translate the document, please contact me** `ldq404@qq.com`
 
@@ -99,6 +99,6 @@
 
 <br />
 
-## 推荐的开源项目
+## 友情链接
 
 - [🎁 h5-Dooring 一款功能强大，高可扩展的H5可视化编辑器](https://github.com/MrXujiang/h5-Dooring)

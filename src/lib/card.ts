@@ -33,18 +33,20 @@ export default class LuckyCard extends Lucky {
     this.initData(data)
     this.init()
   }
+
   initData (data: LuckyCardConfig) {
     this.$set(this, 'mask', data.mask || [])
     this.$set(this, 'startCallback', data.start)
     this.$set(this, 'endCallback', data.end)
   }
+
   init () {
+    super.init()
     const { config, ctx } = this
-    this.setDpr()
-    this.setHTMLFontSize()
-    this.zoomCanvas()
+    this.canPlay = false
     this.draw()
   }
+
   draw () {
     const { config, ctx, mask } = this
     ctx.globalCompositeOperation = 'source-over'
@@ -52,7 +54,7 @@ export default class LuckyCard extends Lucky {
     if (hasBackground(background)) {
       ctx.fillStyle = background!
       ctx.beginPath()
-      ctx.rect(0, 0, config.width, config.height)
+      ctx.rect(0, 0, this.boxWidth, this.boxHeight)
       ctx.fill()
     }
     ctx.globalCompositeOperation = 'destination-out'
@@ -71,7 +73,7 @@ export default class LuckyCard extends Lucky {
     // ctx.clearRect(x - radius, y - radius, radius * 2, radius * 2)
     drawRoundRect(ctx, x - radius, y - radius, radius * 2, radius * 2, 15, '#ccc')
     ctx.fill()
-    const ImageData = ctx.getImageData(0, 0, config.width * config.dpr, config.height * config.dpr)?.data
+    const ImageData = ctx.getImageData(0, 0, this.boxWidth * config.dpr, this.boxHeight * config.dpr)?.data
     let count = 0, len = ImageData.length / 4
     for (let i = 1; i <= len; i++) {
       if (ImageData[(i - 1) * 4] < 128) count++
@@ -96,7 +98,7 @@ export default class LuckyCard extends Lucky {
    */
   public clean () {
     const { config, ctx } = this
-    ctx.clearRect(0, 0, config.width, config.height)
+    ctx.clearRect(0, 0, this.boxWidth, this.boxHeight)
   }
 
   /**
@@ -120,7 +122,7 @@ export default class LuckyCard extends Lucky {
    */
   private getWidth (
     width: string | number | undefined,
-    maxWidth: number = this.config.width
+    maxWidth: number = this.boxWidth
   ): number {
     if (isExpectType(width, 'number')) return (width as number)
     if (isExpectType(width, 'string')) return this.changeUnits(width as string, maxWidth)
@@ -132,7 +134,7 @@ export default class LuckyCard extends Lucky {
    */
   private getHeight (
     height: string | number | undefined,
-    maxHeight: number = this.config.height
+    maxHeight: number = this.boxHeight
   ): number {
     if (isExpectType(height, 'number')) return (height as number)
     if (isExpectType(height, 'string')) return this.changeUnits(height as string, maxHeight)
