@@ -53,7 +53,9 @@ export interface CellType<T, U> {
 
 export type PrizeType = CellType<PrizeFontType, PrizeImgType>
 
-export type ButtonType = CellType<ButtonFontType, ButtonImgType>
+export type ButtonType = CellType<ButtonFontType, ButtonImgType> & {
+  callback?: Function
+}
 
 export interface DefaultConfigType {
   gutter?: number

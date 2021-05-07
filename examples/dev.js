@@ -30,6 +30,8 @@
     };
 
     function __extends(d, b) {
+        if (typeof b !== "function" && b !== null)
+            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
         extendStatics(d, b);
         function __() { this.constructor = d; }
         d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -84,12 +86,10 @@
         }
     }
 
-    function __spreadArrays() {
-        for (var s = 0, i = 0, il = arguments.length; i < il; i++) s += arguments[i].length;
-        for (var r = Array(s), k = 0, i = 0; i < il; i++)
-            for (var a = arguments[i], j = 0, jl = a.length; j < jl; j++, k++)
-                r[k] = a[j];
-        return r;
+    function __spreadArray(to, from) {
+        for (var i = 0, il = from.length, j = to.length; i < il; i++, j++)
+            to[j] = from[i];
+        return to;
     }
 
     /**
@@ -249,7 +249,7 @@
     };
 
     var name = "lucky-canvas";
-    var version = "1.5.3";
+    var version = "1.5.4";
 
     var Dep = /** @class */ (function () {
         /**
@@ -1790,7 +1790,7 @@
             var _this = this;
             var _a, _b;
             _super.prototype.init.call(this);
-            var _c = this, config = _c.config, ctx = _c.ctx, button = _c.button;
+            var _c = this, config = _c.config; _c.ctx; _c.button;
             // 初始化前回调函数
             (_a = config.beforeInit) === null || _a === void 0 ? void 0 : _a.call(this);
             // 先画一次防止闪烁
@@ -1822,7 +1822,7 @@
         LuckyGrid.prototype.handleClick = function (e) {
             var _this = this;
             var ctx = this.ctx;
-            __spreadArrays(this.buttons, [
+            __spreadArray(__spreadArray([], this.buttons), [
                 this.button
             ]).forEach(function (btn) {
                 var _a;
@@ -1837,7 +1837,11 @@
                     return;
                 if (_this.startTime)
                     return;
-                (_a = _this.startCallback) === null || _a === void 0 ? void 0 : _a.call(_this, e);
+                // 如果btn里有单独的回调方法, 优先触发
+                if (typeof btn.callback === 'function')
+                    btn.callback.call(_this, btn);
+                // 最后触发公共回调
+                (_a = _this.startCallback) === null || _a === void 0 ? void 0 : _a.call(_this, e, btn);
             });
         };
         /**
@@ -1921,7 +1925,7 @@
             // 清空画布
             ctx.clearRect(0, 0, this.boxWidth, this.boxHeight);
             // 合并奖品和按钮
-            this.cells = __spreadArrays(this.prizes, this.buttons);
+            this.cells = __spreadArray(__spreadArray([], this.prizes), this.buttons);
             if (this.button)
                 this.cells.push(this.button);
             this.cells.forEach(function (cell) {
