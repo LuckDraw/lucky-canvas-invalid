@@ -87,7 +87,7 @@ export interface ActiveStyleType {
 
 export type RowsType = number
 export type ColsType = number
-export type StartCallbackType = (e: MouseEvent) => void
+export type StartCallbackType = (e: MouseEvent, button?: ButtonType) => void
 export type EndCallbackType = (prize: object) => void
 
 export default interface LuckyGridConfig {

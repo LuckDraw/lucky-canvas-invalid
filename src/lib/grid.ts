@@ -255,7 +255,7 @@ export default class LuckyGrid extends Lucky {
       ctx.rect(x, y, width, height)
       if (!ctx.isPointInPath(e.offsetX, e.offsetY)) return
       if (this.startTime) return
-      this.startCallback?.(e)
+        this.startCallback?.(e, btn)
     })
   }
 
